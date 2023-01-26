@@ -9,7 +9,6 @@ import mmot_dual_nn as mmot
 import numpy as np
 import matplotlib.pyplot as pl
 
-import scipy.stats as stats
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -90,11 +89,8 @@ def plot_sample(X, Y, label):
     pl.legend(['X sample', 'Y sample'])
 
 
-
 # --- cost function ---
- 
 # portfolio option
-# separating for show purposes
 ax1 = 1.0
 ax2 = 2.0
 ay1 = 1.0
@@ -126,13 +122,13 @@ distribution = 'uniform'
 
 # cost and penalty functions
 cost, f_label = f_portfolio_option, f_label
-# cost, f_label = minus_f_portfolio_option, '-' + f_label
+# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
 
 # objective
 primal_obj = 'max'
 
 # ref_value = 11 / 8                 # max portfolio_option
-ref_value = -1 / 8                  # min portfolio_option
+ref_value = -1 / 8                   # min portfolio_option
 # ref_value = None                   # unknown
 
 # coupling mu1-mu2 and nu1-nu2

@@ -105,6 +105,8 @@ def train_loop(cost, primal_obj, mu_loader, th_loader,
                phi_x_list, phi_y_list, h_list, beta, gamma,
                optimizer = None, verbose = False):
     
+    # NOTE: primal_obj=min is unstable; use primal_obj=max with a negative of the cost function instead
+    
     # f:      cost function (primal)
     # h_list: list of potential functions (dual)
     # beta:   penalization function
