@@ -159,39 +159,40 @@ for label in labels:
     #     _, _th = sample(n_points, distribution=distribution, theta_x_coupling=theta_x_coupling, theta_fix_x = fix_x, clip_normal = 3)
     #     th = torch.tensor(np.array([_th[:,0], _th[:,1], _th[:,2], _th[:,3]]).T).float()
 
+    _, __, _th_X, _th_Y = mmot.generate_tensors(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
     
-    if False:
-        plot_sample(_th, 'th', fix_axes=False)
-    
-    full_size = len(th)
-    th_X1 = th[:, 0].view(full_size, 1)
-    th_X2 = th[:, 1].view(full_size, 1)
-    th_Y1 = th[:, 2].view(full_size, 1)
-    th_Y2 = th[:, 3].view(full_size, 1)
+    sample_size = len(_th_X)
+    th_X1 = _th_X[:, 0].view(sample_size, 1)
+    th_X2 = _th_X[:, 1].view(sample_size, 1)
+    th_Y1 = _th_Y[:, 0].view(sample_size, 1)
+    th_Y2 = _th_Y[:, 1].view(sample_size, 1)
     
     # potential functions
-    h_x1 = h_list[0]
-    h_x2 = h_list[1]
-    h_y1 = h_list[2]
-    h_y2 = h_list[3]
-    g1   = h_list[4]
-    g2   = h_list[5]
+    phi_x1 = phi_x_list[0]
+    phi_x2 = phi_x_list[1]
+    phi_y1 = phi_y_list[0]
+    phi_y2 = phi_y_list[1]
+    h1     = h_list[0]
+    h2     = h_list[1]
     
     # apply pi_hat logic to theta
     sign = 1 if primal_obj == 'max' else -1
-    f_th = cost(th).view(full_size, 1)
-    h_th = h_x1(th_X1) + h_x2(th_X2) + h_y1(th_Y1) + h_y2(th_Y2)
-    g_th = g1(torch.cat([th_X1, th_X2]).view(full_size, 2)) * (th_Y1 - th_X1) + \
-           g2(torch.cat([th_X1, th_X2]).view(full_size, 2)) * (th_Y2 - th_X2)
-    b_prime = beta_L2_prime(sign * (f_th - (h_th + g_th)), gamma=gamma)
+    f_th = module.cost(_th_X, _th_Y).view(sample_size, 1)
+    phi_th = phi_x1(th_X1) + phi_x2(th_X2) + phi_y1(th_Y1) + phi_y2(th_Y2)
+    h_th = h1(torch.cat([th_X1, th_X2]).view(sample_size, 2)) * (th_Y1 - th_X1) + \
+           h2(torch.cat([th_X1, th_X2]).view(sample_size, 2)) * (th_Y2 - th_X2)
+    b_prime = mmot.beta_L2_prime(sign * (f_th - (phi_th + h_th)), gamma=module.gamma)
     b_prime = b_prime.detach().numpy()[:,0]
     
     # draw points from theta and discard according to beta'(f - h)
     select_size = 100000
     draw_probability = b_prime / b_prime.sum()
     draw_probability.max()
-    select_points = np.random.choice(range(len(th)), size=select_size, p=draw_probability)
-    selection = th[select_points].detach().numpy()
+    select_points = np.random.choice(range(sample_size), size=select_size, p=draw_probability)
+    selection = np.array([th_X1[select_points].detach().numpy()[:,0],
+                          th_X2[select_points].detach().numpy()[:,0],
+                          th_Y1[select_points].detach().numpy()[:,0],
+                          th_Y2[select_points].detach().numpy()[:,0]]).T
     
     # pi_hat
     pl.figure(figsize=figsize)
@@ -208,15 +209,15 @@ for label in labels:
     pl.figure(figsize=figsize)
     pl.xlabel('x1, x2')
     pl.ylabel('phi')
-    pl.plot(t, h_x1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.plot(t, h_x2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
+    pl.plot(t, phi_x1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
+    pl.plot(t, phi_x2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
     pl.legend(['phi_1(x1)', 'phi_2(x2)'])
     
     pl.figure(figsize=figsize)
     pl.xlabel('y1, y2')
     pl.ylabel('psi')
-    pl.plot(t, h_y1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.plot(t, h_y2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
+    pl.plot(t, phi_y1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
+    pl.plot(t, phi_y2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
     pl.legend(['psi_1(y1)', 'psi_2(y2)'])
     
     x1x2 = torch.tensor(np.vstack([t,t]).T).float().view(len(t), 2)
@@ -224,7 +225,7 @@ for label in labels:
     pl.xlabel('x1 (= x2)')
     pl.ylabel('h')
     pl.title('h')
-    pl.plot(t, g1(x1x2).detach().numpy())
-    pl.plot(t, g2(x1x2).detach().numpy())
+    pl.plot(t, h1(x1x2).detach().numpy())
+    pl.plot(t, h2(x1x2).detach().numpy())
     pl.legend(['h1(x1, x2)', 'h2(x1, x2)'])   
     
