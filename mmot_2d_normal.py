@@ -136,6 +136,7 @@ def f_cross_product(x, y):
 
 cost = f_cross_product
 cost_label    = 'cross_product'
+distribution = 'normal'
 
 # reference value
 sig1 = normal_scale[0]
@@ -146,33 +147,19 @@ l1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
 l2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
 ref_value = 2 + l1 * l2            # max cross_product
 # ref_value = None                   # unknown
- 
+
+# optimization parameters
+d = 2
+primal_obj = 'max'
+batch_size = 1000
+gamma = 1000
+clip_normal = 4
+# clip_normal = None
 
 if __name__ == "__main__":
 
-    # --- optimization setting ---
     n_points = 100000
-    distribution = 'normal'
-    
-    # choose parameters below
-    
-    # cost and penalty functions
-    # f_label = f_label_cross_product
-    f_label = f_label_cross_product_y
-    cost = cost_function[f_label]
-    
-    # clip_normal = None
-    clip_normal = 4
-    
-    # objective
-    primal_obj = 'max'
-    
-    # normal
-    # coupling = 'independent'
-    # coupling = 'positive'
-    # coupling = 'direct'
-    
-    gamma = 1000
+    epochs = 2000
     
     for coupling in ['independent', 'positive', 'direct']:
         
@@ -184,11 +171,9 @@ if __name__ == "__main__":
             plot_sample(sample_th_X, sample_th_Y, 'th')
             
         # wrap samples in tensor loaders
-        batch_size = 1000
         mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
         
         # --- new model ---
-        d = 2
         hidden_size = 32
         n_hidden_layers = 2
         phi_x_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
@@ -210,7 +195,6 @@ if __name__ == "__main__":
         print(f'penalty:             {penalty:7.4f}')
         
         # iterative calls
-        epochs = 2000
         t0 = time.time() # timer
         _value = []
         _std = []

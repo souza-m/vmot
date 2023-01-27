@@ -19,18 +19,17 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # import mmot_uniform as module
 import mmot_2d_normal as module
 
-# will be used:
-module.cost
-module.cost_label
-module.sample
+# module functions to be used:
+# module.cost
+# module.sample
+# module.plot_sample
+print('distribution: ' + module.distribution)
+print('cost:         ' + module.cost_label)
 
-print('cost label ' + module.cost_label)
-
-_dir = './model_dump/'
 figsize = [12,12]
+_dir = './model_dump/'
 
 # choose:
-
 # 2d normal
 labels = ['results_max_cross_product_y_normal_independent',
           'results_max_cross_product_y_normal_positive',
@@ -41,6 +40,29 @@ labels = ['results_max_cross_product_y_normal_independent',
 
 # uniform min
 # labels = ...
+
+# adjustments
+# for label in labels:
+#     file = label + '.pickle'
+#     _path = _dir + file
+#     with open(_path, 'rb') as file:
+#         results = pickle.load(file)
+#     print('model loaded from ' + _path)
+    
+#     # adjustments
+#     # results.keys()
+#     # print(f'reference value {results["ref_value"]:8.4f}')
+#     # results['ref_value'] = ref_value
+#     # del results['f_label']
+#     # del results['cost']
+#     # results['cost_label'] = module.cost_label
+#     # ...
+#     # ---
+    
+#     with open(_path, 'wb') as file:
+#         pickle.dump(results, file)
+#     print('model saved to ' + _path)
+
 
 # show convergence results, normal marginals, cross product
 pl.figure(figsize=figsize)   # plot in two iterations to have a clean legend
@@ -79,40 +101,47 @@ for label in labels:
     with open(_path, 'rb') as file:
         results = pickle.load(file)
         print('model loaded from ' + _path)
-    distribution   = results['distribution']
-    f_label        = results['f_label']
     primal_obj     = results['primal_obj']
+    distribution   = results['distribution']
+    cost_label     = results['cost_label']
     coupling       = results['coupling']
+    phi_x_list     = results['phi_x_list']
+    phi_y_list     = results['phi_y_list']
     h_list         = results['h_list']
     value_series   = results['value_series']
     std_series     = results['std_series']
     penalty_series = results['penalty_series']
-    cost           = cost_function[f_label]
+    ref_value      = results['ref_value']
     
-    print('distribution:      ' + distribution)
-    print('function:          ' + f_label)
     print('primal objective:  ' + primal_obj)
+    print('distribution:      ' + distribution)
+    print('cost function:     ' + cost_label)
     print('coupling:          ' + coupling)
+    print(f'reference value:   {ref_value:8.4f}')
     
     # new sample
     n_points = 100000
     clip_normal = 4
-    sample_mu_X, sample_mu_Y = sample(n_points, coupling='independent', clip_normal=clip_normal, seed=1)
-    sample_th_X, sample_th_Y = sample(n_points, coupling=coupling)
+    sample_mu_X, sample_mu_Y = module.sample(n_points)
+    sample_th_X, sample_th_Y = module.sample(n_points, coupling=coupling)
     
     # plot samples
     if False:
-        plot_sample(sample_mu_X, sample_mu_Y, 'mu')
-        plot_sample(sample_th_X, sample_th_Y, 'th')
+        module.plot_sample(sample_mu_X, sample_mu_Y, 'mu')
+        module.plot_sample(sample_th_X, sample_th_Y, 'th')
     
     # data loader
-    batch_size = 1000
-    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, module.batch_size)
 
     # single call
-    gamma = 1000   # to do: read from file
+    print()
     print('single call')
-    value, std, penalty = train_loop(loader, cost, h_list, beta, primal_obj, gamma, verbose=True)
+    print('-------------------------------------------------------')
+    value, std, penalty = mmot.train_loop(module.cost, module.primal_obj,
+                                          mu_loader, th_loader, 
+                                          phi_x_list, phi_y_list, h_list, mmot.beta_L2, module.gamma,
+                                          optimizer = None, verbose = True)
+
     print(f'value:               {value:7.4f}')
     print(f'standard deviation:  {std:7.4f}')
     print(f'penalty:             {penalty:7.4f}')
