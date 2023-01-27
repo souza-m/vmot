@@ -11,7 +11,6 @@ import matplotlib.pyplot as pl
 
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
 import pickle
 
 import datetime as dt, time
@@ -117,19 +116,13 @@ f_label = 'portfolio_option'
 
 n_points = 100000
 distribution = 'uniform'
-
-# choose parameters below
-
-# cost and penalty functions
-cost, f_label = f_portfolio_option, f_label
-# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
-
-# objective
 primal_obj = 'max'
 
-# ref_value = 11 / 8                 # max portfolio_option
-ref_value = -1 / 8                   # min portfolio_option
-# ref_value = None                   # unknown
+# cost function and reference value
+cost, f_label = f_portfolio_option, f_label
+# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
+ref_value = 11 / 8                   # portfolio_option
+ref_value = -1 / 8                   # minus_portfolio_option
 
 # coupling mu1-mu2 and nu1-nu2
 # coupling = ['independent', 'independent']
@@ -157,15 +150,15 @@ for coupling in [['independent', 'independent'],
     # wrap samples in tensor loaders
     batch_size = 1000
     shuffle = True
-    _mu_X = torch.tensor(sample_mu_X).float()
-    _mu_Y = torch.tensor(sample_mu_Y).float()
-    _th_X = torch.tensor(sample_th_X).float()
-    _th_Y = torch.tensor(sample_th_Y).float()
-    mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
-    
+    # _mu_X = torch.tensor(sample_mu_X).float()
+    # _mu_Y = torch.tensor(sample_mu_Y).float()
+    # _th_X = torch.tensor(sample_th_X).float()
+    # _th_Y = torch.tensor(sample_th_Y).float()
+    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
+    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
+    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
+    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
     
     # --- new model ---
     d = 2
@@ -174,7 +167,6 @@ for coupling in [['independent', 'independent'],
     phi_x_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
     phi_y_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
     h_list     = nn.ModuleList([mmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-    
     
     # --- training: calls to train_loop ---
     print()
@@ -188,7 +180,6 @@ for coupling in [['independent', 'independent'],
     print(f'standard deviation:  {std:7.4f}')
     print(f'penalty:             {penalty:7.4f}')
         
-    
     # iterative calls
     epochs = 200
     t0 = time.time() # timer
@@ -253,8 +244,9 @@ for coupling in [['independent', 'independent'],
                 'penalty_series': penalty_series  }
     
     # dump
-    _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + (epochs != 200) * f'_{epochs}.pickle'
+    _dir = '/module_dump/'
+    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -262,7 +254,7 @@ for coupling in [['independent', 'independent'],
 
 
 # load
-_dir = 'U:/Projects/MMOT/module_dump/'
+_dir = '/module_dump/'
 
 # max portfolio_option
 labels = ['results_max_cross_product_y_uniform_independent_independent',
@@ -365,14 +357,12 @@ for label in labels:
     # wrap samples in tensor loaders
     batch_size = 1000
     shuffle = True
-    _mu_X = torch.tensor(sample_mu_X).float()
-    _mu_Y = torch.tensor(sample_mu_Y).float()
-    _th_X = torch.tensor(sample_th_X).float()
-    _th_Y = torch.tensor(sample_th_Y).float()
-    mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
+    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
+    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
+    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+
     
     # single call
     print()
@@ -385,6 +375,11 @@ for label in labels:
     print(f'value:               {value:7.4f}')
     print(f'standard deviation:  {std:7.4f}')
     print(f'penalty:             {penalty:7.4f}')
+    
+    _mu_X = torch.tensor(sample_mu_X).float()
+    _mu_Y = torch.tensor(sample_mu_Y).float()
+    _th_X = torch.tensor(sample_th_X).float()
+    _th_Y = torch.tensor(sample_th_Y).float()
     
     # graph sample
     full_size = len(_th_X)

@@ -54,7 +54,7 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 import numpy as np
 import torch
 from torch import nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'   # pytorch version issues
@@ -71,7 +71,21 @@ class SampleDataset(Dataset):
     def __getitem__(self, index):
         return self.X[index], self.Y[index]
  
- 
+def generate_tensors(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y):
+    t_mu_X = torch.tensor(sample_mu_X).float()
+    t_mu_Y = torch.tensor(sample_mu_Y).float()
+    t_th_X = torch.tensor(sample_th_X).float()
+    t_th_Y = torch.tensor(sample_th_Y).float()
+    return t_mu_X, t_mu_Y, t_th_X, t_th_Y
+
+def generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size, shuffle = True):
+    t_mu_X, t_mu_Y, t_th_X, t_th_Y = generate_tensors(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+    mu_dataset = SampleDataset(t_mu_X, t_mu_Y)
+    th_dataset = SampleDataset(t_th_X, t_th_Y)
+    mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
+    th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    return mu_loader, th_loader
+    
 # class for model for each hj (or gj) to be minimized (rhs of eq 2.8)
 class Phi(nn.Module):
  

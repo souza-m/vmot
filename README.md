@@ -8,6 +8,6 @@ Reference papers for the numerical procedure:
 - Eckstein, Guo, Lim, Obloj (2019) "Robust Pricing and Hedging of Options on Multiple Assets and Its Numerics".
 - Eckstein, Kupper (2019) "Computation of Optimal Transport and Related Hedging Problems via Penalization and Neural Networks".
 
-Reference GitHub Projects:
+Reference GitHub Projects (originals in Python/TensorFlow):
 - https://github.com/stephaneckstein/transport-and-related/tree/master/MartingaleOT
 - https://github.com/stephaneckstein/OT_Comparison
