@@ -176,7 +176,7 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \begin_inset Formula $L_{2}$
 \end_inset
 
- and the penalization parameter 
+ and the penalization parameter as 
 \begin_inset Formula $\gamma=1000$
 \end_inset
 
@@ -199,7 +199,7 @@ c\left(X_{1},Y\right) & =\left(a_{1}X_{1}+a_{2}X_{2}-k_{1}\right)^{+}+\left(b_{1
 \end_layout
 
 \begin_layout Example
-The marginals are uniform distributions centered at zero.
+Our marginals are uniform distributions centered at zero.
  Set 
 \begin_inset Formula $d=2$
 \end_inset
@@ -321,11 +321,7 @@ Notice that we are using the fact that
 \begin_inset Formula $\pi^{*}$
 \end_inset
 
- be absolutely convex with respect to 
-\begin_inset Formula $\theta$
-\end_inset
-
-.
+ be absolutely convex with respect to it.
  In its most general form, 
 \begin_inset Formula $\theta$
 \end_inset
@@ -336,7 +332,11 @@ Notice that we are using the fact that
 \begin_inset Formula $\theta^{1}$
 \end_inset
 
- to be monotonically coupled.
+ to be determined by the monotonic coupling of 
+\begin_inset Formula $\left(\vec{\mu}_{i}\right)$
+\end_inset
+
+ (positive or negative according to the objective).
  We use both choices of 
 \begin_inset Formula $\theta$
 \end_inset
@@ -365,8 +365,8 @@ k in both cases.
 \end_layout
 
 \begin_layout Standard
-Results after 
-\begin_inset Formula $2000$
+The following tamble summarizes the results after 
+\begin_inset Formula $200$
 \end_inset
 
  iterations.
@@ -704,6 +704,10 @@ Penalty
 \end_inset
 
 
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
 \begin_layout Example
@@ -722,7 +726,7 @@ c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}
 \end_layout
 
 \begin_layout Standard
-The marginals follow normal distributions with parameters 
+Now our marginals follow normal distributions with parameters 
 \begin_inset Formula 
 \begin{align*}
 X_{i} & \sim N\left(0,\sigma_{i}^{2}\right)\\
@@ -731,6 +735,10 @@ Y_{i} & \sim N\left(0,\rho_{i}^{2}\right)
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
 We start with 
 \begin_inset Formula $d=2$
 \end_inset
@@ -774,12 +782,8 @@ To avoid noisy behavior in the potential functions, we sample from normal
 \begin_inset Formula $\theta$
 \end_inset
 
- given by the independent coupling of the marginals and with an alternative
- measure that uses our resoult, that is, an improved 
-\begin_inset Formula $\theta$
-\end_inset
-
- with 
+ given by the independent coupling of the marginals and with an improved
+ measure that uses our result, namely, with 
 \begin_inset Formula $\theta^{1}$
 \end_inset
 
@@ -789,7 +793,19 @@ To avoid noisy behavior in the potential functions, we sample from normal
 
 .
  A futher improvement is allowed by the fact that we are using normal marginals,
- see (REF).
+ see (REF), which gives us a third, potentially even more efficient 
+\begin_inset Formula $\theta$
+\end_inset
+
+ where 
+\begin_inset Formula $\theta^{1}$
+\end_inset
+
+ is given as before and 
+\begin_inset Formula $\theta^{2}$
+\end_inset
+
+ follows a joint normal with parameters given by the reference (develop).
  The value convergence using the three sampling measures is shown below.
  Sample sizes are 
 \begin_inset Formula $100$
@@ -809,20 +825,13 @@ The convergence graph shows similar pattern between independent and monotone
 \end_inset
 
 .
- [comment]
+ (comment)
 \end_layout
 
 \begin_layout Standard
-We construct candidate distributions 
-\begin_inset Formula $\hat{\pi}_{\text{independent}}$
-\end_inset
-
- and 
-\begin_inset Formula $\hat{\pi}_{\text{monotone}}$
-\end_inset
-
- derived from the numerically constructed potential functions according
- to 
+To provide a visual illustration of the coupling process, we construct examples
+ of distributions from the potential functions generated in the numerical
+ procedure, according to equation 2.6 of –EcksteinKupper2021– 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "eckstein_kupper_computational_2021"
@@ -830,7 +839,7 @@ literal "false"
 
 \end_inset
 
-, equation 2.6.
+.
 \end_layout
 
 \begin_layout Standard
@@ -1509,6 +1518,10 @@ Penalty
 </row>
 </lyxtabular>
 
+\end_inset
+
+
+\begin_inset Newline newline
 \end_inset
 
 
