@@ -109,8 +109,8 @@ def f_portfolio_option(x, y):
 def minus_f_portfolio_option(x, y):
     return -f_portfolio_option(x, y)
 
-f_label = 'portfolio_option'
-
+cost, cost_label = f_portfolio_option, 'portfolio_option'
+minus_cost, minus_cost_label = minus_f_portfolio_option, 'minus_portfolio_option'
  
 # --- optimization setting ---
 
@@ -119,8 +119,6 @@ distribution = 'uniform'
 primal_obj = 'max'
 
 # cost function and reference value
-cost, f_label = f_portfolio_option, f_label
-# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
 ref_value = 11 / 8                   # portfolio_option
 ref_value = -1 / 8                   # minus_portfolio_option
 
@@ -131,6 +129,7 @@ ref_value = -1 / 8                   # minus_portfolio_option
 # coupling = ['positive', 'positive']
 # coupling = ['negative', 'negative']
 
+batch_size = 1000
 gamma = 1000
 
 
@@ -244,9 +243,9 @@ for coupling in [['independent', 'independent'],
                 'penalty_series': penalty_series  }
     
     # dump
-    _dir = '/module_dump/'
-    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
+    _dir = '/model_dump/'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -254,23 +253,22 @@ for coupling in [['independent', 'independent'],
 
 
 # load
-_dir = '/module_dump/'
+_dir = './model_dump/'
 
 # max portfolio_option
-labels = ['results_max_cross_product_y_uniform_independent_independent',
-          'results_max_cross_product_y_uniform_positive_independent',
-          'results_max_cross_product_y_uniform_positive_positive' ]
+labels = ['results_max_portfolio_option_uniform_independent_independent',
+          'results_max_portfolio_option_uniform_positive_independent',
+          'results_max_portfolio_option_uniform_positive_positive' ]
 
 # min portfolio_option
 labels = ['results_max_minus_portfolio_option_uniform_independent_independent',
           'results_max_minus_portfolio_option_uniform_negative_independent',
           'results_max_minus_portfolio_option_uniform_negative_negative' ]
 
-files = [l + '.pickle' for l in labels]
-
 # show convergence results, normal marginals, cross product
 pl.figure(figsize=figsize)   # plot in two iterations to have a clean legend
-for file in files:    
+for label in labels:
+    file = label + '.pickle'
     _path = _dir + file
     with open(_path, 'rb') as file: 
         results = pickle.load(file)
@@ -279,7 +277,8 @@ for file in files:
     # value_series   = results['value_series'] + results['penalty_series']
     pl.plot(value_series)
 pl.legend([l[8:] for l in labels])
-for file in files:    
+for label in labels:
+    file = label + '.pickle'
     _path = _dir + file
     with open(_path, 'rb') as file:
         results = pickle.load(file)
@@ -294,15 +293,20 @@ for file in files:
 if not results['ref_value']  is None:
     pl.axhline(results['ref_value'], linestyle=':', color='black')  
     
-# adjustments
 for label in labels:
-    print(label)
     file = label + '.pickle'
     _path = _dir + file
     with open(_path, 'rb') as file:
         results = pickle.load(file)
-    
+    print('model loaded from ' + _path)
+    print(results.keys())
     # adjustments
+    # del results['f_label']
+    # del results['cost']
+    # results['cost_label'] = cost_label
+    # results['coupling'] = [results['x_coupling'], results['y_coupling']]
+    # del results['x_coupling']
+    # del results['y_coupling']
     # ...
     # print(results['ref_value'])
     # results['ref_value'] = ref_value
@@ -310,6 +314,7 @@ for label in labels:
     
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
+    print('model saved to ' + _path)
 
         
 # choose file
@@ -324,11 +329,8 @@ for label in labels:
         print('model loaded from ' + _path)
         
     primal_obj     = results['primal_obj']
-    f_label        = results['f_label']
-    cost           = results['cost']
     distribution   = results['distribution']
-    x_coupling     = results['x_coupling']
-    y_coupling     = results['y_coupling']
+    coupling       = results['coupling']
     gamma          = results['gamma']
     ref_value      = results['ref_value']
     phi_x_list     = results['phi_x_list']
@@ -337,36 +339,29 @@ for label in labels:
     value_series   = results['value_series']
     std_series     = results['std_series']
     penalty_series = results['penalty_series']
-    # cost = cost_function[f_label]
+    f_label        = results['cost_label']
     
     print('primal objective:  ' + primal_obj)
     print('function:          ' + f_label)
     print('distribution:      ' + distribution)
-    print('x coupling:        ' + x_coupling)
-    print('y coupling:        ' + y_coupling)
+    print('coupling:          ' + str(coupling))
     print(f'ref value:         {ref_value:7.4f}')
     
     # new sample
     n_points = 100000
-    sample_mu_X, sample_mu_Y = sample(n_points, coupling=['independent', 'independent'], seed=1)
-    sample_th_X, sample_th_Y = sample(n_points, coupling=[x_coupling, y_coupling])
+    sample_mu_X, sample_mu_Y = sample(n_points, seed=1)
+    sample_th_X, sample_th_Y = sample(n_points, coupling=coupling)
     if False:
         plot_sample(sample_mu_X, sample_mu_Y, 'mu')
         plot_sample(sample_th_X, sample_th_Y, 'th')
         
     # wrap samples in tensor loaders
-    batch_size = 1000
-    shuffle = True
-    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
-    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
 
     
     # single call
     print()
-    print('first call')
+    print('single call')
     print('-------------------------------------------------------')
     value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
                                           phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,

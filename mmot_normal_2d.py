@@ -241,7 +241,7 @@ if __name__ == "__main__":
         
         # summarize results
         results = { 'primal_obj'    : primal_obj,
-                    'f_label'       : f_label,
+                    'cost_label'    : cost_label,
                     'cost'          : cost,
                     'distribution'  : distribution,
                     'clip_normal'   : clip_normal,
@@ -258,8 +258,35 @@ if __name__ == "__main__":
         # dump
         _dir = '/model_dump/'
         # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
-        _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + '.pickle'
+        _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
         _path = _dir + _file
         with open(_path, 'wb') as file:
             pickle.dump(results, file)
         print('model saved to ' + _path)
+
+# --- adjustments ---
+labels = ['results_max_cross_product_y_normal_independent',
+          'results_max_cross_product_y_normal_positive',
+          'results_max_cross_product_y_normal_direct' ]
+
+for label in labels:
+    file = label + '.pickle'
+    _path = _dir + file
+    with open(_path, 'rb') as file:
+        results = pickle.load(file)
+    print('model loaded from ' + _path)
+    
+    # adjustments
+    # results.keys()
+    # print(f'reference value {results["ref_value"]:8.4f}')
+    # results['ref_value'] = ref_value
+    # del results['f_label']
+    # del results['cost']
+    # results['cost_label'] = module.cost_label
+    # ...
+    # ---
+    
+    with open(_path, 'wb') as file:
+        pickle.dump(results, file)
+    print('model saved to ' + _path)
+
