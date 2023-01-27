@@ -29,102 +29,109 @@
 
 \paragraph{Numeric examples.}
 
-(To be moved to the Introduction Section.) In the numerical section,
+(To be moved to the Introduction Section.) In the Numerics section,
 we develop several examples of robust pricing problems designed to
 show the improvement allowed by our result. We consider cost functions
-based on the the basket call option and a theoretical cross-product
-contract. Some of the examples use uniform or normal marginal distributions,
-while some use real-world marginal distributions implied by option
-prices of individual assets at two distinct future points in time.
+based on the the european call option applied to a basket of assets
+and a theoretical covariance (or cross-product) contract. The first
+two examples use hypothetical uniform and normal marginal distributions,
+while the third uses real-world marginal distributions implied by
+option prices of individual assets at two distinct future points in
+time.
 
 In this section, we solve several versions of the problem of robust
 pricing of a financial contract involving the prices of a pair of
-assets at two distinct points in time. We apply the framework of \cite{eckstein_kupper_computational_2021},
-further developed in --EcksteinGuoLimObloj21-- and analyze potential
-performance improvements allowed by our result about the geometry
-of optimal couplings. Our tests run accross different dimensions,
-cost functions and marginal shapes, including marginals derived from
-actual stock market option prices, as detailed below.
+assets at two distinct points in time. We apply the framework of \cite{eckstein_kupper_computational_2021}
+--EcksteinKupper21--, further developed in --EcksteinGuoLimObloj21--
+and analyze potential performance improvements allowed by our result
+about the geometry of the optimal couplings. Our tests run accross
+various dimensions, cost functions and marginal shapes, including
+marginals derived from actual stock market option prices, as detailed
+below.
 
 The model introduced in --EcksteinKupper2021-- uses penalyzation
-and neural network optimization to solve the dual problem of VMOT.
---EcksteinGuoLimObloj21-- introduces the martingale constraint to
-the optimal transport problem. More precisely, the model approximates
-the potential functions $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
-of equation 2.6 using neural networks and use penalyzation to impose
-condition 2.7. The novelty of our method is in the improvement of
-$\theta$, the sampling measure used for penalyzation: since we know
-that a solution (unique in the case of strict submodularity) is attained
-with monotone coupling of the $X$ marginals $\left(\vec{\mu}_{i}\right)$,
+and neural network optimization to solve the dual problem of Optimal
+Transport. More precisely, the model approximates the potential functions
+$\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$ of equation 2.6 using
+neural networks and use penalyzation to impose condition 2.7. --EcksteinGuoLimObloj21--
+introduces the martingale constraint to the optimal transport problem,
+providing a dual solution to VMOT. The novelty of our method is in
+the improvement of the sampling measure $\theta$, used for penalyzation:
+since we know that a solution (unique in the case of strict submodularity)
+is attained with monotone coupling of the $X$ marginals $\left(\vec{\mu}_{i}\right)$,
 we determine $\theta^{1}$, the $X$-side of $\theta$, by those marginals.
-For the sake of comparison, we run tests with and without this improvement.
-For simplicity, we fix the penalyzation function as $L_{2}$ and the
-penalization parameter $\gamma=1000$.
+When possible, we improve $\theta$ a little further by applying some
+additional knowledge about the full coupling of the marginals, including
+the $Y$ side. Further research on VMOT can reveal ways to improve
+$\theta$ for more general cases. Here, for the sake of comparison,
+we run tests with and without these known improvements. For simplicity,
+we fix the penalyzation function as $L_{2}$ and the penalization
+parameter as $\gamma=1000$.
 \begin{example}
-(Basket option cost function, uniform marginals.) Let $d=2$ and our
-cost function and marginals be 
+(Basket option cost function, uniform marginals.) Our first cost function
+mimics the payoff of a contract similar to an European call option
+applied to a basket composed of assets. That is, our cost function
+has general form 
+\begin{align*}
+c\left(X_{1},Y\right) & =\left(a_{1}X_{1}+a_{2}X_{2}-k_{1}\right)^{+}+\left(b_{1}Y_{1}+b_{2}Y_{2}-k_{2}\right)^{+}
+\end{align*}
+
+Our marginals are uniform distributions centered at zero. Set $d=2$
+and 
 \begin{align*}
 c\left(X_{1},Y\right) & =\left(X_{1}+2X_{2}-1\right)^{+}+\left(Y_{1}+2Y_{2}-1\right)^{+}\\
 X_{1},X_{2} & \sim U\left[-1,1\right]\\
 Y_{1},Y_{2} & \sim U\left[-2,2\right]
 \end{align*}
 \end{example}
-It is useful to calculate {[}bounds for $p^{+}$ and $p^{-}$? --
-check conditions for monotone coupling on $Y${]} $p^{+}$ and $p^{-}$
-as references for the numerical output. For the maximum, consider
-$\hat{\pi}$ with positive monotone coupling on both $\hat{\pi}^{1}$
-and $\hat{\pi}^{2}$. We calculate the maximum in this particular
-case as 
+We are interested in both upper and lower bounds. It is useful to
+calculate $p^{+}$ and $p^{-}$ as references for the numerical output
+{[}check conditions for monotone coupling on $Y${]} . For the maximum
+(minimum) we take $\hat{\pi}$ with positive (negative) monotone coupling
+on both $\hat{\pi}^{1}$ and $\hat{\pi}^{2}$. We calculate the bounds
+as 
 \begin{align*}
-p_{\hat{\pi}}^{+} & =p_{X,\hat{\pi}}^{+}+p_{Y,\hat{\pi}}^{+}
+p_{\hat{\pi}}^{+} & =p_{X,\hat{\pi}}^{+}+p_{Y,\hat{\pi}}^{+}\\
+p_{\hat{\pi}}^{-} & =p_{X,\hat{\pi}}^{-}+p_{Y,\hat{\pi}}^{-}
 \end{align*}
  where, using the formula on A1 below, 
 \begin{align*}
-p_{X,\hat{\pi}}^{+} & =\frac{1}{3}\\
-p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}
+p_{X,\hat{\pi}}^{+} & =\frac{1}{3}; & p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}\\
+p_{Y,\hat{\pi}}^{-} & =0; & p_{Y,\tilde{\pi}}^{-} & =\frac{1}{8}
 \end{align*}
 
-Thus, {[}a lower bound for $p^{+}$ is{]} $p^{+}=\frac{1}{3}+\frac{25}{24}=\frac{11}{8}=1.375$.
-For the minimum, let us consider $\tilde{\pi}$ with negative monotone
-coupling on both $\tilde{\pi}^{1}$ and $\tilde{\pi}^{2}$. Now we
-have, again from A1,
-\begin{align*}
-p_{X,\tilde{\pi}}^{-} & =0\\
-p_{Y,\tilde{\pi}}^{-} & =\frac{1}{8}
-\end{align*}
- 
-
-Thus, {[}an upper bound for $p^{-}$ is{]} $p^{-}=\frac{1}{8}=0.125$.
+Thus, our theoretical reference bounds for the numerical approximation
+are $p^{+}=\frac{1}{3}+\frac{25}{24}=\frac{11}{8}=1.375$ and $p^{-}=\frac{1}{8}=0.125$.
 Our first step in the computation process is to build two samples
 from the theoretical distributions $\mu_{0}$ and $\theta$ in equation
-2.3 of \cite{eckstein_kupper_computational_2021}. We repeat the target
-function to be optimized here, with adapted notation. We want to minimize
-or maximize
+2.3 of --EcksteinKupper21--. We repeat the target function to be
+optimized here, with adapted notation. We want to minimize or maximize
 \begin{align*}
  & \int\left(\sum_{i}f_{i}+\sum_{i}g_{i}\right)d\mu_{0}+\int\beta_{\gamma}\left(c-\varphi\right)d\theta\\
  & =\sum_{i}\left(\int f_{i}d\mu_{i}+\int g_{i}d\nu_{i}\right)+\int\beta_{\gamma}\left(c-\varphi\right)d\theta
 \end{align*}
 
 Notice that we are using the fact that $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$
-to eliminate this term from the first integral in the equation above.
-Given the separation in the first term of the RHS, $\mu_{0}$ can
-be simply taken as the independent coupling of the marginals. As for
-$\theta$, the only requirement besides the marginals is that a true
-solution $\pi^{*}$ be absolutely convex with respect to $\theta$.
-In its most general form, $\theta$ is composed of the independent
-coupling of the marginals. A more elaborate version comes from using
-our main result, when we set $\theta^{1}$ to be monotonically coupled.
-We use both choices of $\theta$ and compare the outputs. Sample sizes
-are $100$k in both cases. The graph below shows the convergence of
-the numeric value for the number of iterations in the horizontal axis.
-The shaded grey area covers $\pm1$ standard deviations of the numeric
-outputs.
+to eliminate this term from the first integral in each side of the
+the equation above. Given the separation in the first term of the
+RHS, $\mu_{0}$ can be simply taken as the independent coupling of
+the marginals. As for $\theta$, the only requirement besides the
+marginals is that a true solution $\pi^{*}$ be absolutely convex
+with respect to it. In its most general form, $\theta$ is composed
+of the independent coupling of the marginals. A more elaborate version
+comes from using our main result, when we set $\theta^{1}$ to be
+determined by the monotonic coupling of $\left(\vec{\mu}_{i}\right)$
+(positive or negative according to the objective). We use both choices
+of $\theta$ and compare the outputs. Sample sizes are $100$k in
+both cases. The graph below shows the convergence of the numeric value
+for the number of iterations in the horizontal axis. The shaded grey
+area covers $\pm1$ standard deviations of the numeric outputs.
 
 {[}graph: convergence max{]}
 
 {[}graph: convergence min{]}
 
-Results after $200$ iterations.
+The following tamble summarizes the results after $200$ iterations.
 
 Maximization.
 
@@ -158,16 +165,23 @@ Standard deviation & 0.0230 & 0.0251\tabularnewline
 \hline 
 Penalty & 0.0082 & 0.0075\tabularnewline
 \hline 
-\end{tabular}
+\end{tabular}\\
+
 \begin{example}
-(Covariance cost function, normal marginals.) The general form for
-our cost function and marginals is
+(Covariance cost function, normal marginals.) For our second example,
+we consider a cost function inspired by a theoretical contract that
+pays proportional to the covariance of two assets. The general form
+is
 \begin{align*}
-c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}\\
+c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}
+\end{align*}
+\end{example}
+Now our marginals follow normal distributions with parameters 
+\begin{align*}
 X_{i} & \sim N\left(0,\sigma_{i}^{2}\right)\\
 Y_{i} & \sim N\left(0,\rho_{i}^{2}\right)
 \end{align*}
-\end{example}
+
 We start with $d=2$ and set
 \begin{align*}
 c\left(X,Y\right) & =Y_{1}Y_{2}\\
@@ -175,28 +189,35 @@ c\left(X,Y\right) & =Y_{1}Y_{2}\\
 \left(\rho_{1},\rho_{2}\right) & =\left(3,4\right)
 \end{align*}
 
-Proposition 3.7 gives us the exact solution 
+By symmetry, we only need to look at the maximization problem. Proposition
+3.7 gives us the exact solution to be used as a reference for the
+maximum price 
 \[
 p^{+}=2*1+\sqrt{3^{2}-2^{2}}\sqrt{4^{2}-1^{2}}\sim10.6603
 \]
 
 To avoid noisy behavior in the potential functions, we sample from
-normal distributions clipped at $\pm4\sigma$. Sample sizes are $100$k.
-To provide a reference for the convergence process, we also use the
-fact that an optimal $\theta^{*}$ is be given by {[}reference{]}.
-The value convergence using the three distributions -- with independent
-and positively monotone $\theta^{1}$ and with full optimal coupling
--- is shown below.
+normal distributions clipped at $\pm4\sigma$. As before, we run our
+optimization with the most general sampling measure $\theta$ given
+by the independent coupling of the marginals and with an improved
+measure that uses our result, namely, with $\theta^{1}$ determined
+by the monotone coupling of $\left(\vec{\mu}_{i}\right)$. A futher
+improvement is allowed by the fact that we are using normal marginals,
+see (REF), which gives us a third, potentially even more efficient
+$\theta$ where $\theta^{1}$ is given as before and $\theta^{2}$
+follows a joint normal with parameters given by the reference (develop).
+The value convergence using the three sampling measures is shown below.
+Sample sizes are $100$k.
 
 {[}graph: convergence{]}
 
 The convergence graph shows similar pattern between independent and
-monotone coupling on $\theta^{1}$. {[}comment{]}
+monotone coupling on $\theta^{1}$. (comment)
 
-We construct candidate distributions $\hat{\pi}_{\text{independent}}$
-and $\hat{\pi}_{\text{monotone}}$ derived from the numerically constructed
-potential functions according to \cite{eckstein_kupper_computational_2021},
-equation 2.6.
+To provide a visual illustration of the coupling process, we construct
+examples of distributions from the potential functions generated in
+the numerical procedure, according to equation 2.6 of --EcksteinKupper2021--
+\cite{eckstein_kupper_computational_2021}.
 
 {[}graphs: $\hat{\pi}$ for both cases{]}
 
@@ -204,7 +225,7 @@ Results after $2000$ iterations.
 
 \begin{tabular}{|c|c|c|c|}
 \hline 
-Cupling & Independent & Positive $\theta^{1}$ & Fully optimal\tabularnewline
+Cupling & Independent & Positive $\theta^{1}$ & Positive $\theta^{1}$ and optimal $\theta^{2}$\tabularnewline
 \hline 
 \hline 
 Target & \multicolumn{3}{c|}{10.6603}\tabularnewline
@@ -220,7 +241,8 @@ Penalty & 0.4135 & 0.1684 & 0.0132\tabularnewline
 \subparagraph{Higher dimensions.}
 
 To compare performance in higher dimensions, we also run examples
-with $d=3$ and $d=5$. Our cost is simplified as 
+with $d=3$ and $d=5$ (to do: change to higher dimension such as
+$d=10$). Our cost is simplified as 
 \[
 c\left(x,y\right)=\sum_{i}\sum_{j>i}b_{ij}y_{i}y_{j}
 \]
@@ -241,7 +263,7 @@ Below is a graph of the convergence
 
 {[}comment{]}
 
-Results after $2000$ iterations.
+Results after $2000$ iterations. (update)
 
 \begin{tabular}{|c|c|c|}
 \hline 
@@ -272,7 +294,7 @@ Below is a graph of the convergence
 
 {[}comment{]}
 
-Results after $2000$ iterations.
+Results after $2000$ iterations. (update)
 
 \begin{tabular}{|c|c|c|}
 \hline 
@@ -287,7 +309,8 @@ Standard deviation &  & \tabularnewline
 \hline 
 Penalty &  & \tabularnewline
 \hline 
-\end{tabular}
+\end{tabular}\\
+
 \begin{example}
 (Covariance cost function with real stock market marginals.) To be
 developed. Include graphs of dual functions and discussion.
@@ -348,6 +371,6 @@ p^{-} & =\frac{1}{2m}\int_{-m}^{\frac{k}{a_{1}-a_{2}}}f\left(\left(t,-t\right)\r
 \end{align*}
 
 \bibliographystyle{plain}
-\bibliography{../../Research/REFs}
+\bibliography{REFs}
 
 \end{document}
