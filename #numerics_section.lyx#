@@ -142,10 +142,10 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \end_inset
 
 , we determine 
-\begin_inset Formula $\\th$
+\begin_inset Formula $\theta^{1}$
 \end_inset
 
-the 
+, the 
 \begin_inset Formula $X$
 \end_inset
 
@@ -153,11 +153,7 @@ the
 \begin_inset Formula $\theta$
 \end_inset
 
-, denoted 
-\begin_inset Formula $\theta^{1}$
-\end_inset
-
-, is determined by those marginals.
+, by those marginals.
  For the sake of comparison, we run tests with and without this improvement.
  For simplicity, we fix the penalyzation function as 
 \begin_inset Formula $L_{2}$
@@ -171,8 +167,7 @@ the
 \end_layout
 
 \begin_layout Example
-Basket option cost function, uniform marginals.
- Let 
+(Basket option cost function, uniform marginals.) Let 
 \begin_inset Formula $d=2$
 \end_inset
 
@@ -749,10 +744,10 @@ We start with
 \begin_inset Formula $d=2$
 \end_inset
 
- and 
+ and set
 \begin_inset Formula 
 \begin{align*}
-c\left(X,Y\right) & =2X_{1}X_{2}+3Y_{1}Y_{2}\\
+c\left(X,Y\right) & =Y_{1}Y_{2}\\
 \left(\sigma_{1},\sigma_{2}\right) & =\left(2,1\right)\\
 \left(\rho_{1},\rho_{2}\right) & =\left(3,4\right)
 \end{align*}
@@ -763,15 +758,10 @@ c\left(X,Y\right) & =2X_{1}X_{2}+3Y_{1}Y_{2}\\
 \end_layout
 
 \begin_layout Standard
-Proposition 3.7 gives us the exact solution as a reference.
- We have 
-\begin_inset Formula $\lambda_{1}=\sqrt{5},\lambda_{2}=\sqrt{15}$
-\end_inset
-
- and 
+Proposition 3.7 gives us the exact solution 
 \begin_inset Formula 
 \[
-p^{+}=10+15\sqrt{3}\approx35.981
+p^{+}=2*1+\sqrt{}
 \]
 
 \end_inset

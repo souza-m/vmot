@@ -720,13 +720,9 @@ Penalty
 
 \end_layout
 
-\begin_layout Subparagraph
-Example 2.
- Covariance cost function, normal marginals.
-\end_layout
-
-\begin_layout Standard
-The general form for our cost function and marginals is
+\begin_layout Example
+(Covariance cost function, normal marginals.) The general form for our cost
+ function and marginals is
 \begin_inset Formula 
 \begin{align*}
 c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}\\
@@ -744,10 +740,10 @@ We start with
 \begin_inset Formula $d=2$
 \end_inset
 
- and 
+ and set
 \begin_inset Formula 
 \begin{align*}
-c\left(X,Y\right) & =2X_{1}X_{2}+3Y_{1}Y_{2}\\
+c\left(X,Y\right) & =Y_{1}Y_{2}\\
 \left(\sigma_{1},\sigma_{2}\right) & =\left(2,1\right)\\
 \left(\rho_{1},\rho_{2}\right) & =\left(3,4\right)
 \end{align*}
@@ -758,15 +754,10 @@ c\left(X,Y\right) & =2X_{1}X_{2}+3Y_{1}Y_{2}\\
 \end_layout
 
 \begin_layout Standard
-Proposition 3.7 gives us the exact solution as a reference.
- We have 
-\begin_inset Formula $\lambda_{1}=\sqrt{5},\lambda_{2}=\sqrt{15}$
-\end_inset
-
- and 
+Proposition 3.7 gives us the exact solution 
 \begin_inset Formula 
 \[
-p^{+}=10+15\sqrt{3}\approx35.981
+p^{+}=2*1+\sqrt{3^{2}-2^{2}}\sqrt{4^{2}-1^{2}}\sim10.6603
 \]
 
 \end_inset
@@ -928,7 +919,7 @@ Target
 \uwave off
 \noun off
 \color none
-35.98
+10.6603
 \end_layout
 
 \end_inset
@@ -1502,13 +1493,8 @@ Penalty
 
 \end_layout
 
-\begin_layout Subparagraph
-Example 4.
- Covariance cost function with real stock market marginals.
-\end_layout
-
-\begin_layout Standard
-To be developed.
+\begin_layout Example
+(Covariance cost function with real stock market marginals.) To be developed.
  Include graphs of dual functions and discussion.
 \end_layout
 
