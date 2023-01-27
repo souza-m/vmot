@@ -39,7 +39,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # --- sampling ---
  
 normal_scale   = [2.0, 1.0, 3.0, 4.0]
-def sample(n_points, coupling = 'independent', clip_normal = None, fix_x = None, seed = None):   # coupling in ['independent', 'positive', 'negative', 'straight']
+def sample(n_points, coupling = 'independent', clip_normal = 4, fix_x = None, seed = None):   # coupling in ['independent', 'positive', 'negative', 'straight']
     
     if not seed is None:
         np.random.seed(seed)
@@ -125,8 +125,8 @@ def plot_sample(X, Y, label):
 
 # --- cost function ---
 # cross product
-a = 2
-b = 3
+a = 0
+b = 1
 def f_cross_product(x, y):
     x1 = x[:, 0]
     x2 = x[:, 1]
@@ -134,16 +134,8 @@ def f_cross_product(x, y):
     y2 = y[:, 1]
     return a * x1 * x2 + b * y1 * y2
 
-# cross product, y only
-def f_cross_product_y(x, y):
-    y1 = y[:, 0]
-    y2 = y[:, 1]
-    return y1 * y2
-
-f_label_cross_product    = 'cross_product'
-f_label_cross_product_y  = 'cross_product_y'
-cost_function = { f_label_cross_product   : f_cross_product,
-                  f_label_cross_product_y : f_cross_product_y   }
+cost = f_cross_product
+cost_label    = 'cross_product'
 
 # reference value
 sig1 = normal_scale[0]
@@ -152,7 +144,7 @@ rho1 = normal_scale[2]
 rho2 = normal_scale[3]
 l1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
 l2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
-ref_value = 2 + l1 * l2            # max cross_product_y
+ref_value = 2 + l1 * l2            # max cross_product
 # ref_value = None                   # unknown
  
 
@@ -193,15 +185,6 @@ if __name__ == "__main__":
             
         # wrap samples in tensor loaders
         batch_size = 1000
-        # shuffle = True
-        # _mu_X = torch.tensor(sample_mu_X).float()
-        # _mu_Y = torch.tensor(sample_mu_Y).float()
-        # _th_X = torch.tensor(sample_th_X).float()
-        # _th_Y = torch.tensor(sample_th_Y).float()
-        # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-        # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-        # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-        # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
         mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
         
         # --- new model ---

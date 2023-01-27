@@ -15,10 +15,16 @@ import pickle
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-# cost function pointers to be used when loading results
-from mmot_2d_normal import f_cross_product_y
-from mmot_uniform   import f_portfolio_option
+# choose
+# import mmot_uniform as module
+import mmot_2d_normal as module
 
+# will be used:
+module.cost
+module.cost_label
+module.sample
+
+print('cost label ' + module.cost_label)
 
 _dir = './model_dump/'
 figsize = [12,12]
@@ -44,8 +50,7 @@ for label in labels:
     with open(_path, 'rb') as file:
         results = pickle.load(file)
         print('model loaded from ' + _path)
-    value_series   = results['value_series']
-    # value_series   = results['value_series'] + results['penalty_series']
+    value_series   = results['value_series'] # + results['penalty_series']
     pl.plot(value_series)
 pl.legend([l[8:] for l in labels])
 for label in labels:
@@ -54,8 +59,7 @@ for label in labels:
     with open(_path, 'rb') as file:
         results = pickle.load(file)
         print('model loaded from ' + _path)
-    value_series   = results['value_series']
-    # value_series   = results['value_series'] + results['penalty_series']
+    value_series   = results['value_series'] # + results['penalty_series']
     # top = results['value_series'].max()
     # bot = results['value_series'].min()
     # pl.ylim(bot - .1 * (top-bot), top + .1 * (top-bot))
@@ -83,7 +87,7 @@ for label in labels:
     value_series   = results['value_series']
     std_series     = results['std_series']
     penalty_series = results['penalty_series']
-    cost = cost_function[f_label]
+    cost           = cost_function[f_label]
     
     print('distribution:      ' + distribution)
     print('function:          ' + f_label)
@@ -95,6 +99,7 @@ for label in labels:
     clip_normal = 4
     sample_mu_X, sample_mu_Y = sample(n_points, coupling='independent', clip_normal=clip_normal, seed=1)
     sample_th_X, sample_th_Y = sample(n_points, coupling=coupling)
+    
     # plot samples
     if False:
         plot_sample(sample_mu_X, sample_mu_Y, 'mu')
@@ -102,15 +107,6 @@ for label in labels:
     
     # data loader
     batch_size = 1000
-    shuffle = True
-    # _mu_X = torch.tensor(sample_mu_X).float()
-    # _mu_Y = torch.tensor(sample_mu_Y).float()
-    # _th_X = torch.tensor(sample_th_X).float()
-    # _th_Y = torch.tensor(sample_th_Y).float()
-    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
     mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
 
     # single call

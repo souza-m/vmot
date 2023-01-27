@@ -116,19 +116,13 @@ f_label = 'portfolio_option'
 
 n_points = 100000
 distribution = 'uniform'
-
-# choose parameters below
-
-# cost and penalty functions
-cost, f_label = f_portfolio_option, f_label
-# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
-
-# objective
 primal_obj = 'max'
 
-# ref_value = 11 / 8                 # max portfolio_option
-ref_value = -1 / 8                   # min portfolio_option
-# ref_value = None                   # unknown
+# cost function and reference value
+cost, f_label = f_portfolio_option, f_label
+# cost, f_label = minus_f_portfolio_option, 'minus_' + f_label
+ref_value = 11 / 8                   # portfolio_option
+ref_value = -1 / 8                   # minus_portfolio_option
 
 # coupling mu1-mu2 and nu1-nu2
 # coupling = ['independent', 'independent']
