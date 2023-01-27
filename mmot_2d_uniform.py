@@ -34,6 +34,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 #    f. call mmot.train_loop iteratively (this will calbireate the phi's, defining the numeric potential functions)
 #    g. store the phi modules as .pickle files
 
+# TO DO: clean last section, use show script instead
 
 # --- sampling ---
 uniform_length = [2.0, 2.0, 4.0, 4.0]
