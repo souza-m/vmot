@@ -147,17 +147,7 @@ for coupling in [['independent', 'independent'],
         plot_sample(sample_th_X, sample_th_Y, 'th')
         
     # wrap samples in tensor loaders
-    batch_size = 1000
-    shuffle = True
-    # _mu_X = torch.tensor(sample_mu_X).float()
-    # _mu_Y = torch.tensor(sample_mu_Y).float()
-    # _th_X = torch.tensor(sample_th_X).float()
-    # _th_Y = torch.tensor(sample_th_Y).float()
-    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
-    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
     
     # --- new model ---
     d = 2
@@ -228,12 +218,9 @@ for coupling in [['independent', 'independent'],
     
     # summarize results
     results = { 'primal_obj'    : primal_obj,
-                'f_label'       : f_label,
-                'cost'          : cost,
                 'distribution'  : distribution,
-                'x_coupling'    : coupling[0],
-                'y_coupling'    : coupling[1],
-                'gamma'         : gamma,
+                'coupling'      : [coupling[0], coupling[1]],
+                'cost_label'    : cost_label,
                 'ref_value'     : ref_value,
                 'phi_x_list'    : phi_x_list,
                 'phi_y_list'    : phi_y_list,
@@ -244,7 +231,7 @@ for coupling in [['independent', 'independent'],
     
     # dump
     _dir = '/model_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
     # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
@@ -292,7 +279,8 @@ for label in labels:
     pl.fill_between(range(len(value_series)), value_series + std_series, value_series - std_series, alpha = .5, facecolor = 'grey')
 if not results['ref_value']  is None:
     pl.axhline(results['ref_value'], linestyle=':', color='black')  
-    
+
+# adjustments
 for label in labels:
     file = label + '.pickle'
     _path = _dir + file
@@ -300,7 +288,6 @@ for label in labels:
         results = pickle.load(file)
     print('model loaded from ' + _path)
     print(results.keys())
-    # adjustments
     # del results['f_label']
     # del results['cost']
     # results['cost_label'] = cost_label
@@ -316,9 +303,7 @@ for label in labels:
         pickle.dump(results, file)
     print('model saved to ' + _path)
 
-        
-# choose file
-# label = labels[0]
+# show (TO DO: clean up and use proper script)
 for label in labels:
     print()
     print(label)
@@ -331,6 +316,7 @@ for label in labels:
     primal_obj     = results['primal_obj']
     distribution   = results['distribution']
     coupling       = results['coupling']
+    f_label        = results['cost_label']
     gamma          = results['gamma']
     ref_value      = results['ref_value']
     phi_x_list     = results['phi_x_list']
@@ -339,7 +325,6 @@ for label in labels:
     value_series   = results['value_series']
     std_series     = results['std_series']
     penalty_series = results['penalty_series']
-    f_label        = results['cost_label']
     
     print('primal objective:  ' + primal_obj)
     print('function:          ' + f_label)
