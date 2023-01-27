@@ -157,7 +157,7 @@ ref_value = 2 + l1 * l2            # max cross_product_y
 # --- optimization setting ---
 
 n_points = 100000
-distribution = 'uniform'
+distribution = 'normal'
 
 # choose parameters below
 
@@ -273,7 +273,7 @@ for coupling in ['independent', 'positive', 'direct']:
     results = { 'primal_obj'    : primal_obj,
                 'f_label'       : f_label,
                 'cost'          : cost,
-                'distribution'  : 'normal',
+                'distribution'  : distribution,
                 'clip_normal'   : clip_normal,
                 'ref_value'     : ref_value,
                 'gamma'         : gamma,
@@ -287,10 +287,7 @@ for coupling in ['independent', 'positive', 'direct']:
 
     # dump
     _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_normal_' + coupling + '.pickle'
-    _path = _dir + _file
-    _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + (epochs != 200) * f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -300,10 +297,10 @@ for coupling in ['independent', 'positive', 'direct']:
 # load
 _dir = 'U:/Projects/MMOT/module_dump/'
 
-labels = ['results_max_cross_product_normal_independent_2d',
-          'results_max_cross_product_normal_positive_2d',
-          'results_max_cross_product_normal_direct_2d' ]
-
+labels = ['results_max_cross_product_y_normal_independent.pickle',
+          'results_max_cross_product_y_normal_positive.pickle',
+          'results_max_cross_product_y_normal_direct.pickle' ]
+          
 files = [l + '.pickle' for l in labels]
 
 

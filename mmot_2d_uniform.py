@@ -251,7 +251,7 @@ for coupling in [['independent', 'independent'],
     
     # dump
     _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + (epochs != 200) * f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
