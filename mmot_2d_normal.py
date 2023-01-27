@@ -12,7 +12,6 @@ import matplotlib.pyplot as pl
 import scipy.stats as stats
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
 import pickle
 
 import datetime as dt, time
@@ -127,30 +126,6 @@ def plot_sample(X, Y, label):
 
 
 # --- cost function ---
- 
-# portfolio option
-# separating for show purposes
-ax1 = 1.0
-ax2 = 2.0
-ay1 = 1.0
-ay2 = 2.0
-Kx  = 1.0
-Ky  = 1.0
-def f_x(x1, x2):
-    nominal  = ax1 * x1 + ax2 * x2 - Kx
-    _f = np.maximum(nominal, 0)
-    return _f
-def f_y(y1, y2):
-    nominal  = ay1 * y1 + ay2 * y2 - Ky
-    _f = np.maximum(nominal, 0)
-    return _f
-def f_portfolio_option(x, y):
-    x1 = x[:, 0]
-    x2 = x[:, 1]
-    y1 = y[:, 0]
-    y2 = y[:, 1]
-    return f_x(x1, x2) + f_y(y1, y2)
-
 # cross product
 a = 2
 b = 3
@@ -167,26 +142,30 @@ def f_cross_product_y(x, y):
     y2 = y[:, 1]
     return y1 * y2
 
-f_label_portfolio_option = 'portfolio_option'
 f_label_cross_product    = 'cross_product'
 f_label_cross_product_y  = 'cross_product_y'
-cost_function = { f_label_portfolio_option: f_portfolio_option,
-                  f_label_cross_product   : f_cross_product,
+cost_function = { f_label_cross_product   : f_cross_product,
                   f_label_cross_product_y : f_cross_product_y   }
 
+# reference value
+l1 = np.sqrt(normal_scale[2] ** 2 - normal_scale[0] ** 2)
+l2 = np.sqrt(normal_scale[3] ** 2 - normal_scale[1] ** 2)
+
+ref_value = 2 + l1 * l2            # max cross_product_y
+# ref_value = None                   # unknown
  
 # --- optimization setting ---
 
 n_points = 100000
-    
+distribution = 'uniform'
+
 # choose parameters below
 
 # cost and penalty functions
+# f_label = f_label_cross_product
 f_label = f_label_cross_product_y
 cost = cost_function[f_label]
-beta = mmot.beta_L2
 
-distribution = 'normal'
 # clip_normal = None
 clip_normal = 4
 
@@ -194,127 +173,128 @@ clip_normal = 4
 primal_obj = 'max'
 
 # normal
-coupling = 'independent'
-coupling = 'positive'
-coupling = 'direct'
-
-# uniform
-coupling = ['independent', 'independent']
-coupling = ['independent', 'positive']
-coupling = ['independent', 'negative']
-coupling = ['positive', 'positive']
-coupling = ['negative', 'negative']
-
-# construct samples
-sample_mu_X, sample_mu_Y = sample(n_points, distribution=distribution, coupling='independent', clip_normal=clip_normal, seed=1)
-sample_th_X, sample_th_Y = sample(n_points, distribution=distribution, coupling=coupling, clip_normal=clip_normal)
-if False:
-    plot_sample(sample_mu_X, sample_mu_Y, 'mu')
-    plot_sample(sample_th_X, sample_th_Y, 'th')
-    
-# wrap samples in tensor loaders
-batch_size = 1000
-shuffle = True
-_mu_X = torch.tensor(sample_mu_X).float()
-_mu_Y = torch.tensor(sample_mu_Y).float()
-_th_X = torch.tensor(sample_th_X).float()
-_th_Y = torch.tensor(sample_th_Y).float()
-mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
-
-# --- new model ---
-d = 2
-hidden_size = 32
-n_hidden_layers = 2
-phi_x_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-phi_y_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-h_list     = nn.ModuleList([mmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+# coupling = 'independent'
+# coupling = 'positive'
+# coupling = 'direct'
 
 gamma = 1000
-epochs = 200
-
-# --- training: calls to train_loop ---
-t0 = time.time() # timer
-lr =1e-4
-optimizer = torch.optim.Adam(h_list.parameters(), lr=lr)
-print()
-print('first call')
-print(f'learning rate:       {lr:0.7f}')
-print('-------------------------------------------------------')
-value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
-                                      phi_x_list, phi_y_list, h_list, beta, gamma,
-                                      optimizer = optimizer, verbose = True)
-
-print(f'value:               {value:7.4f}')
-print(f'standard deviation:  {std:7.4f}')
-print(f'penalty:             {penalty:7.4f}')
     
-
-# iterative calls
-_value = []
-_std = []
-_penalty = []
-lr =1e-4
-print()
-print('iterative calls')
-print(f'learning rate:       {lr:0.7f}')
-print('-------------------------------------------------------')
-optimizer = torch.optim.Adam(list(phi_x_list.parameters()) + list(phi_y_list.parameters()) + list(h_list.parameters()), lr=lr)
-for t in range(epochs):
-    verb = ((t == 0) | ((t+1) % 10 == 0) | ((t+1) == epochs))
-    if verb:
-        print()
-        print(f'epoch {t+1}')
-        print(f'gamma:               {gamma:0d}')
-        print('-------------------------------------------------------')
-    else:
-        print(f'epoch {t+1}...')
-    value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
-                                          phi_x_list, phi_y_list, h_list, beta, gamma,
-                                          optimizer = optimizer, verbose = verb)
-    _value.append(value)
-    _std.append(std)
-    _penalty.append(penalty)
-    if verb:
-        print()
+for coupling in ['independent', 'positive', 'direct']:
+    
+    # construct samples
+    sample_mu_X, sample_mu_Y = sample(n_points, coupling='independent', clip_normal=clip_normal, seed=1)
+    sample_th_X, sample_th_Y = sample(n_points, coupling=coupling, clip_normal=clip_normal)
+    if False:
+        plot_sample(sample_mu_X, sample_mu_Y, 'mu')
+        plot_sample(sample_th_X, sample_th_Y, 'th')
         
-print(f'value:               {value:7.4f}')
-print(f'standard deviation:  {std:7.4f}')
-print(f'penalty:             {penalty:7.4f}')
+    # wrap samples in tensor loaders
+    batch_size = 1000
+    # shuffle = True
+    # _mu_X = torch.tensor(sample_mu_X).float()
+    # _mu_Y = torch.tensor(sample_mu_Y).float()
+    # _th_X = torch.tensor(sample_th_X).float()
+    # _th_Y = torch.tensor(sample_th_Y).float()
+    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
+    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
+    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
+    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
     
-t1 = time.time() # timer
-print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
+    # --- new model ---
+    d = 2
+    hidden_size = 32
+    n_hidden_layers = 2
+    phi_x_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+    phi_y_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+    h_list     = nn.ModuleList([mmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
     
-value_series = np.array(_value)
-std_series = np.array(_std)
-penalty_series = np.array(_penalty)
-ref_value = 10 + 15 * np.sqrt(3)
+    # --- training: calls to train_loop ---
+    lr =1e-4
+    optimizer = torch.optim.Adam(h_list.parameters(), lr=lr)
+    print()
+    print('first call')
+    print(f'learning rate:       {lr:0.7f}')
+    print('-------------------------------------------------------')
+    value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+                                          phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
+                                          optimizer = optimizer, verbose = True)
+    print(f'value:               {value:7.4f}')
+    print(f'standard deviation:  {std:7.4f}')
+    print(f'penalty:             {penalty:7.4f}')
+    
+    # iterative calls
+    epochs = 2000
+    t0 = time.time() # timer
+    _value = []
+    _std = []
+    _penalty = []
+    lr =1e-4
+    print()
+    print('iterative calls')
+    print(f'learning rate:       {lr:0.7f}')
+    print('-------------------------------------------------------')
+    optimizer = torch.optim.Adam(list(phi_x_list.parameters()) + list(phi_y_list.parameters()) + list(h_list.parameters()), lr=lr)
+    for t in range(epochs):
+        verb = ((t == 0) | ((t+1) % 10 == 0) | ((t+1) == epochs))
+        if verb:
+            print()
+            print(f'epoch {t+1}')
+            print(f'gamma:               {gamma:0d}')
+            print('-------------------------------------------------------')
+        else:
+            print(f'epoch {t+1}...')
+        value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+                                              phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
+                                              optimizer = optimizer, verbose = verb)
+        _value.append(value)
+        _std.append(std)
+        _penalty.append(penalty)
+        if verb:
+            print()
+            
+    print(f'value:               {value:7.4f}')
+    print(f'standard deviation:  {std:7.4f}')
+    print(f'penalty:             {penalty:7.4f}')
+        
+    t1 = time.time() # timer
+    print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
+        
+    value_series = np.array(_value)
+    std_series = np.array(_std)
+    penalty_series = np.array(_penalty)
+    ref_value = 10 + 15 * np.sqrt(3)
+    
+    # show
+    pl.plot(value_series)
+    pl.axhline(ref_value, linestyle=':', color='black') 
+    
+    # summarize results
+    results = { 'primal_obj'    : primal_obj,
+                'f_label'       : f_label,
+                'cost'          : cost,
+                'distribution'  : 'normal',
+                'clip_normal'   : clip_normal,
+                'ref_value'     : ref_value,
+                'gamma'         : gamma,
+                'coupling'      : coupling,
+                'phi_x_list'    : phi_x_list,
+                'phi_y_list'    : phi_y_list,
+                'h_list'        : h_list,
+                'value_series'  : value_series,
+                'std_series'    : std_series,
+                'penalty_series': penalty_series  }
 
-# show
-pl.plot(value_series)
-pl.axhline(ref_value, linestyle=':', color='black')    
-
-# summarize results
-results = { 'distribution'  : distribution,
-            'cost'          : cost,
-            'f_label'       : f_label,
-            'primal_obj'    : primal_obj,
-            'ref_value'     : ref_value,
-            'efficient'     : efficient,
-            'h_list'        : h_list,
-            'value_series'  : value_series,
-            'std_series'    : std_series,
-            'penalty_series': penalty_series  }
-
-# dump
-_dir = 'U:/Projects/MMOT/module_dump/'
-_file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + '.pickle'
-_path = _dir + _file
-with open(_path, 'wb') as file:
-    pickle.dump(results, file)
-print('model saved to ' + _path)
+    # dump
+    _dir = 'U:/Projects/MMOT/module_dump/'
+    _file = 'results_' + primal_obj + '_' + f_label + '_normal_' + coupling + '.pickle'
+    _path = _dir + _file
+    _dir = 'U:/Projects/MMOT/module_dump/'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + (epochs != 200) * f'_{epochs}.pickle'
+    _path = _dir + _file
+    with open(_path, 'wb') as file:
+        pickle.dump(results, file)
+    print('model saved to ' + _path)
 
 
 # load
@@ -344,15 +324,7 @@ results.keys()
 with open(_path, 'wb') as file:
     pickle.dump(results, file)
 
-normal_scale   = [2.0, 1.0, 3.0, 4.0]
-l1 = np.sqrt(normal_scale[2] ** 2 - normal_scale[0] ** 2)
-l2 = np.sqrt(normal_scale[3] ** 2 - normal_scale[1] ** 2)
 
-ref_value = 10 + 15 * np.sqrt(3)   # max cross_product
-ref_value = 2 + l1 * l2            # max cross_product_y
-ref_value = 11 / 8                 # max portfolio_option
-ref_value = 1 / 8                  # min portfolio_option
-ref_value = None                   # unknown
 
 
 
@@ -437,15 +409,16 @@ for label in labels:
     # data loader
     batch_size = 1000
     shuffle = True
-    _mu_X = torch.tensor(sample_mu_X).float()
-    _mu_Y = torch.tensor(sample_mu_Y).float()
-    _th_X = torch.tensor(sample_th_X).float()
-    _th_Y = torch.tensor(sample_th_Y).float()
-    mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
-    th_dataset = mmot.SampleDataset(_th_X, _th_Y)
-    mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
-    th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
-    
+    # _mu_X = torch.tensor(sample_mu_X).float()
+    # _mu_Y = torch.tensor(sample_mu_Y).float()
+    # _th_X = torch.tensor(sample_th_X).float()
+    # _th_Y = torch.tensor(sample_th_Y).float()
+    # mu_dataset = mmot.SampleDataset(_mu_X, _mu_Y)
+    # th_dataset = mmot.SampleDataset(_th_X, _th_Y)
+    # mu_loader = DataLoader(mu_dataset, batch_size = batch_size, shuffle = shuffle)
+    # th_loader = DataLoader(th_dataset, batch_size = batch_size, shuffle = shuffle)
+    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
+
     # single call
     gamma = 1000   # to do: read from file
     print('single call')
@@ -454,15 +427,21 @@ for label in labels:
     print(f'standard deviation:  {std:7.4f}')
     print(f'penalty:             {penalty:7.4f}')
     
-    # graph sample
-    fix_x = False
-    if fix_x:
-        # tentative pi_x
-        fix_x = sample_single_x(distribution=distribution)
-        _, _th = sample(n_points, distribution=distribution, theta_x_coupling=theta_x_coupling, theta_fix_x = fix_x, clip_normal = 3)
-        th = torch.tensor(np.array([_th[:,0], _th[:,1], _th[:,2], _th[:,3]]).T).float()
+    # _mu_X = torch.tensor(sample_mu_X).float()
+    # _mu_Y = torch.tensor(sample_mu_Y).float()
+    # _th_X = torch.tensor(sample_th_X).float()
+    # _th_Y = torch.tensor(sample_th_Y).float()
     
-    if True:
+    # graph sample
+    # fix_x = False
+    # if fix_x:
+    #     # tentative pi_x
+    #     fix_x = sample_single_x(distribution=distribution)
+    #     _, _th = sample(n_points, distribution=distribution, theta_x_coupling=theta_x_coupling, theta_fix_x = fix_x, clip_normal = 3)
+    #     th = torch.tensor(np.array([_th[:,0], _th[:,1], _th[:,2], _th[:,3]]).T).float()
+
+    
+    if False:
         plot_sample(_th, 'th', fix_axes=False)
     
     full_size = len(th)

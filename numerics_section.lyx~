@@ -6,9 +6,6 @@
 \origin unavailable
 \textclass article
 \use_default_options true
-\begin_modules
-theorems-std
-\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -32,7 +29,6 @@ theorems-std
 \bibtex_command default
 \index_command default
 \paperfontsize default
-\spacing single
 \use_hyperref false
 \papersize default
 \use_geometry false
@@ -48,7 +44,6 @@ theorems-std
 \use_package undertilde 1
 \cite_engine basic
 \cite_engine_type default
-\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
@@ -87,20 +82,8 @@ Numeric examples.
 \end_layout
 
 \begin_layout Standard
-(To be moved to the Introduction Section.) In the numerical section, we develop
- several examples of robust pricing problems designed to show the improvement
- allowed by our result.
- We consider cost functions based on the the basket call option and a theoretica
-l cross-product contract.
- Some of the examples use uniform or normal marginal distributions, while
- some use real-world marginal distributions implied by option prices of
- individual assets at two distinct future points in time.
-\end_layout
-
-\begin_layout Standard
-In this section, we solve several versions of the problem of robust pricing
- of a financial contract involving the prices of a pair of assets at two
- distinct points in time.
+In this section, we solve several versions of the robust pricing of a financial
+ contract involving the future prices of a pair of assets.
  We apply the framework of 
 \begin_inset CommandInset citation
 LatexCommand cite
@@ -109,65 +92,40 @@ literal "false"
 
 \end_inset
 
-, further developed in –EcksteinGuoLimObloj21– and analyze potential performance
- improvements allowed by our result about the geometry of optimal couplings.
+ and analyze potential performance improvements allowed by the better knwoledge
+ of the familiy of feasible couplings.
  Our tests run accross different dimensions, cost functions and marginal
- shapes, including marginals derived from actual stock market option prices,
- as detailed below.
-\end_layout
-
-\begin_layout Standard
-The model introduced in –EcksteinKupper2021– uses penalyzation and neural
- network optimization to solve the dual problem of VMOT.
- –EcksteinGuoLimObloj21– introduces the martingale constraint to the optimal
- transport problem.
- More precisely, the model approximates the potential functions 
-\begin_inset Formula $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
+ shapes, including marginals derived from actual stock market option prices.
+ Throughout this section, we fix the penalyzation function 
+\begin_inset Formula $\beta$
 \end_inset
 
- of equation 2.6 using neural networks and use penalyzation to impose condition
- 2.7.
- The novelty of our method is in the improvement of 
-\begin_inset Formula $\theta$
+ in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "eckstein_kupper_computational_2021"
+literal "false"
+
 \end_inset
 
-, the sampling measure used for penalyzation: since we know that a solution
- (unique in the case of strict submodularity) is attained with monotone
- coupling of the 
-\begin_inset Formula $X$
-\end_inset
-
- marginals 
-\begin_inset Formula $\left(\vec{\mu}_{i}\right)$
-\end_inset
-
-, we determine 
-\begin_inset Formula $\theta^{1}$
-\end_inset
-
-, the 
-\begin_inset Formula $X$
-\end_inset
-
--side of 
-\begin_inset Formula $\theta$
-\end_inset
-
-, by those marginals.
- For the sake of comparison, we run tests with and without this improvement.
- For simplicity, we fix the penalyzation function as 
+ to be 
 \begin_inset Formula $L_{2}$
 \end_inset
 
- and the penalization parameter 
+ with 
 \begin_inset Formula $\gamma=1000$
 \end_inset
 
 .
 \end_layout
 
-\begin_layout Example
-(Basket option cost function, uniform marginals.) Let 
+\begin_layout Subparagraph
+Example 1.
+ Basket option cost function, uniform marginals.
+\end_layout
+
+\begin_layout Standard
+Let 
 \begin_inset Formula $d=2$
 \end_inset
 

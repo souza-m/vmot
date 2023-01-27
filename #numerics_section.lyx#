@@ -142,10 +142,10 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \end_inset
 
 , we determine 
-\begin_inset Formula $\theta^{1}$
+\begin_inset Formula $\\th$
 \end_inset
 
-, the 
+the 
 \begin_inset Formula $X$
 \end_inset
 
@@ -153,7 +153,11 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \begin_inset Formula $\theta$
 \end_inset
 
-, by those marginals.
+, denoted 
+\begin_inset Formula $\theta^{1}$
+\end_inset
+
+, is determined by those marginals.
  For the sake of comparison, we run tests with and without this improvement.
  For simplicity, we fix the penalyzation function as 
 \begin_inset Formula $L_{2}$
@@ -167,7 +171,8 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \end_layout
 
 \begin_layout Example
-(Basket option cost function, uniform marginals.) Let 
+Basket option cost function, uniform marginals.
+ Let 
 \begin_inset Formula $d=2$
 \end_inset
 
