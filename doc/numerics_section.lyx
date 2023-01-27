@@ -112,19 +112,19 @@ literal "false"
  –EcksteinKupper21–, further developed in –EcksteinGuoLimObloj21– and analyze
  potential performance improvements allowed by our result about the geometry
  of the optimal couplings.
- Our tests run accross various dimensions, cost functions and marginal shapes,
+ Our tests run across various dimensions, cost functions and marginal shapes,
  including marginals derived from actual stock market option prices, as
  detailed below.
 \end_layout
 
 \begin_layout Standard
-The model introduced in –EcksteinKupper2021– uses penalyzation and neural
+The model introduced in –EcksteinKupper2021– uses penalization and neural
  network optimization to solve the dual problem of Optimal Transport.
  More precisely, the model approximates the potential functions 
 \begin_inset Formula $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
 \end_inset
 
- of equation 2.6 using neural networks and use penalyzation to impose condition
+ of equation 2.6 using neural networks and use penalization to impose condition
  2.7.
  –EcksteinGuoLimObloj21– introduces the martingale constraint to the optimal
  transport problem, providing a dual solution to VMOT.
@@ -133,7 +133,7 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \begin_inset Formula $\theta$
 \end_inset
 
-, used for penalyzation: since we know that a solution (unique in the case
+, used for penalization: since we know that a solution (unique in the case
  of strict submodularity) is attained with monotone coupling of the 
 \begin_inset Formula $X$
 \end_inset
@@ -172,7 +172,7 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
  for more general cases.
  Here, for the sake of comparison, we run tests with and without these known
  improvements.
- For simplicity, we fix the penalyzation function as 
+ For simplicity, we fix the penalization function as 
 \begin_inset Formula $L_{2}$
 \end_inset
 
