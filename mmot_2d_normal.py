@@ -148,9 +148,12 @@ cost_function = { f_label_cross_product   : f_cross_product,
                   f_label_cross_product_y : f_cross_product_y   }
 
 # reference value
-l1 = np.sqrt(normal_scale[2] ** 2 - normal_scale[0] ** 2)
-l2 = np.sqrt(normal_scale[3] ** 2 - normal_scale[1] ** 2)
-
+sig1 = normal_scale[0]
+sig2 = normal_scale[1]
+rho1 = normal_scale[2]
+rho2 = normal_scale[3]
+l1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
+l2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
 ref_value = 2 + l1 * l2            # max cross_product_y
 # ref_value = None                   # unknown
  
@@ -286,8 +289,9 @@ for coupling in ['independent', 'positive', 'direct']:
                 'penalty_series': penalty_series  }
 
     # dump
-    _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
+    _dir = '/model_dump/'
+    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -295,11 +299,11 @@ for coupling in ['independent', 'positive', 'direct']:
 
 
 # load
-_dir = 'U:/Projects/MMOT/module_dump/'
+_dir = '/model_dump/'
 
-labels = ['results_max_cross_product_y_normal_independent.pickle',
-          'results_max_cross_product_y_normal_positive.pickle',
-          'results_max_cross_product_y_normal_direct.pickle' ]
+labels = ['results_max_cross_product_y_normal_independent',
+          'results_max_cross_product_y_normal_positive',
+          'results_max_cross_product_y_normal_direct' ]
           
 files = [l + '.pickle' for l in labels]
 
@@ -321,8 +325,27 @@ results.keys()
 with open(_path, 'wb') as file:
     pickle.dump(results, file)
 
-
-
+# adjustments
+for label in labels:
+    print(label)
+    _dir = '/model_dump/'
+    _file = label + '.pickle'
+    _path = _dir + _file
+    with open(_path, 'rb') as file:
+        results = pickle.load(file)
+    print('model loaded from ' + _path)
+    
+    # adjustments
+    # ...
+    print(f'ref_value {results["ref_value"]:8.4f}')
+    # results['ref_value'] = ref_value
+    # ---
+    
+    _dir = './model_dump/'
+    _path = _dir + _file
+    with open(_path, 'wb') as file:
+        pickle.dump(results, file)
+    print('model saved to ' + _path)
 
 
 # show convergence results, normal marginals, cross product

@@ -250,8 +250,9 @@ for coupling in [['independent', 'independent'],
                 'penalty_series': penalty_series  }
     
     # dump
-    _dir = 'U:/Projects/MMOT/module_dump/'
-    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    _dir = '/module_dump/'
+    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -259,7 +260,7 @@ for coupling in [['independent', 'independent'],
 
 
 # load
-_dir = 'U:/Projects/MMOT/module_dump/'
+_dir = '/module_dump/'
 
 # max portfolio_option
 labels = ['results_max_cross_product_y_uniform_independent_independent',
