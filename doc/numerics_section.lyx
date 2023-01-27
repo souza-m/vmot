@@ -87,14 +87,14 @@ Numeric examples.
 \end_layout
 
 \begin_layout Standard
-(To be moved to the Introduction Section.) In the numerical section, we develop
+(To be moved to the Introduction Section.) In the Numerics section, we develop
  several examples of robust pricing problems designed to show the improvement
  allowed by our result.
- We consider cost functions based on the the basket call option and a theoretica
-l cross-product contract.
- Some of the examples use uniform or normal marginal distributions, while
- some use real-world marginal distributions implied by option prices of
- individual assets at two distinct future points in time.
+ We consider cost functions based on the the european call option applied
+ to a basket of assets and a theoretical covariance (or cross-product) contract.
+ The first two examples use hypothetical uniform and normal marginal distributio
+ns, while the third uses real-world marginal distributions implied by option
+ prices of individual assets at two distinct future points in time.
 \end_layout
 
 \begin_layout Standard
@@ -109,31 +109,32 @@ literal "false"
 
 \end_inset
 
-, further developed in –EcksteinGuoLimObloj21– and analyze potential performance
- improvements allowed by our result about the geometry of optimal couplings.
- Our tests run accross different dimensions, cost functions and marginal
- shapes, including marginals derived from actual stock market option prices,
- as detailed below.
+ –EcksteinKupper21–, further developed in –EcksteinGuoLimObloj21– and analyze
+ potential performance improvements allowed by our result about the geometry
+ of the optimal couplings.
+ Our tests run accross various dimensions, cost functions and marginal shapes,
+ including marginals derived from actual stock market option prices, as
+ detailed below.
 \end_layout
 
 \begin_layout Standard
 The model introduced in –EcksteinKupper2021– uses penalyzation and neural
- network optimization to solve the dual problem of VMOT.
- –EcksteinGuoLimObloj21– introduces the martingale constraint to the optimal
- transport problem.
+ network optimization to solve the dual problem of Optimal Transport.
  More precisely, the model approximates the potential functions 
 \begin_inset Formula $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
 \end_inset
 
  of equation 2.6 using neural networks and use penalyzation to impose condition
  2.7.
- The novelty of our method is in the improvement of 
+ –EcksteinGuoLimObloj21– introduces the martingale constraint to the optimal
+ transport problem, providing a dual solution to VMOT.
+ The novelty of our method is in the improvement of the sampling measure
+ 
 \begin_inset Formula $\theta$
 \end_inset
 
-, the sampling measure used for penalyzation: since we know that a solution
- (unique in the case of strict submodularity) is attained with monotone
- coupling of the 
+, used for penalyzation: since we know that a solution (unique in the case
+ of strict submodularity) is attained with monotone coupling of the 
 \begin_inset Formula $X$
 \end_inset
 
@@ -154,7 +155,23 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \end_inset
 
 , by those marginals.
- For the sake of comparison, we run tests with and without this improvement.
+ When possible, we improve 
+\begin_inset Formula $\theta$
+\end_inset
+
+ a little further by applying some additional knowledge about the full coupling
+ of the marginals, including the 
+\begin_inset Formula $Y$
+\end_inset
+
+ side.
+ Further research on VMOT can reveal ways to improve 
+\begin_inset Formula $\theta$
+\end_inset
+
+ for more general cases.
+ Here, for the sake of comparison, we run tests with and without these known
+ improvements.
  For simplicity, we fix the penalyzation function as 
 \begin_inset Formula $L_{2}$
 \end_inset
@@ -167,11 +184,27 @@ The model introduced in –EcksteinKupper2021– uses penalyzation and neural
 \end_layout
 
 \begin_layout Example
-(Basket option cost function, uniform marginals.) Let 
+(Basket option cost function, uniform marginals.) Our first cost function
+ mimics the payoff of a contract similar to an European call option applied
+ to a basket composed of assets.
+ That is, our cost function has general form 
+\begin_inset Formula 
+\begin{align*}
+c\left(X_{1},Y\right) & =\left(a_{1}X_{1}+a_{2}X_{2}-k_{1}\right)^{+}+\left(b_{1}Y_{1}+b_{2}Y_{2}-k_{2}\right)^{+}
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Example
+The marginals are uniform distributions centered at zero.
+ Set 
 \begin_inset Formula $d=2$
 \end_inset
 
- and our cost function and marginals be 
+ and 
 \begin_inset Formula 
 \begin{align*}
 c\left(X_{1},Y\right) & =\left(X_{1}+2X_{2}-1\right)^{+}+\left(Y_{1}+2Y_{2}-1\right)^{+}\\
@@ -185,7 +218,8 @@ Y_{1},Y_{2} & \sim U\left[-2,2\right]
 \end_layout
 
 \begin_layout Standard
-It is useful to calculate [bounds for 
+We are interested in both upper and lower bounds.
+ It is useful to calculate 
 \begin_inset Formula $p^{+}$
 \end_inset
 
@@ -193,24 +227,17 @@ It is useful to calculate [bounds for
 \begin_inset Formula $p^{-}$
 \end_inset
 
-? – check conditions for monotone coupling on 
+ as references for the numerical output [check conditions for monotone coupling
+ on 
 \begin_inset Formula $Y$
 \end_inset
 
-] 
-\begin_inset Formula $p^{+}$
-\end_inset
-
- and 
-\begin_inset Formula $p^{-}$
-\end_inset
-
- as references for the numerical output.
- For the maximum, consider 
+] .
+ For the maximum (minimum) we take 
 \begin_inset Formula $\hat{\pi}$
 \end_inset
 
- with positive monotone coupling on both 
+ with positive (negative) monotone coupling on both 
 \begin_inset Formula $\hat{\pi}^{1}$
 \end_inset
 
@@ -219,10 +246,11 @@ It is useful to calculate [bounds for
 \end_inset
 
 .
- We calculate the maximum in this particular case as 
+ We calculate the bounds as 
 \begin_inset Formula 
 \begin{align*}
-p_{\hat{\pi}}^{+} & =p_{X,\hat{\pi}}^{+}+p_{Y,\hat{\pi}}^{+}
+p_{\hat{\pi}}^{+} & =p_{X,\hat{\pi}}^{+}+p_{Y,\hat{\pi}}^{+}\\
+p_{\hat{\pi}}^{-} & =p_{X,\hat{\pi}}^{-}+p_{Y,\hat{\pi}}^{-}
 \end{align*}
 
 \end_inset
@@ -230,8 +258,8 @@ p_{\hat{\pi}}^{+} & =p_{X,\hat{\pi}}^{+}+p_{Y,\hat{\pi}}^{+}
  where, using the formula on A1 below, 
 \begin_inset Formula 
 \begin{align*}
-p_{X,\hat{\pi}}^{+} & =\frac{1}{3}\\
-p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}
+p_{X,\hat{\pi}}^{+} & =\frac{1}{3}; & p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}\\
+p_{Y,\hat{\pi}}^{-} & =0; & p_{Y,\tilde{\pi}}^{-} & =\frac{1}{8}
 \end{align*}
 
 \end_inset
@@ -240,46 +268,12 @@ p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}
 \end_layout
 
 \begin_layout Standard
-Thus, [a lower bound for 
-\begin_inset Formula $p^{+}$
-\end_inset
-
- is] 
+Thus, our theoretical reference bounds for the numerical approximation are
+ 
 \begin_inset Formula $p^{+}=\frac{1}{3}+\frac{25}{24}=\frac{11}{8}=1.375$
 \end_inset
 
-.
- For the minimum, let us consider 
-\begin_inset Formula $\tilde{\pi}$
-\end_inset
-
- with negative monotone coupling on both 
-\begin_inset Formula $\tilde{\pi}^{1}$
-\end_inset
-
  and 
-\begin_inset Formula $\tilde{\pi}^{2}$
-\end_inset
-
-.
- Now we have, again from A1,
-\begin_inset Formula 
-\begin{align*}
-p_{X,\tilde{\pi}}^{-} & =0\\
-p_{Y,\tilde{\pi}}^{-} & =\frac{1}{8}
-\end{align*}
-
-\end_inset
-
- 
-\end_layout
-
-\begin_layout Standard
-Thus, [an upper bound for 
-\begin_inset Formula $p^{-}$
-\end_inset
-
- is] 
 \begin_inset Formula $p^{-}=\frac{1}{8}=0.125$
 \end_inset
 
@@ -293,15 +287,7 @@ Thus, [an upper bound for
 \begin_inset Formula $\theta$
 \end_inset
 
- in equation 2.3 of 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "eckstein_kupper_computational_2021"
-literal "false"
-
-\end_inset
-
-.
+ in equation 2.3 of –EcksteinKupper21–.
  We repeat the target function to be optimized here, with adapted notation.
  We want to minimize or maximize
 \begin_inset Formula 
@@ -320,7 +306,8 @@ Notice that we are using the fact that
 \begin_inset Formula $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$
 \end_inset
 
- to eliminate this term from the first integral in the equation above.
+ to eliminate this term from the first integral in each side of the the
+ equation above.
  Given the separation in the first term of the RHS, 
 \begin_inset Formula $\mu_{0}$
 \end_inset
@@ -379,7 +366,7 @@ k in both cases.
 
 \begin_layout Standard
 Results after 
-\begin_inset Formula $200$
+\begin_inset Formula $2000$
 \end_inset
 
  iterations.
@@ -720,13 +707,13 @@ Penalty
 \end_layout
 
 \begin_layout Example
-(Covariance cost function, normal marginals.) The general form for our cost
- function and marginals is
+(Covariance cost function, normal marginals.) For our second example, we
+ consider a cost function inspired by a theoretical contract that pays proportio
+nal to the covariance of two assets.
+ The general form is
 \begin_inset Formula 
 \begin{align*}
-c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}\\
-X_{i} & \sim N\left(0,\sigma_{i}^{2}\right)\\
-Y_{i} & \sim N\left(0,\rho_{i}^{2}\right)
+c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}
 \end{align*}
 
 \end_inset
@@ -735,6 +722,15 @@ Y_{i} & \sim N\left(0,\rho_{i}^{2}\right)
 \end_layout
 
 \begin_layout Standard
+The marginals follow normal distributions with parameters 
+\begin_inset Formula 
+\begin{align*}
+X_{i} & \sim N\left(0,\sigma_{i}^{2}\right)\\
+Y_{i} & \sim N\left(0,\rho_{i}^{2}\right)
+\end{align*}
+
+\end_inset
+
 We start with 
 \begin_inset Formula $d=2$
 \end_inset
@@ -753,7 +749,9 @@ c\left(X,Y\right) & =Y_{1}Y_{2}\\
 \end_layout
 
 \begin_layout Standard
-Proposition 3.7 gives us the exact solution 
+By symmetry, we only need to look at the maximization problem.
+ Proposition 3.7 gives us the exact solution to be used as a reference for
+ the maximum price 
 \begin_inset Formula 
 \[
 p^{+}=2*1+\sqrt{3^{2}-2^{2}}\sqrt{4^{2}-1^{2}}\sim10.6603
@@ -771,23 +769,33 @@ To avoid noisy behavior in the potential functions, we sample from normal
 \end_inset
 
 .
+ As before, we run our optimization with the most general sampling measure
+ 
+\begin_inset Formula $\theta$
+\end_inset
+
+ given by the independent coupling of the marginals and with an alternative
+ measure that uses our resoult, that is, an improved 
+\begin_inset Formula $\theta$
+\end_inset
+
+ with 
+\begin_inset Formula $\theta^{1}$
+\end_inset
+
+ determined by the monotone coupling of 
+\begin_inset Formula $\left(\vec{\mu}_{i}\right)$
+\end_inset
+
+.
+ A futher improvement is allowed by the fact that we are using normal marginals,
+ see (REF).
+ The value convergence using the three sampling measures is shown below.
  Sample sizes are 
 \begin_inset Formula $100$
 \end_inset
 
 k.
- To provide a reference for the convergence process, we also use the fact
- that an optimal 
-\begin_inset Formula $\theta^{*}$
-\end_inset
-
- is be given by [reference].
- The value convergence using the three distributions – with independent
- and positively monotone 
-\begin_inset Formula $\theta^{1}$
-\end_inset
-
- and with full optimal coupling – is shown below.
 \end_layout
 
 \begin_layout Standard
@@ -885,7 +893,15 @@ Positive
 \begin_inset Text
 
 \begin_layout Plain Layout
-Fully optimal
+Positive 
+\begin_inset Formula $\theta^{1}$
+\end_inset
+
+ and optimal 
+\begin_inset Formula $\theta^{2}$
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1076,7 +1092,11 @@ To compare performance in higher dimensions, we also run examples with
 \begin_inset Formula $d=5$
 \end_inset
 
-.
+ (to do: change to higher dimension such as 
+\begin_inset Formula $d=10$
+\end_inset
+
+).
  Our cost is simplified as 
 \begin_inset Formula 
 \[
@@ -1125,6 +1145,7 @@ Results after
 \end_inset
 
  iterations.
+ (update)
 \end_layout
 
 \begin_layout Standard
@@ -1327,6 +1348,7 @@ Results after
 \end_inset
 
  iterations.
+ (update)
 \end_layout
 
 \begin_layout Standard
@@ -1656,7 +1678,7 @@ p^{-} & =\frac{1}{2m}\int_{-m}^{\frac{k}{a_{1}-a_{2}}}f\left(\left(t,-t\right)\r
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
 btprint "btPrintCited"
-bibfiles "../../Research/REFs"
+bibfiles "REFs"
 options "plain"
 
 \end_inset
