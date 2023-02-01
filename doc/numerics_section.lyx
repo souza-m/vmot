@@ -99,7 +99,7 @@ ns, while the third uses real-world marginal distributions implied by option
 
 \begin_layout Standard
 In this section, we solve several versions of the problem of robust pricing
- of a financial contract involving the prices of a pair of assets at two
+ of a financial contract involving the prices of a group of assets at two
  distinct points in time.
  We apply the framework of 
 \begin_inset CommandInset citation
@@ -110,7 +110,7 @@ literal "false"
 \end_inset
 
  –EcksteinKupper21–, further developed in –EcksteinGuoLimObloj21– and analyze
- potential performance improvements allowed by our result about the geometry
+ potential performance improvements allowed by our result on the geometry
  of the optimal couplings.
  Our tests run across various dimensions, cost functions and marginal shapes,
  including marginals derived from actual stock market option prices, as
@@ -120,7 +120,7 @@ literal "false"
 \begin_layout Standard
 The model introduced in –EcksteinKupper2021– uses penalization and neural
  network optimization to solve the dual problem of Optimal Transport.
- More precisely, the model approximates the potential functions 
+ More precisely, it approximates the potential functions 
 \begin_inset Formula $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
 \end_inset
 
@@ -187,10 +187,10 @@ The model introduced in –EcksteinKupper2021– uses penalization and neural
 (Basket option cost function, uniform marginals.) Our first cost function
  mimics the payoff of a contract similar to an European call option applied
  to a basket composed of assets.
- That is, our cost function has general form 
+ That is, a cost function with general form 
 \begin_inset Formula 
 \begin{align*}
-c\left(X_{1},Y\right) & =\left(a_{1}X_{1}+a_{2}X_{2}-k_{1}\right)^{+}+\left(b_{1}Y_{1}+b_{2}Y_{2}-k_{2}\right)^{+}
+c\left(X,Y\right) & =\left(\sum_{i=1}^{d}a_{i}X_{i}-k_{1}\right)^{+}+\left(\sum_{i=1}^{d}b_{i}Y_{i}-k_{2}\right)^{+}
 \end{align*}
 
 \end_inset
@@ -289,7 +289,7 @@ Thus, our theoretical reference bounds for the numerical approximation are
 
  in equation 2.3 of –EcksteinKupper21–.
  We repeat the target function to be optimized here, with adapted notation.
- We want to minimize or maximize
+ We want to (min)maximize
 \begin_inset Formula 
 \begin{align*}
  & \int\left(\sum_{i}f_{i}+\sum_{i}g_{i}\right)d\mu_{0}+\int\beta_{\gamma}\left(c-\varphi\right)d\theta\\
@@ -365,7 +365,7 @@ k in both cases.
 \end_layout
 
 \begin_layout Standard
-The following tamble summarizes the results after 
+The following table summarizes the results after 
 \begin_inset Formula $200$
 \end_inset
 
@@ -712,8 +712,8 @@ Penalty
 
 \begin_layout Example
 (Covariance cost function, normal marginals.) For our second example, we
- consider a cost function inspired by a theoretical contract that pays proportio
-nal to the covariance of two assets.
+ consider a cost function inspired by a theoretical contract with payoff
+ proportional to the covariance of two assets.
  The general form is
 \begin_inset Formula 
 \begin{align*}
@@ -1101,7 +1101,7 @@ To compare performance in higher dimensions, we also run examples with
 \begin_inset Formula $d=5$
 \end_inset
 
- (to do: change to higher dimension such as 
+ (to do: change second to 
 \begin_inset Formula $d=10$
 \end_inset
 
