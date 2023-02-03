@@ -101,7 +101,7 @@ ns, while the third uses real-world marginal distributions implied by option
 In this section, we solve several versions of the problem of robust pricing
  of a financial contract involving the prices of a group of assets at two
  distinct points in time.
- We apply the framework of 
+ We build upon the framework of EK21
 \begin_inset CommandInset citation
 LatexCommand cite
 key "eckstein_kupper_computational_2021"
@@ -109,32 +109,113 @@ literal "false"
 
 \end_inset
 
- –EcksteinKupper21–, further developed in –EcksteinGuoLimObloj21– and analyze
- potential performance improvements allowed by our result on the geometry
- of the optimal couplings.
+ and analyze potential performance improvements allowed by our result on
+ the geometry of the optimal couplings.
  Our tests run across various dimensions, cost functions and marginal shapes,
- including marginals derived from actual stock market option prices, as
- detailed below.
+ including marginals derived from actual stock market option prices.
 \end_layout
 
 \begin_layout Standard
-The model introduced in –EcksteinKupper2021– uses penalization and neural
- network optimization to solve the dual problem of Optimal Transport.
- More precisely, it approximates the potential functions 
-\begin_inset Formula $\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$
-\end_inset
-
- of equation 2.6 using neural networks and use penalization to impose condition
- 2.7.
- –EcksteinGuoLimObloj21– introduces the martingale constraint to the optimal
- transport problem, providing a dual solution to VMOT.
- The novelty of our method is in the improvement of the sampling measure
- 
+[NOTE: discussion about 
 \begin_inset Formula $\theta$
 \end_inset
 
-, used for penalization: since we know that a solution (unique in the case
- of strict submodularity) is attained with monotone coupling of the 
+ moved to here and developed further]
+\end_layout
+
+\begin_layout Standard
+EK21 uses neural network optimization with penalization to solve the dual
+ problem of Optimal Transport.
+ More specific to our case, their model approximate the potential functions
+ of our equation 2.6 with neural networks and impose condition 2.7 though
+ penalization.
+ The optimization objective is summarized in a sum of integrals (equation
+ 2.3 of EK21), which we repeat here with adapted notation.
+ We want to (min)maximize
+\begin_inset Formula 
+\begin{align*}
+\text{Loss} & =\int\varphi d\mu_{0}+\int b_{\gamma}\left(c-\varphi\right)d\theta\\
+ & =\int\left(\sum_{i}\phi_{i}+\sum_{i}\psi_{i}\right)d\mu_{0}+\int b_{\gamma}\left(c-\varphi\right)d\theta\\
+ & =\sum_{i}\int\phi_{i}d\mu_{i}+\sum_{i}\int\psi_{i}d\nu_{i}+\int b_{\gamma}\left(c-\varphi\right)d\theta
+\end{align*}
+
+\end_inset
+
+ where 
+\begin_inset Formula $\varphi\left(x,y\right)=\sum_{i}\phi_{i}\left(x_{i}\right)+\sum_{i}\psi_{i}\left(y_{i}\right)+\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)$
+\end_inset
+
+.
+ Notice that the fact that 
+\begin_inset Formula $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$
+\end_inset
+
+, from the martingale condition, allows us to eliminate this term from the
+ first integral.
+ Given the separation in the first term of the RHS, 
+\begin_inset Formula $\mu_{0}$
+\end_inset
+
+ can be simply taken as the independent coupling of the marginals.
+ Computationally, each of 
+\begin_inset Formula $\phi_{i},\psi_{i},h_{i}$
+\end_inset
+
+ is replaced by some approximation 
+\begin_inset Formula $\phi_{i}^{m},\psi_{i}^{m},h_{i}^{m}$
+\end_inset
+
+ implemented as a neural network with an internal size measured by 
+\begin_inset Formula $m$
+\end_inset
+
+.
+ The calibration of the neural networks is performed through gradient descent
+ methods referenced on a loss function.
+ The last integral adds a penalization to the loss function, imposing the
+ appropriate pointwise inequality between 
+\begin_inset Formula $\varphi$
+\end_inset
+
+ and 
+\begin_inset Formula $c$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Our main point of interest is in the sampling measure 
+\begin_inset Formula $\theta$
+\end_inset
+
+ used for penalization.
+ While the only requirement on 
+\begin_inset Formula $\theta$
+\end_inset
+
+ besides is that a true solution 
+\begin_inset Formula $\pi^{*}$
+\end_inset
+
+ be absolutely convex with respect to it, a better accuracy is expected
+ in general when 
+\begin_inset Formula $\theta$
+\end_inset
+
+ is closer to a true solution – see brief discussion in sections 4.4 and
+ 4.5 of EK21.
+ In its most general form, 
+\begin_inset Formula $\theta$
+\end_inset
+
+ is composed of the independent coupling of the marginals.
+ The novelty of our method is in the improvement of 
+\begin_inset Formula $\theta$
+\end_inset
+
+: since we know that a solution (unique in the case of strict submodularity)
+ is attained with monotone coupling of the 
 \begin_inset Formula $X$
 \end_inset
 
@@ -155,32 +236,55 @@ The model introduced in –EcksteinKupper2021– uses penalization and neural
 \end_inset
 
 , by those marginals.
- When possible, we improve 
+ In the special case of normal marginals, we improve 
 \begin_inset Formula $\theta$
 \end_inset
 
- a little further by applying some additional knowledge about the full coupling
+ a little further by applying additional knowledge about the full coupling
  of the marginals, including the 
 \begin_inset Formula $Y$
 \end_inset
 
  side.
- Further research on VMOT can reveal ways to improve 
+ It can be possible to improve 
 \begin_inset Formula $\theta$
 \end_inset
 
- for more general cases.
- Here, for the sake of comparison, we run tests with and without these known
- improvements.
- For simplicity, we fix the penalization function as 
-\begin_inset Formula $L_{2}$
+ even further and in more general cases.
+ For instance, we could achieve great improvements with the knowledge of
+ the conditional distribution of 
+\begin_inset Formula $Y$
 \end_inset
 
- and the penalization parameter as 
-\begin_inset Formula $\gamma=1000$
+ given 
+\begin_inset Formula $X$
+\end_inset
+
+, that is, 
+\begin_inset Formula $\pi_{x}$
+\end_inset
+
+ for a fixed 
+\begin_inset Formula $x$
 \end_inset
 
 .
+ This topic remains for future research.
+ The purpose here is to run tests with and without the known improvements
+ that we have at hand.
+ We fix the penalization function 
+\begin_inset Formula $b$
+\end_inset
+
+ (see discussion in the reference) as
+\begin_inset Formula 
+\begin{align*}
+b\left(t\right) & =\frac{1}{\gamma}\frac{1}{2}\left(\left(\gamma t\right)^{+}\right)^{2} & \gamma=1000
+\end{align*}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Example
@@ -288,47 +392,12 @@ Thus, our theoretical reference bounds for the numerical approximation are
 \end_inset
 
  in equation 2.3 of –EcksteinKupper21–.
- We repeat the target function to be optimized here, with adapted notation.
- We want to (min)maximize
-\begin_inset Formula 
-\begin{align*}
- & \int\left(\sum_{i}f_{i}+\sum_{i}g_{i}\right)d\mu_{0}+\int\beta_{\gamma}\left(c-\varphi\right)d\theta\\
- & =\sum_{i}\left(\int f_{i}d\mu_{i}+\int g_{i}d\nu_{i}\right)+\int\beta_{\gamma}\left(c-\varphi\right)d\theta
-\end{align*}
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Notice that we are using the fact that 
-\begin_inset Formula $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$
-\end_inset
-
- to eliminate this term from the first integral in each side of the the
- equation above.
- Given the separation in the first term of the RHS, 
-\begin_inset Formula $\mu_{0}$
-\end_inset
-
- can be simply taken as the independent coupling of the marginals.
- As for 
+ [NOTE: refer to the discussion about 
 \begin_inset Formula $\theta$
 \end_inset
 
-, the only requirement besides the marginals is that a true solution 
-\begin_inset Formula $\pi^{*}$
-\end_inset
-
- be absolutely convex with respect to it.
- In its most general form, 
-\begin_inset Formula $\theta$
-\end_inset
-
- is composed of the independent coupling of the marginals.
- A more elaborate version comes from using our main result, when we set
- 
+ in the section introduction] A more elaborate version comes from using
+ our main result, when we set 
 \begin_inset Formula $\theta^{1}$
 \end_inset
 
