@@ -40,40 +40,73 @@ option prices of individual assets at two distinct future points in
 time.
 
 In this section, we solve several versions of the problem of robust
-pricing of a financial contract involving the prices of a pair of
-assets at two distinct points in time. We apply the framework of \cite{eckstein_kupper_computational_2021}
---EcksteinKupper21--, further developed in --EcksteinGuoLimObloj21--
-and analyze potential performance improvements allowed by our result
-about the geometry of the optimal couplings. Our tests run accross
-various dimensions, cost functions and marginal shapes, including
-marginals derived from actual stock market option prices, as detailed
-below.
+pricing of a financial contract involving the prices of a group of
+assets at two distinct points in time. We build upon the framework
+of EK21\cite{eckstein_kupper_computational_2021} and analyze potential
+performance improvements allowed by our result on the geometry of
+the optimal couplings. Our tests run across various dimensions, cost
+functions and marginal shapes, including marginals derived from actual
+stock market option prices.
 
-The model introduced in --EcksteinKupper2021-- uses penalyzation
-and neural network optimization to solve the dual problem of Optimal
-Transport. More precisely, the model approximates the potential functions
-$\left(\phi_{i},\psi_{i},h_{i}\right)_{i}$ of equation 2.6 using
-neural networks and use penalyzation to impose condition 2.7. --EcksteinGuoLimObloj21--
-introduces the martingale constraint to the optimal transport problem,
-providing a dual solution to VMOT. The novelty of our method is in
-the improvement of the sampling measure $\theta$, used for penalyzation:
-since we know that a solution (unique in the case of strict submodularity)
-is attained with monotone coupling of the $X$ marginals $\left(\vec{\mu}_{i}\right)$,
-we determine $\theta^{1}$, the $X$-side of $\theta$, by those marginals.
-When possible, we improve $\theta$ a little further by applying some
-additional knowledge about the full coupling of the marginals, including
-the $Y$ side. Further research on VMOT can reveal ways to improve
-$\theta$ for more general cases. Here, for the sake of comparison,
-we run tests with and without these known improvements. For simplicity,
-we fix the penalyzation function as $L_{2}$ and the penalization
-parameter as $\gamma=1000$.
+{[}NOTE: discussion about $\theta$ moved to here and developed further{]}
+
+EK21 uses neural network optimization with penalization to solve the
+dual problem of Optimal Transport. More specific to our case, their
+model approximate the potential functions of our equation 2.6 with
+neural networks and impose condition 2.7 though penalization. The
+optimization objective is summarized in a sum of integrals (equation
+2.3 of EK21), which we repeat here with adapted notation. We want
+to (min)maximize
+\begin{align*}
+\text{Loss} & =\int\varphi d\mu_{0}+\int b_{\gamma}\left(c-\varphi\right)d\theta\\
+ & =\int\left(\sum_{i}\phi_{i}+\sum_{i}\psi_{i}\right)d\mu_{0}+\int b_{\gamma}\left(c-\varphi\right)d\theta\\
+ & =\sum_{i}\int\phi_{i}d\mu_{i}+\sum_{i}\int\psi_{i}d\nu_{i}+\int b_{\gamma}\left(c-\varphi\right)d\theta
+\end{align*}
+ where $\varphi\left(x,y\right)=\sum_{i}\phi_{i}\left(x_{i}\right)+\sum_{i}\psi_{i}\left(y_{i}\right)+\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)$.
+Notice that the fact that $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$,
+from the martingale condition, allows us to eliminate this term from
+the first integral. Given the separation in the first term of the
+RHS, $\mu_{0}$ can be simply taken as the independent coupling of
+the marginals. Computationally, each of $\phi_{i},\psi_{i},h_{i}$
+is replaced by some approximation $\phi_{i}^{m},\psi_{i}^{m},h_{i}^{m}$
+implemented as a neural network with an internal size measured by
+$m$. The calibration of the neural networks is performed through
+gradient descent methods referenced on a loss function. The last integral
+adds a penalization to the loss function, imposing the appropriate
+pointwise inequality between $\varphi$ and $c$.
+
+Our main point of interest is in the sampling measure $\theta$ used
+for penalization. While the only requirement on $\theta$ besides
+is that a true solution $\pi^{*}$ be absolutely convex with respect
+to it, a better accuracy is expected in general when $\theta$ is
+closer to a true solution -- see brief discussion in sections 4.4
+and 4.5 of EK21. In its most general form, $\theta$ is composed of
+the independent coupling of the marginals. The novelty of our method
+is in the improvement of $\theta$: since we know that a solution
+(unique in the case of strict submodularity) is attained with monotone
+coupling of the $X$ marginals $\left(\vec{\mu}_{i}\right)$, we determine
+$\theta^{1}$, the $X$-side of $\theta$, by those marginals. In
+the special case of normal marginals, we improve $\theta$ a little
+further by applying additional knowledge about the full coupling of
+the marginals, including the $Y$ side. It can be possible to improve
+$\theta$ even further and in more general cases. For instance, we
+could achieve great improvements with the knowledge of the conditional
+distribution of $Y$ given $X$, that is, $\pi_{x}$ for a fixed $x$.
+This topic remains for future research. The purpose here is to run
+tests with and without the known improvements that we have at hand.
+We fix the penalization function $b$ (see discussion in the reference)
+as
+\begin{align*}
+b\left(t\right) & =\frac{1}{\gamma}\frac{1}{2}\left(\left(\gamma t\right)^{+}\right)^{2} & \gamma=1000
+\end{align*}
+
 \begin{example}
 (Basket option cost function, uniform marginals.) Our first cost function
 mimics the payoff of a contract similar to an European call option
-applied to a basket composed of assets. That is, our cost function
-has general form 
+applied to a basket composed of assets. That is, a cost function with
+general form 
 \begin{align*}
-c\left(X_{1},Y\right) & =\left(a_{1}X_{1}+a_{2}X_{2}-k_{1}\right)^{+}+\left(b_{1}Y_{1}+b_{2}Y_{2}-k_{2}\right)^{+}
+c\left(X,Y\right) & =\left(\sum_{i=1}^{d}a_{i}X_{i}-k_{1}\right)^{+}+\left(\sum_{i=1}^{d}b_{i}Y_{i}-k_{2}\right)^{+}
 \end{align*}
 
 Our marginals are uniform distributions centered at zero. Set $d=2$
@@ -104,21 +137,8 @@ Thus, our theoretical reference bounds for the numerical approximation
 are $p^{+}=\frac{1}{3}+\frac{25}{24}=\frac{11}{8}=1.375$ and $p^{-}=\frac{1}{8}=0.125$.
 Our first step in the computation process is to build two samples
 from the theoretical distributions $\mu_{0}$ and $\theta$ in equation
-2.3 of --EcksteinKupper21--. We repeat the target function to be
-optimized here, with adapted notation. We want to minimize or maximize
-\begin{align*}
- & \int\left(\sum_{i}f_{i}+\sum_{i}g_{i}\right)d\mu_{0}+\int\beta_{\gamma}\left(c-\varphi\right)d\theta\\
- & =\sum_{i}\left(\int f_{i}d\mu_{i}+\int g_{i}d\nu_{i}\right)+\int\beta_{\gamma}\left(c-\varphi\right)d\theta
-\end{align*}
-
-Notice that we are using the fact that $\int\sum_{i}h_{i}\left(x\right).\left(y_{i}-x_{i}\right)d\mu_{0}=0$
-to eliminate this term from the first integral in each side of the
-the equation above. Given the separation in the first term of the
-RHS, $\mu_{0}$ can be simply taken as the independent coupling of
-the marginals. As for $\theta$, the only requirement besides the
-marginals is that a true solution $\pi^{*}$ be absolutely convex
-with respect to it. In its most general form, $\theta$ is composed
-of the independent coupling of the marginals. A more elaborate version
+2.3 of --EcksteinKupper21--. {[}NOTE: refer to the discussion about
+$\theta$ in the section introduction{]} A more elaborate version
 comes from using our main result, when we set $\theta^{1}$ to be
 determined by the monotonic coupling of $\left(\vec{\mu}_{i}\right)$
 (positive or negative according to the objective). We use both choices
@@ -131,7 +151,7 @@ area covers $\pm1$ standard deviations of the numeric outputs.
 
 {[}graph: convergence min{]}
 
-The following tamble summarizes the results after $200$ iterations.
+The following table summarizes the results after $200$ iterations.
 
 Maximization.
 
@@ -169,8 +189,8 @@ Penalty & 0.0082 & 0.0075\tabularnewline
 
 \begin{example}
 (Covariance cost function, normal marginals.) For our second example,
-we consider a cost function inspired by a theoretical contract that
-pays proportional to the covariance of two assets. The general form
+we consider a cost function inspired by a theoretical contract with
+payoff proportional to the covariance of two assets. The general form
 is
 \begin{align*}
 c\left(X,Y\right) & =\sum_{i}\sum_{j>i}a_{ij}X_{i}X_{j}+b_{ij}Y_{i}Y_{j}
@@ -241,8 +261,8 @@ Penalty & 0.4135 & 0.1684 & 0.0132\tabularnewline
 \subparagraph{Higher dimensions.}
 
 To compare performance in higher dimensions, we also run examples
-with $d=3$ and $d=5$ (to do: change to higher dimension such as
-$d=10$). Our cost is simplified as 
+with $d=3$ and $d=5$ (to do: change second to $d=10$). Our cost
+is simplified as 
 \[
 c\left(x,y\right)=\sum_{i}\sum_{j>i}b_{ij}y_{i}y_{j}
 \]
