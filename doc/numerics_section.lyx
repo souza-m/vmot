@@ -90,11 +90,11 @@ Numeric examples.
 (To be moved to the Introduction Section.) In the Numerics section, we develop
  several examples of robust pricing problems designed to show the improvement
  allowed by our result.
- We consider cost functions based on the the european call option applied
+ We consider cost functions based on the the European call option applied
  to a basket of assets and a theoretical covariance (or cross-product) contract.
  The first two examples use hypothetical uniform and normal marginal distributio
-ns, while the third uses real-world marginal distributions implied by option
- prices of individual assets at two distinct future points in time.
+ns, while the third one uses real-world marginal distributions implied by
+ option prices of individual assets at two distinct future points in time.
 \end_layout
 
 \begin_layout Standard
@@ -126,11 +126,10 @@ literal "false"
 \begin_layout Standard
 EK21 uses neural network optimization with penalization to solve the dual
  problem of Optimal Transport.
- More specific to our case, their model approximate the potential functions
+ More specific to our case, their model approximates the potential functions
  of our equation 2.6 with neural networks and impose condition 2.7 though
  penalization.
- The optimization objective is summarized in a sum of integrals (equation
- 2.3 of EK21), which we repeat here with adapted notation.
+ The optimization objective is repeated here with adapted notation.
  We want to (min)maximize
 \begin_inset Formula 
 \begin{align*}
@@ -152,7 +151,7 @@ EK21 uses neural network optimization with penalization to solve the dual
 
 , from the martingale condition, allows us to eliminate this term from the
  first integral.
- Given the separation in the first term of the RHS, 
+ Given the separation in the first integral, 
 \begin_inset Formula $\mu_{0}$
 \end_inset
 
@@ -172,8 +171,8 @@ EK21 uses neural network optimization with penalization to solve the dual
 .
  The calibration of the neural networks is performed through gradient descent
  methods referenced on a loss function.
- The last integral adds a penalization to the loss function, imposing the
- appropriate pointwise inequality between 
+ The rightmost integral adds a penalization to the loss function, imposing
+ the appropriate pointwise inequality between 
 \begin_inset Formula $\varphi$
 \end_inset
 
@@ -185,7 +184,7 @@ EK21 uses neural network optimization with penalization to solve the dual
 \end_layout
 
 \begin_layout Standard
-Our main point of interest is in the sampling measure 
+Our main interest is in the sampling measure 
 \begin_inset Formula $\theta$
 \end_inset
 
@@ -194,7 +193,7 @@ Our main point of interest is in the sampling measure
 \begin_inset Formula $\theta$
 \end_inset
 
- besides is that a true solution 
+ is that a true solution 
 \begin_inset Formula $\pi^{*}$
 \end_inset
 
@@ -240,8 +239,8 @@ Our main point of interest is in the sampling measure
 \begin_inset Formula $\theta$
 \end_inset
 
- a little further by applying additional knowledge about the full coupling
- of the marginals, including the 
+ a bit more by applying additional knowledge about the full coupling of
+ the marginals, including the 
 \begin_inset Formula $Y$
 \end_inset
 
@@ -336,8 +335,8 @@ We are interested in both upper and lower bounds.
 \begin_inset Formula $Y$
 \end_inset
 
-] .
- For the maximum (minimum) we take 
+].
+ For the maximum (minimum), we take 
 \begin_inset Formula $\hat{\pi}$
 \end_inset
 
@@ -359,7 +358,7 @@ p_{\hat{\pi}}^{-} & =p_{X,\hat{\pi}}^{-}+p_{Y,\hat{\pi}}^{-}
 
 \end_inset
 
- where, using the formula on A1 below, 
+ where, using the formula from A1 below, 
 \begin_inset Formula 
 \begin{align*}
 p_{X,\hat{\pi}}^{+} & =\frac{1}{3}; & p_{Y,\hat{\pi}}^{+} & =\frac{25}{24}\\
@@ -391,13 +390,9 @@ Thus, our theoretical reference bounds for the numerical approximation are
 \begin_inset Formula $\theta$
 \end_inset
 
- in equation 2.3 of –EcksteinKupper21–.
- [NOTE: refer to the discussion about 
-\begin_inset Formula $\theta$
-\end_inset
-
- in the section introduction] A more elaborate version comes from using
- our main result, when we set 
+ in equation 2.3 of EK21.
+ A more elaborate version comes from using our main result, when we set
+ 
 \begin_inset Formula $\theta^{1}$
 \end_inset
 
@@ -861,8 +856,9 @@ To avoid noisy behavior in the potential functions, we sample from normal
 \end_inset
 
 .
- A futher improvement is allowed by the fact that we are using normal marginals,
- see (REF), which gives us a third, potentially even more efficient 
+ Another degree of improvement is allowed by the fact that we are using
+ normal marginals, see (REF), which gives us a third, potentially even more
+ efficient 
 \begin_inset Formula $\theta$
 \end_inset
 
@@ -940,7 +936,7 @@ Results after
 \begin_inset Text
 
 \begin_layout Plain Layout
-Cupling
+Coupling
 \end_layout
 
 \end_inset
@@ -1171,7 +1167,7 @@ To compare performance in higher dimensions, we also run examples with
 \end_inset
 
  (to do: change second to 
-\begin_inset Formula $d=10$
+\begin_inset Formula $d=8$
 \end_inset
 
 ).
@@ -1238,7 +1234,7 @@ Results after
 \begin_inset Text
 
 \begin_layout Plain Layout
-Cupling
+Coupling
 \end_layout
 
 \end_inset
