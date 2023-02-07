@@ -428,5 +428,4 @@ for label in labels:
     pl.title('h')
     pl.plot(t, g1(x1x2).detach().numpy())
     pl.plot(t, g2(x1x2).detach().numpy())
-    pl.legend(['h1(x1, x2)', 'h2(x1, x2)'])   
-    
+    pl.legend(['h1(x1, x2)', 'h2(x1, x2)'])
