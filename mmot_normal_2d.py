@@ -265,6 +265,7 @@ if __name__ == "__main__":
         print('model saved to ' + _path)
 
 # --- adjustments ---
+_dir = '/model_dump/'
 labels = ['results_max_cross_product_y_normal_independent',
           'results_max_cross_product_y_normal_positive',
           'results_max_cross_product_y_normal_direct' ]
