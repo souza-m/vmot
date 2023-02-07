@@ -180,7 +180,7 @@ def train_loop(cost, primal_obj, mu_loader, th_loader,
         # iteration report
         if verbose:
             c = (batch + 1) * size
-            if batch == 0 or c % 10000 == 0:
+            if batch == 0 or c % 100000 == 0:
                 if optimizer is None:
                     print(f'{value.item():18.4f}' + \
                         f'  {value_h.item():18.4f}' + \

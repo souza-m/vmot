@@ -17,10 +17,11 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # choose
 # import mmot_uniform as module
-import mmot_2d_normal as module
+import mmot_normal_2d as module
 
 # module functions to be used:
 # module.cost
+# module.minus_cost
 # module.sample
 # module.plot_sample
 print('distribution: ' + module.distribution)
@@ -40,29 +41,6 @@ labels = ['results_max_cross_product_y_normal_independent',
 
 # uniform min
 # labels = ...
-
-# adjustments
-# for label in labels:
-#     file = label + '.pickle'
-#     _path = _dir + file
-#     with open(_path, 'rb') as file:
-#         results = pickle.load(file)
-#     print('model loaded from ' + _path)
-    
-#     # adjustments
-#     # results.keys()
-#     # print(f'reference value {results["ref_value"]:8.4f}')
-#     # results['ref_value'] = ref_value
-#     # del results['f_label']
-#     # del results['cost']
-#     # results['cost_label'] = module.cost_label
-#     # ...
-#     # ---
-    
-#     with open(_path, 'wb') as file:
-#         pickle.dump(results, file)
-#     print('model saved to ' + _path)
-
 
 # show convergence results, normal marginals, cross product
 pl.figure(figsize=figsize)   # plot in two iterations to have a clean legend
@@ -122,7 +100,7 @@ for label in labels:
     # new sample
     n_points = 100000
     clip_normal = 4
-    sample_mu_X, sample_mu_Y = module.sample(n_points)
+    sample_mu_X, sample_mu_Y = module.sample(n_points, seed=1)
     sample_th_X, sample_th_Y = module.sample(n_points, coupling=coupling)
     
     # plot samples

@@ -2,3 +2,7 @@
 *.pyc
 *.py_
 *.ini
+*.lyx#
+*.lyx~
+*.lyx#
+*.lyx~
