@@ -1,0 +1,386 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\begin_modules
+theorems-std
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Paragraph
+
+\size normal
+Discussion: sampling vs.
+ quantile approach.
+\end_layout
+
+\begin_layout Standard
+We describe the current numerical penalization method being used, with emphasis
+ on the sampling of points, and discuss alternative options to consider.
+ To approximate a solution to equation 2.6 with constraint 2.7, we want to
+ minimize 
+\begin_inset Formula 
+\begin{align*}
+ & \int\left(\sum_{i}\phi_{i}+\sum_{i}\psi_{i}\right)d\mu_{0}+\int b_{\gamma}\left(c-\varphi\right)d\theta\\
+ & =\sum_{i}\int\phi_{i}\mu_{i}+\sum_{i}\int\psi_{i}d\nu_{i}+\int b_{\gamma}\left(c-\varphi\right)d\theta
+\end{align*}
+
+\end_inset
+
+ where 
+\begin_inset Formula $\varphi\left(x,y\right)=\sum_{i}\phi_{i}\left(x_{i}\right)+\sum_{i}\psi_{i}\left(y_{i}\right)+\sum_{i}h_{i}\left(x\right)\left(y_{i}-x_{i}\right)$
+\end_inset
+
+.
+ The last sum is omited from the first integral because its integral converges
+ to zero.
+ 
+\begin_inset Formula $b_{\gamma}$
+\end_inset
+
+ is a penalization function defined as
+\begin_inset Formula 
+\[
+b_{\gamma}\left(t\right)=\frac{1}{\gamma}\frac{1}{2}\left[\left(\gamma t\right)^{+}\right]^{2}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Each function 
+\begin_inset Formula $\phi_{i},\psi_{i},h_{i}$
+\end_inset
+
+ is implemented by a neural network.
+ The proposed alternative is to work on the quantile domain.
+ Let 
+\begin_inset Formula $F,G$
+\end_inset
+
+ be the cumulative distribution functions of 
+\begin_inset Formula $x,y$
+\end_inset
+
+ (assumed to be known) and define
+\begin_inset Formula 
+\begin{alignat*}{1}
+\hat{x}_{i} & =F^{-1}\left(x_{i}\right)\\
+\hat{y}_{i} & =G^{-1}\left(y_{i}\right)\\
+\hat{\phi}\left(\hat{y_{i}}\right) & =\phi\left(y_{i}\right)\\
+\hat{\psi}\left(\hat{y_{i}}\right) & =\psi\left(y_{i}\right)\\
+\hat{h}_{i}\left(\hat{x}\right) & h\left(x\right)
+\end{alignat*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Each 
+\begin_inset Formula $\hat{\phi}_{i},\hat{\psi}_{i},\hat{h}_{i}$
+\end_inset
+
+ is now implemented by a neural network instead of their primitives.
+ Instead of randomly sampling, we run our model from a grid of quantiles.
+ Our marginals are uniform discrete probabilities depending on the grid
+ size.
+ The sampling measure 
+\begin_inset Formula $\theta$
+\end_inset
+
+ is a discrete coupling of uniform discrete marginals.
+\end_layout
+
+\begin_layout Standard
+Advantages:
+\end_layout
+
+\begin_layout Itemize
+This spreads the area covered by the training more evenly.
+ This is critical in high dimension case where much of the areas can be
+ left uncovered with random sampling.
+\end_layout
+
+\begin_layout Itemize
+The monotone coupling can allow a dimension reduction.
+ To be tested.
+\end_layout
+
+\begin_layout Itemize
+The neural network will potentially perform better in the interval 
+\begin_inset Formula $\left[0,1\right]$
+\end_inset
+
+ than in the line.
+ A good reason to think that is the tail noise in the normal-marginals example.
+ To be tested.
+\end_layout
+
+\begin_layout Itemize
+Potentially easier update of the sampling measure 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subparagraph*
+Penalization integral approximation - Comparison
+\end_layout
+
+\begin_layout Enumerate
+Sampling.
+ Let 
+\begin_inset Formula $\mathcal{X}_{i}=\left\{ x_{i}^{1},\ldots x_{i}^{n}\right\} ,\mathcal{Y}_{i}=\left\{ y_{i}^{1},\ldots y_{i}^{n}\right\} $
+\end_inset
+
+ be (simulated) samples, 
+\begin_inset Formula $i=1,\ldots,d$
+\end_inset
+
+.
+ Note 1: the marginal probabilities are expressed in the samples; their
+ construction is the only place where the marginals are considered.
+ Note 2: In the empirical example, even though we are using market data,
+ the pricing method first builds an impllicit distribution and then generates
+ a random sample from that distribution.
+ Hence, the sample is simulated in any case.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Current method.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+First step is building a common sample 
+\begin_inset Formula $\Theta$
+\end_inset
+
+ of 
+\begin_inset Formula $2d$
+\end_inset
+
+-dimension points.
+ In the independent case, we wrap the points arbitrarily as (for instance)
+ 
+\begin_inset Formula $\Theta=\left\{ \left(x_{1}^{1},\ldots,x_{d}^{1},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{n},\ldots,x_{d}^{n},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $
+\end_inset
+
+.
+ In the monotone coupling case, the 
+\begin_inset Formula $x_{i}^{k}$
+\end_inset
+
+'s are first ordered as 
+\begin_inset Formula $x_{i}^{\left(1\right)},\ldots,x_{i}^{\left(n\right)}$
+\end_inset
+
+ and then coupled in order, while the 
+\begin_inset Formula $y_{i}^{k}$
+\end_inset
+
+'s are coupled arbitrarily, like 
+\begin_inset Formula $\Theta=\left\{ \left(x_{1}^{\left(1\right)},\ldots,x_{d}^{\left(1\right)},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{\left(n\right)},\ldots,x_{d}^{\left(n\right)},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $
+\end_inset
+
+.
+ The penalty is given by
+\begin_inset Formula 
+\[
+\varepsilon_{1}=\sum_{i}\sum_{j}\sum_{\left(x,y\right)\in\Theta}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Separated sampling.
+ The common sample 
+\begin_inset Formula $\Theta$
+\end_inset
+
+ is the product of the marginal samples.
+ The penalty is calculated as
+\begin_inset Formula 
+\[
+\varepsilon_{2}=\sum_{i}\sum_{j}\sum_{x_{i}\in\mathcal{X}_{i}}\sum_{y_{i}\in\mathcal{Y}_{i}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\]
+
+\end_inset
+
+To keep the complexity comparable, we must have 
+\begin_inset Formula $\Pi_{i}\Pi_{j}\left|\mathcal{X}_{i}\right|\left|Y_{i}\right|$
+\end_inset
+
+ in the same scale as before.
+ So, if we used 
+\begin_inset Formula $n=1m$
+\end_inset
+
+ in the first procedure, we should use 
+\begin_inset Formula $n=32$
+\end_inset
+
+ for 
+\begin_inset Formula $d=2$
+\end_inset
+
+ and 
+\begin_inset Formula $n=10$
+\end_inset
+
+ for 
+\begin_inset Formula $d=3$
+\end_inset
+
+.
+ An inprovement is to sample 
+\begin_inset Formula $x$
+\end_inset
+
+ from the diagonal, with dimension reduction, but the observation about
+ the scaling is similar: to achieve the same coverage as the optimal sample
+ above, 
+\begin_inset Formula $\Pi_{j}\left|\mathcal{X}_{1}\right|\left|Y_{i}\right|$
+\end_inset
+
+ must be in the same scale as the 
+\begin_inset Formula $\Theta$
+\end_inset
+
+ defined there.
+\end_layout
+
+\begin_layout Itemize
+Intermediate sampling.
+ One option is to build 
+\begin_inset Formula $\Theta_{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $\Theta_{Y}$
+\end_inset
+
+ separated, each one of them like in the first bullet.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Quantile method.
+ The points 
+\begin_inset Formula $\left(\hat{x},\hat{y}\right)$
+\end_inset
+
+ are taken from the grid of the 1-hypercube.
+ So, for instance, if the grid granularity is 10, we divide each marginal
+ of the cube into 10 intervals, and the points would be the middle points
+ of each interval, as (for 
+\begin_inset Formula $d=2$
+\end_inset
+
+)
+\begin_inset Formula 
+\begin{align*}
+\hat{\Theta} & =\Big\{\left(0.05,0.05,0.05,0.05\right),\left(0.05,0.05,0.05,0.15\right),\ldots,\left(0.05,0.05,0.05,0.95\right),\\
+ & \ \ \ \ \ \ \left(0.05,0.05,0.15,0.05\right),\left(0.05,0.05,0.15,0.15\right),\ldots,\\
+ & \ \ \ \ \ \ \left(0.95,0.95,0.95,0.95\right)\Big\}
+\end{align*}
+
+\end_inset
+
+and the penalty is
+\begin_inset Formula 
+\[
+\varepsilon_{3}=\sum_{j}\sum
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
