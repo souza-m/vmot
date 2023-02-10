@@ -89,7 +89,7 @@ Discussion: sampling vs.
 
 \begin_layout Standard
 We describe the numerical penalization method being currently used, with
- emphasis on the sampling of points for penalization, and discuss an alternative
+ emphasis on the sampling of points for penalization and discuss an alternative
  option to consider.
  To approximate a solution of equation 2.6 with constraint 2.7, we want to
  minimize 
@@ -116,7 +116,7 @@ b_{\gamma}\left(t\right)=\frac{1}{\gamma}\frac{1}{2}\left[\left(\gamma t\right)^
 \end_layout
 
 \begin_layout Standard
-Compotationally, each function 
+Computationally, each function 
 \begin_inset Formula $\phi_{i},\psi_{i},h_{i}$
 \end_inset
 
@@ -163,7 +163,7 @@ Now each
 \end_inset
 
  is implemented by a neural network instead of their primitives.
- Alternatively to random sampling, we run our model from a grid of quantiles.
+ Instead of random sampling, we use a grid of quantiles.
  Our marginals are uniform discrete probabilities depending on the choice
  of grid size.
  The sampling measure 
@@ -171,7 +171,7 @@ Now each
 \end_inset
 
  is a discrete coupling of uniform discrete marginals.
- Advantages of this 
+ Some advantages of this 
 \begin_inset Quotes eld
 \end_inset
 
@@ -179,13 +179,13 @@ quantile
 \begin_inset Quotes erd
 \end_inset
 
- approach:
+ approach are
 \end_layout
 
 \begin_layout Itemize
-It spreads the area covered by the training more evenly.
- This is critical in high dimension case where much of the areas can be
- left uncovered with random sampling.
+It spreads the area covered by the training evenly.
+ This is critical in the high dimension case where much of the area can
+ be left uncovered with random sampling.
 \end_layout
 
 \begin_layout Itemize
@@ -194,13 +194,13 @@ The neural network will potentially perform better in the interval
 \end_inset
 
  than in the line.
- A good reason to believe that is the tail noise in the normal-marginals
- example.
- To be tested.
+ A good reason to believe that is the tail noise observed in the normal-marginal
+s example.
+ To be checked.
 \end_layout
 
 \begin_layout Itemize
-Potentially easier update of the sampling measure 
+Potential to find ways to update of the sampling measure 
 \begin_inset Formula $\hat{\theta}$
 \end_inset
 
@@ -208,7 +208,7 @@ Potentially easier update of the sampling measure
 \end_layout
 
 \begin_layout Subparagraph*
-Penalization integral approximation - Comparison
+Approximations to the penalization integral: description and comparison.
 \end_layout
 
 \begin_layout Standard
@@ -234,8 +234,8 @@ Sampling.
  construction is the only place where the marginal probabilities are ever
  considered.
  Note 2: In the empirical example, even though we are using actual market
- data, the method first builds marginal distributions of individual prices
- and then generates a random sample from those distributions.
+ data, the method first builds marginal distributions of random, future
+ prices and then generates a sample from those distributions.
  Hence, the final sample is simulated in any case.
  
 \end_layout
@@ -247,7 +247,7 @@ Current method.
 
 \begin_deeper
 \begin_layout Standard
-First step is building a common sample 
+First step is to build a common sample 
 \begin_inset Formula $\Theta_{1}$
 \end_inset
 
@@ -282,7 +282,7 @@ First step is building a common sample
  The penalty is given by
 \begin_inset Formula 
 \[
-\varepsilon_{1}=\sum_{\left(x,y\right)\in\Theta_{1}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\varepsilon_{1}=\frac{1}{\left|\Theta_{1}\right|}\sum_{\left(x,y\right)\in\Theta_{1}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
 \]
 
 \end_inset
@@ -301,7 +301,7 @@ Separated sampling.
  In the independent coupling case, the penalty is calculated as
 \begin_inset Formula 
 \[
-\varepsilon_{2}=\sum_{x_{1}\in\mathcal{X}_{1}}\ldots\sum_{x_{d}\in\mathcal{X}_{d}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\varepsilon_{2}=\frac{1}{\prod_{i}\prod_{j}\left|\mathcal{X}_{i}\right|\left|Y_{i}\right|}\sum_{x_{1}\in\mathcal{X}_{1}}\ldots\sum_{x_{d}\in\mathcal{X}_{d}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
 \]
 
 \end_inset
@@ -317,7 +317,7 @@ In the monotone case, the choice of
 , therefore we can write 
 \begin_inset Formula 
 \[
-\varepsilon_{2}=\sum_{x_{1}\in\mathcal{X}_{1}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x\left(x_{1}\right),y\right)-\varphi\left(x\left(x_{1}\right),y\right)\right)
+\varepsilon_{2}=\frac{1}{\left|\mathcal{X}_{1}\right|\prod_{j}\left|Y_{i}\right|}\sum_{x_{1}\in\mathcal{X}_{1}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x\left(x_{1}\right),y\right)-\varphi\left(x\left(x_{1}\right),y\right)\right)
 \]
 
 \end_inset
@@ -330,17 +330,17 @@ To keep the complexity comparable, we must have either
 \begin_inset Formula $\left|\mathcal{X}_{1}\right|\prod_{j}\left|Y_{i}\right|=n^{d+1}$
 \end_inset
 
- (in the monotone coupling case) in the same scale as the full sample 
-\begin_inset Formula $\Theta_{1}$
+ (in the monotone coupling case) in the same scale as 
+\begin_inset Formula $\left|\Theta_{1}\right|$
 \end_inset
 
- of the previous method.
+ in the previous method.
  Thus, suppose we used 
-\begin_inset Formula $n=1M$
+\begin_inset Formula $\left|\Theta_{1}\right|=1M$
 \end_inset
 
- in the first sampling method.
- In the independent case, we should use a comparable 
+ there.
+ Here, in the independent case, we should use a comparable 
 \begin_inset Formula $n=\left(1M\right)^{\nicefrac{1}{4}}\sim32$
 \end_inset
 
@@ -379,10 +379,10 @@ To keep the complexity comparable, we must have either
 \begin_layout Standard
 Notice that, provided the sample sets have the same size, there is no difference
  between the two methods just discussed in terms of computational effort
- (other that memory allocation, perhaps).
+ (other than possibly memory allocation).
  But in the separated sampling case, given that marginal sizes are small
  specially in higher dimension, we may have some areas of the marginal distribut
-ions being scarcelly covered throughout 
+ions being scarcely covered throughout 
 \begin_inset Formula $\Theta$
 \end_inset
 
@@ -396,9 +396,13 @@ Quantile method.
 \begin_inset Formula $\left(\hat{x},\hat{y}\right)$
 \end_inset
 
- are taken from the grid of the 1-hypercube.
- So, for example, if the grid granularity is 10, we divide each marginal
- of the cube into 10 intervals, and the points are the middle points 
+ are taken from a grid in the 1-hypercube.
+ So, for example, if the grid granularity is 
+\begin_inset Formula $10$
+\end_inset
+
+, we divide each marginal of the cube into 10 intervals, and pick the middle
+ points 
 \begin_inset Formula 
 \begin{align*}
 \hat{x}_{i}\in\hat{\mathcal{X}}_{i} & =\left\{ 0.05,\ldots,0.95\right\} \\
@@ -407,10 +411,24 @@ Quantile method.
 
 \end_inset
 
-and the penalty is
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The points 
+\begin_inset Formula $\left(\hat{x},\hat{y}\right)$
+\end_inset
+
+ are attributed the discrete probability 
+\begin_inset Formula $\hat{\theta}$
+\end_inset
+
+ with uniform marginals.
+ The penalty is given by
 \begin_inset Formula 
 \[
-\varepsilon_{3}=\sum_{\hat{x}_{1}\in\hat{\mathcal{X}}_{1}}\ldots\sum_{\hat{x}_{d}\in\hat{\mathcal{X}}_{d}}\sum_{\hat{y}_{1}\in\hat{\mathcal{Y}}_{1}}\ldots\sum_{\hat{y}_{d}\in\hat{\mathcal{Y}}_{d}}\hat{\theta}\left(\hat{x},\hat{y}\right)b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\varepsilon_{3}=\frac{1}{\prod_{i}\prod_{j}\left|\mathcal{\hat{X}}_{i}\right|\left|\hat{Y}_{i}\right|}\sum_{\hat{x}_{1}\in\hat{\mathcal{X}}_{1}}\ldots\sum_{\hat{x}_{d}\in\hat{\mathcal{X}}_{d}}\sum_{\hat{y}_{1}\in\hat{\mathcal{Y}}_{1}}\ldots\sum_{\hat{y}_{d}\in\hat{\mathcal{Y}}_{d}}\hat{\theta}\left(\hat{x},\hat{y}\right)b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
 \]
 
 \end_inset
@@ -418,32 +436,87 @@ and the penalty is
 
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
-Notice that the sampling measure probability has entered the formula, while
- in the previous method it only influenced the construction of the sample.
- So, while the discrete marginal pro
-\begin_inset Formula $F_{i},G_{i}$
+Notice that the concept of sampling measure has entered the formula through
+ the probability 
+\begin_inset Formula $\hat{\theta}$
 \end_inset
 
- are known, the joint cummulative 
-\begin_inset Formula $\mathbf{F}\left(x,y\right)$
+, while previously it only influenced the construction of the sample 
+\begin_inset Formula $\Theta$
 \end_inset
 
- used to calculate the discrete 
-\begin_inset Formula $\mathbb{P}\left(\hat{x},\hat{y}\right)$
+.
+ In the simplest, independent case, 
+\begin_inset Formula $\hat{\theta}$
 \end_inset
 
- used in the penalization method (see details below) is chosen through 
+ is the independent coupling, which is the uniform probability 
+\begin_inset Formula $\hat{\theta}\left(\hat{x},\hat{y}\right)=\frac{1}{n^{2d}}$
+\end_inset
+
+.
+ In the positive monotone coupling case, only points satisfying 
+\begin_inset Formula $\hat{x}_{i}=\hat{x}_{j}\forall i,j$
+\end_inset
+
+ have positive probability.
+ So, if the 
+\begin_inset Formula $y$
+\end_inset
+
+-side of 
+\begin_inset Formula $\hat{\theta}$
+\end_inset
+
+ is independent, we set 
+\begin_inset Formula 
+\[
+\hat{\theta}\left(\hat{x},\hat{y}\right)=\begin{cases}
+\frac{1}{n^{d+1}} & \hat{x}_{i}=\hat{x}_{j}\forall i,j\\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+\end_inset
+
+There could be interesting cases where additional information is available,
+ giving rise to a more elaborated and efficient 
 \begin_inset Formula $\hat{\theta}$
 \end_inset
 
 .
- In the independent coupling case, 
-\begin_inset Formula $\mathbf{F}\left(x,y\right)=\prod F_{i}\left(x_{i}\right)G_{i}\left(y_{i}\right)$
+ One topic to investigate is whether it is possible to update 
+\begin_inset Formula $\hat{\theta}$
 \end_inset
 
-; other cases must be studied.
+ with information from 
+\begin_inset Formula $\hat{\varphi}$
+\end_inset
+
+ in the same fashion as in formula 2.6 of Eckstein and Kupper (2021).
+\end_layout
+
+\begin_layout Standard
+Note: There might be some literature about similar quantile-based methods.
+ In their brief introduction to Example 4.6, Eckstein and Kupper (2021) mention
+ the following papers, not yet analyzed.
+\end_layout
+
+\begin_layout Itemize
+Embrechts, P., Puccetti, G., Rüschendorf, L.
+ "Model uncertainty and VaR aggregation." (2013, J.
+ Bank.
+ Financ.)
+\end_layout
+
+\begin_layout Itemize
+Puccetti, G., Rüschendorf, L.
+ "Computation of sharp bounds on the distribution of a function of dependent
+ risks." (J.
+ Comput.
+ Appl.
+ Math., 2012)
 \end_layout
 
 \end_deeper
