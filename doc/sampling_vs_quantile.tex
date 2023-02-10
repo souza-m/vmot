@@ -1,0 +1,160 @@
+%% LyX 2.3.6 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{luainputenc}
+\usepackage{units}
+\usepackage{amsmath}
+\usepackage{babel}
+\begin{document}
+
+\paragraph{Discussion: sampling vs. quantile approach.}
+
+We describe the numerical penalization method being currently used,
+with emphasis on the sampling of points for penalization and discuss
+an alternative option to consider. To approximate a solution of equation
+2.6 with constraint 2.7, we want to minimize 
+\[
+\sum_{i}\int\phi_{i}\mu_{i}+\sum_{i}\int\psi_{i}d\nu_{i}+\int b_{\gamma}\left(c-\varphi\right)d\theta
+\]
+ where $b_{\gamma}$ is a penalization function defined as
+\[
+b_{\gamma}\left(t\right)=\frac{1}{\gamma}\frac{1}{2}\left[\left(\gamma t\right)^{+}\right]^{2}
+\]
+
+Computationally, each function $\phi_{i},\psi_{i},h_{i}$ is implemented
+as a neural network that takes any floating-point number ($\phi_{i},\psi_{i}$)
+or vector ($h_{i}$) as input. The sum of integrals above becomes
+a discrete sum (to be detailed later), and is referenced to a gradient
+descent algorithm as a loss function (that is, the one to be minimized
+numerically). The proposed alternative is to work on the quantile
+domain. Let $F_{i},G_{i}$ be the cumulative distribution functions
+of $x_{i},y_{i}$ (assumed to be known) and define
+\begin{alignat*}{1}
+\hat{x}_{i} & =F\left(x_{i}\right)\\
+\hat{y}_{i} & =G\left(y_{i}\right)\\
+\hat{\phi}_{i}\left(\hat{y_{i}}\right) & =\phi_{i}\left(y_{i}\right)\\
+\hat{\psi_{i}}\left(\hat{y_{i}}\right) & =\psi_{i}\left(y_{i}\right)\\
+\hat{h}_{i}\left(\hat{x}\right) & =h_{i}\left(x\right)
+\end{alignat*}
+
+Now each $\hat{\phi}_{i},\hat{\psi}_{i},\hat{h}_{i}$ is implemented
+by a neural network instead of their primitives. Instead of random
+sampling, we use a grid of quantiles. Our marginals are uniform discrete
+probabilities depending on the choice of grid size. The sampling measure
+$\hat{\theta}$ is a discrete coupling of uniform discrete marginals.
+Some advantages of this ``quantile'' approach are
+\begin{itemize}
+\item It spreads the area covered by the training evenly. This is critical
+in the high dimension case where much of the area can be left uncovered
+with random sampling.
+\item The neural network will potentially perform better in the interval
+$\left[0,1\right]$ than in the line. A good reason to believe that
+is the tail noise observed in the normal-marginals example. To be
+checked.
+\item Potential to find ways to update of the sampling measure $\hat{\theta}$.
+\end{itemize}
+
+\subparagraph*{Approximations to the penalization integral: description and comparison.}
+
+We approximate the penalty term $\varepsilon=\int b_{\gamma}\left(c-\varphi\right)d\theta$
+with a sum, as described below.
+\begin{enumerate}
+\item Sampling. Let $\mathcal{X}_{i}=\left\{ x_{i}^{1},\ldots x_{i}^{n}\right\} ,\mathcal{Y}_{i}=\left\{ y_{i}^{1},\ldots y_{i}^{n}\right\} $
+be (simulated) samples, $i=1,\ldots,d$. Note 1: the marginal probabilities
+are expressed in the samples; their construction is the only place
+where the marginal probabilities are ever considered. Note 2: In the
+empirical example, even though we are using actual market data, the
+method first builds marginal distributions of random, future prices
+and then generates a sample from those distributions. Hence, the final
+sample is simulated in any case. 
+\begin{itemize}
+\item Current method.
+
+First step is to build a common sample $\Theta_{1}$ of $2d$-dimension
+points. In the independent case, we wrap the points arbitrarily as
+(for instance) $\Theta_{1}=\left\{ \left(x_{1}^{1},\ldots,x_{d}^{1},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{n},\ldots,x_{d}^{n},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $.
+In the monotone coupling case, the $x_{i}^{k}$'s are first ordered
+as $x_{i}^{\left(1\right)},\ldots,x_{i}^{\left(n\right)}$ and then
+coupled in order, while the $y_{i}^{k}$'s are coupled arbitrarily,
+like $\Theta_{1}=\left\{ \left(x_{1}^{\left(1\right)},\ldots,x_{d}^{\left(1\right)},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{\left(n\right)},\ldots,x_{d}^{\left(n\right)},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $.
+The penalty is given by
+\[
+\varepsilon_{1}=\frac{1}{\left|\Theta_{1}\right|}\sum_{\left(x,y\right)\in\Theta_{1}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\]
+
+\item Separated sampling. The common sample $\Theta_{2}$ is the product
+of the marginal samples. In the independent coupling case, the penalty
+is calculated as
+\[
+\varepsilon_{2}=\frac{1}{\prod_{i}\prod_{j}\left|\mathcal{X}_{i}\right|\left|Y_{i}\right|}\sum_{x_{1}\in\mathcal{X}_{1}}\ldots\sum_{x_{d}\in\mathcal{X}_{d}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\]
+In the monotone case, the choice of $x$ can be seen as a function
+of $x_{1}$, therefore we can write 
+\[
+\varepsilon_{2}=\frac{1}{\left|\mathcal{X}_{1}\right|\prod_{j}\left|Y_{i}\right|}\sum_{x_{1}\in\mathcal{X}_{1}}\sum_{y_{1}\in\mathcal{Y}_{1}}\ldots\sum_{y_{d}\in\mathcal{Y}_{d}}b_{\gamma}\left(c\left(x\left(x_{1}\right),y\right)-\varphi\left(x\left(x_{1}\right),y\right)\right)
+\]
+To keep the complexity comparable, we must have either $\prod_{i}\prod_{j}\left|\mathcal{X}_{i}\right|\left|Y_{i}\right|=n^{2d}$
+(in the independent case) or $\left|\mathcal{X}_{1}\right|\prod_{j}\left|Y_{i}\right|=n^{d+1}$
+(in the monotone coupling case) in the same scale as $\left|\Theta_{1}\right|$
+in the previous method. Thus, suppose we used $\left|\Theta_{1}\right|=1M$
+there. Here, in the independent case, we should use a comparable $n=\left(1M\right)^{\nicefrac{1}{4}}\sim32$
+for $d=2$ and $n=\left(1M\right)^{\nicefrac{1}{6}}=10$ for $d=3$.
+In the monotone coupling case, we should use $n=\left(1M\right)^{\nicefrac{1}{3}}=100$
+for $d=2$ and $n=\left(1M\right)^{\nicefrac{1}{4}}\sim32$ for $d=3$.
+\end{itemize}
+Notice that, provided the sample sets have the same size, there is
+no difference between the two methods just discussed in terms of computational
+effort (other than possibly memory allocation). But in the separated
+sampling case, given that marginal sizes are small specially in higher
+dimension, we may have some areas of the marginal distributions being
+scarcely covered throughout $\Theta$.
+\item Quantile method. The points $\left(\hat{x},\hat{y}\right)$ are taken
+from a grid in the 1-hypercube. So, for example, if the grid granularity
+is $10$, we divide each marginal of the cube into 10 intervals, and
+pick the middle points 
+\begin{align*}
+\hat{x}_{i}\in\hat{\mathcal{X}}_{i} & =\left\{ 0.05,\ldots,0.95\right\} \\
+\hat{y}_{i}\in\hat{\mathcal{Y}}_{i} & =\left\{ 0.05,\ldots,0.95\right\} 
+\end{align*}
+
+The points $\left(\hat{x},\hat{y}\right)$ are attributed the discrete
+probability $\hat{\theta}$ with uniform marginals. The penalty is
+given by
+\[
+\varepsilon_{3}=\frac{1}{\prod_{i}\prod_{j}\left|\mathcal{\hat{X}}_{i}\right|\left|\hat{Y}_{i}\right|}\sum_{\hat{x}_{1}\in\hat{\mathcal{X}}_{1}}\ldots\sum_{\hat{x}_{d}\in\hat{\mathcal{X}}_{d}}\sum_{\hat{y}_{1}\in\hat{\mathcal{Y}}_{1}}\ldots\sum_{\hat{y}_{d}\in\hat{\mathcal{Y}}_{d}}\hat{\theta}\left(\hat{x},\hat{y}\right)b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)
+\]
+
+Notice that the concept of sampling measure has entered the formula
+through the probability $\hat{\theta}$, while previously it only
+influenced the construction of the sample $\Theta$. In the simplest,
+independent case, $\hat{\theta}$ is the independent coupling, which
+is the uniform probability $\hat{\theta}\left(\hat{x},\hat{y}\right)=\frac{1}{n^{2d}}$.
+In the positive monotone coupling case, only points satisfying $\hat{x}_{i}=\hat{x}_{j}\forall i,j$
+have positive probability. So, if the $y$-side of $\hat{\theta}$
+is independent, we set 
+\[
+\hat{\theta}\left(\hat{x},\hat{y}\right)=\begin{cases}
+\frac{1}{n^{d+1}} & \hat{x}_{i}=\hat{x}_{j}\forall i,j\\
+0 & \text{otherwise}
+\end{cases}
+\]
+There could be interesting cases where additional information is available,
+giving rise to a more elaborated and efficient $\hat{\theta}$. One
+topic to investigate is whether it is possible to update $\hat{\theta}$
+with information from $\hat{\varphi}$ in the same fashion as in formula
+2.6 of Eckstein and Kupper (2021).
+
+Note: There might be some literature about similar quantile-based
+methods. In their brief introduction to Example 4.6, Eckstein and
+Kupper (2021) mention the following papers, not yet analyzed.
+\begin{itemize}
+\item Embrechts, P., Puccetti, G., Rüschendorf, L. \textquotedbl Model
+uncertainty and VaR aggregation.\textquotedbl{} (2013, J. Bank. Financ.)
+\item Puccetti, G., Rüschendorf, L. \textquotedbl Computation of sharp
+bounds on the distribution of a function of dependent risks.\textquotedbl{}
+(J. Comput. Appl. Math., 2012)
+\end{itemize}
+\end{enumerate}
+
+\end{document}
