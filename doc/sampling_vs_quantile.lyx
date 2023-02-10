@@ -258,11 +258,18 @@ First step is to build a common sample
 -dimension points.
  In the independent case, we wrap the points arbitrarily as (for instance)
  
-\begin_inset Formula $\Theta_{1}=\left\{ \left(x_{1}^{1},\ldots,x_{d}^{1},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{n},\ldots,x_{d}^{n},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $
+\begin_inset Formula 
+\[
+\Theta_{1}=\left\{ \left(x_{1}^{1},\ldots,x_{d}^{1},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{n},\ldots,x_{d}^{n},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} 
+\]
+
 \end_inset
 
-.
- In the monotone coupling case, the 
+
+\end_layout
+
+\begin_layout Standard
+In the monotone coupling case, the 
 \begin_inset Formula $x_{i}^{k}$
 \end_inset
 
@@ -275,11 +282,18 @@ First step is to build a common sample
 \end_inset
 
 's are coupled arbitrarily, like 
-\begin_inset Formula $\Theta_{1}=\left\{ \left(x_{1}^{\left(1\right)},\ldots,x_{d}^{\left(1\right)},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{\left(n\right)},\ldots,x_{d}^{\left(n\right)},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} $
+\begin_inset Formula 
+\[
+\Theta_{1}=\left\{ \left(x_{1}^{\left(1\right)},\ldots,x_{d}^{\left(1\right)},y_{1}^{1},\ldots,y_{d}^{1}\right),\ldots,\left(x_{1}^{\left(n\right)},\ldots,x_{d}^{\left(n\right)},y_{1}^{n},\ldots,y_{d}^{n}\right)\right\} 
+\]
+
 \end_inset
 
-.
- The penalty is given by
+
+\end_layout
+
+\begin_layout Standard
+The penalty is given by
 \begin_inset Formula 
 \[
 \varepsilon_{1}=\frac{1}{\left|\Theta_{1}\right|}\sum_{\left(x,y\right)\in\Theta_{1}}b_{\gamma}\left(c\left(x,y\right)-\varphi\left(x,y\right)\right)

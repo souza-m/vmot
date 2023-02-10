@@ -101,11 +101,11 @@ ref_value = None                   # unknown
 d = 2
 primal_obj = 'max'
 batch_size = 10000
-gamma = 1000
+gamma = 100
 
 if __name__ == "__main__":
 
-    epochs = 20
+    epochs = 2000
     
     # choose
     coupling = 'positive'
@@ -202,7 +202,7 @@ if __name__ == "__main__":
                 'penalty_series': penalty_series  }
 
     # dump
-    _dir = '/model_dump/'
+    _dir = './model_dump/'
     # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
     _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
     _path = _dir + _file
