@@ -5,7 +5,7 @@ Created on Mon May 24 17:35:25 2021
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 """
 
-import mmot_dual_nn as mmot
+import vmot_dual_nn as vmot
 import numpy as np
 import matplotlib.pyplot as pl
 
@@ -19,19 +19,19 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
-# Each example of MMOT numeric dual solution is defined by
+# Each example of vmot numeric dual solution is defined by
 #    1. a sample "mu" drown from the independent coupling of the marginals
 #    2. a sample "th" from some sampling measure theta satisfying that a solution is absolutely continuous wrt theta
 #    3. a cost function
 # 
 # To use the framework
-#    a. instantiate a module of class mmot.Phi for each x marginal 
-#    b. instantiate a module of class mmot.Phi for each y marginal 
-#    c. instantiate a module of class mmot.Phi for each h
+#    a. instantiate a module of class vmot.Phi for each x marginal 
+#    b. instantiate a module of class vmot.Phi for each y marginal 
+#    c. instantiate a module of class vmot.Phi for each h
 #    d. wrap the modules and create optimizers pointing to their parameters
 #    e. create loaders for the samples
 #    e. define the primal objective and the penalty function
-#    f. call mmot.train_loop iteratively (this will calbireate the phi's, defining the numeric potential functions)
+#    f. call vmot.train_loop iteratively (this will calbireate the phi's, defining the numeric potential functions)
 #    g. store the phi modules as .pickle files
 
 
@@ -113,9 +113,9 @@ if __name__ == "__main__":
     # --- new model ---
     hidden_size = 32
     n_hidden_layers = 2
-    phi_x_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-    phi_y_list = nn.ModuleList([mmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-    h_list     = nn.ModuleList([mmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+    phi_x_list = nn.ModuleList([vmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+    phi_y_list = nn.ModuleList([vmot.Phi(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+    h_list     = nn.ModuleList([vmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
     
     # construct samples
     sample_mu_X, sample_mu_Y = sample(coupling='independent')
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         plot_sample(sample_th_X, sample_th_Y, 'th')
         
     # wrap samples in tensor loaders
-    mu_loader, th_loader = mmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
+    mu_loader, th_loader = vmot.generate_loaders(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y, batch_size)
     
     # --- training: calls to train_loop ---
     lr =1e-4
@@ -134,8 +134,8 @@ if __name__ == "__main__":
     print('first call')
     print(f'learning rate:       {lr:0.7f}')
     print('-------------------------------------------------------')
-    value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
-                                          phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
+    value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+                                          phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                           optimizer = optimizer, verbose = True)
     print(f'value:               {value:7.4f}')
     print(f'standard deviation:  {std:7.4f}')
@@ -161,8 +161,8 @@ if __name__ == "__main__":
             print('-------------------------------------------------------')
         else:
             print(f'epoch {t+1}...')
-        value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
-                                              phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
+        value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+                                              phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                               optimizer = optimizer, verbose = verb)
         _value.append(value)
         _std.append(std)
