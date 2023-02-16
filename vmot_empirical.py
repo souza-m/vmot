@@ -99,7 +99,6 @@ ref_value = None                   # unknown
 
 # optimization parameters
 d = 2
-primal_obj = 'max'
 batch_size = 10000
 gamma = 100
 
@@ -134,7 +133,7 @@ if __name__ == "__main__":
     print('first call')
     print(f'learning rate:       {lr:0.7f}')
     print('-------------------------------------------------------')
-    value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+    value, std, penalty = vmot.train_loop(cost, mu_loader, th_loader, 
                                           phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                           optimizer = optimizer, verbose = True)
     print(f'value:               {value:7.4f}')
@@ -161,7 +160,7 @@ if __name__ == "__main__":
             print('-------------------------------------------------------')
         else:
             print(f'epoch {t+1}...')
-        value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+        value, std, penalty = vmot.train_loop(cost, mu_loader, th_loader, 
                                               phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                               optimizer = optimizer, verbose = verb)
         _value.append(value)
@@ -187,8 +186,7 @@ if __name__ == "__main__":
     pl.axhline(ref_value, linestyle=':', color='black') 
     
     # summarize results
-    results = { 'primal_obj'    : primal_obj,
-                'cost_label'    : cost_label,
+    results = { 'cost_label'    : cost_label,
                 'cost'          : cost,
                 'distribution'  : distribution,
                 'ref_value'     : ref_value,
@@ -203,8 +201,8 @@ if __name__ == "__main__":
 
     # dump
     _dir = './model_dump/'
-    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
-    _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
+    # _file = 'results_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
+    _file = 'results_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
