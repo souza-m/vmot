@@ -43,8 +43,8 @@ def cost_hat(x_hat, y_hat):
     x, y = np.array([x1, x2]).T, np.array([y1, y2]).T
     return cost(x, y)
 
-def L(xi_hat, yi_hat):
-    return norm.ppf(x_hat) * norm.ppf(yi_hat)
+def L_hat(xi_hat, yi_hat):
+    return norm.ppf(yi_hat) - norm.ppf(xi_hat)
 
 # reference value
 sig1 = normal_scale[0]
@@ -148,7 +148,6 @@ if __name__ == "__main__":
         results = { 'cost_label'    : cost_label,
                     'cost'          : cost,
                     'distribution'  : distribution,
-                    'clip_normal'   : clip_normal,
                     'ref_value'     : ref_value,
                     'gamma'         : gamma,
                     'coupling'      : coupling,
