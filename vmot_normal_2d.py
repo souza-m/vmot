@@ -181,7 +181,7 @@ if __name__ == "__main__":
         
         # --- training: calls to train_loop ---
         lr =1e-4
-        optimizer = torch.optim.Adam(h_list.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(list(phi_x_list.parameters()) + list(phi_y_list.parameters()) + list(h_list.parameters()), lr=lr)
         print()
         print('first call')
         print(f'learning rate:       {lr:0.7f}')
