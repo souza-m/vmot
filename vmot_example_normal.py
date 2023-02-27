@@ -139,11 +139,11 @@ pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
 D_series_list = [D_series2, D_series3]
 H_series_list = [H_series2, H_series3]
 s_series_list = [s_series2, s_series3]
-[pl.plot(np.array(D_series + H_series)) for D_series, H_series in zip(D_series_list, H_series_list)]
+[pl.plot(np.array(D_series) + np.array(H_series)) for D_series, H_series in zip(D_series_list, H_series_list)]
 pl.legend(labels)
 pl.legend(list(range(len(D_series_list))))
 for D_series, H_series, s_series in zip(D_series_list, H_series_list, s_series_list):
     pl.fill_between(range(len(D_series)),
-                    np.array(D_series + H_series) + np.array(band_size * s_series),
-                    np.array(D_series + H_series) - np.array(band_size * s_series), alpha = .3, facecolor = 'grey')
+                    np.array(D_series) + np.array(H_series) + band_size * np.array(s_series),
+                    np.array(D_series) + np.array(H_series) - band_size * np.array(s_series), alpha = .3, facecolor = 'grey')
 pl.axhline(ref_value, linestyle=':', color='black')
