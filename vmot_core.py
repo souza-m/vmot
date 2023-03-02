@@ -50,7 +50,7 @@ def mtg_parse(sample, phi_list, psi_list, h_list):
     
     phi = torch.hstack([phi(sample[:,i].view(size, 1)) for i, phi in enumerate(phi_list)])
     psi = torch.hstack([psi(sample[:,i+d].view(size, 1)) for i, psi in enumerate(psi_list)])
-    h   = torch.hstack([h(sample[:,:d]) for i, h in enumerate(h_list)])
+    h   = torch.hstack([h(sample[:,:d]) for h in h_list])
     L     = sample[:,2*d:3*d]
     c     = sample[:,3*d]
     theta = sample[:,3*d+1]
@@ -71,19 +71,21 @@ def mtg_train_loop(working_loader, phi_list, psi_list, h_list,
     # for batch, subsample in enumerate(sample_loader): break
     for batch, sample in enumerate(working_loader):
         
-        # dual value and penalization
+        # time series of dual value, mtg component and penalization
         phi, psi, h, L, c, theta = mtg_parse(sample, phi_list, psi_list, h_list)
         D = (phi + psi).sum(axis=1)   # sum over dimensions
         H = (h * L).sum(axis=1)       # sum over dimensions
         deviation = D + H - c
-        P = (theta / theta.sum()) * beta(deviation, gamma)
+        # P = (theta / theta.sum()) * beta(deviation, gamma)
+        P = beta(deviation, gamma)   # (?!)
         
         _D = np.append(_D, D.detach().numpy())
         _H = np.append(_H, H.detach().numpy())
         _P = np.append(_P, P.detach().numpy())
         
         # loss and backpropagation
-        loss = (-D + b_multiplier * P).mean()
+        # loss = (-D + b_multiplier * P).mean()
+        loss = -D.mean() + b_multiplier * (theta * P).sum() / theta.sum()
         if not optimizer is None:
             optimizer.zero_grad()
             loss.backward()
@@ -221,29 +223,24 @@ def generate_working_sample_marginals(xi_sample_list, yi_sample_list, cost_f,
         marginals_list = list(x_sample) + yi_sample_list
         xy_sample = np.array(list(itertools.product(*marginals_list)))
     else:
-        # all combinations of quantiles on x cross y
+        # all combinations of quantiles of x cross y
         marginals_list = xi_sample_list + yi_sample_list
         xy_sample = np.array(list(itertools.product(*marginals_list)))
     return generate_working_sample(xy_sample, cost_f, uniform_theta, theta_prob)
         
     
-def generate_working_sample_quantile(n, d, inv_cum_x, inv_cum_y, cost_f,
-                                     monotone_x = False,
-                                     uniform_theta = True,
-                                     theta_prob = None):
+def generate_working_sample_q_set(q_set, inv_cum_x, inv_cum_y, cost_f,
+                                  symmetrical = False,
+                                  monotone_x = False,
+                                  uniform_theta = True,
+                                  theta_prob = None):
 
-    # all combinations of quantiles on x cross y
-    if monotone_x:
-        q_set = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-        q_set = np.hstack([np.tile(q_set[:,0], (d-1, 1)).T, q_set])
-    else:
-        q_set = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
+    n, num_cols = q_set.shape
+    d = int(num_cols / 2)
     qx = q_set[:, :d]
     qy = q_set[:, d:]
-    xhat = (2 * qx + 1) / (2 * n)   # points in the d-hypercube
-    yhat = (2 * qy + 1) / (2 * n)   # points in the d-hypercube
-    x = np.array([inv_cum_x(xhat[:,i], i) for i in range(d)]).T
-    y = np.array([inv_cum_y(yhat[:,i], i) for i in range(d)]).T
+    x = np.array([inv_cum_x(qx[:,i], i) for i in range(d)]).T
+    y = np.array([inv_cum_y(qy[:,i], i) for i in range(d)]).T
     l_set = y - x           # a matrix with d columns, each column has (yi - xi)
     c_set = cost_f(x, y)   # a vector of costs
     if uniform_theta:
@@ -255,8 +252,29 @@ def generate_working_sample_quantile(n, d, inv_cum_x, inv_cum_y, cost_f,
         theta = theta_prob(q_set, coupling = 'independent')   # joint probability of each quantile
     
     # check and build working sample
+    if symmetrical:
+        q_set = 1 * q_set - 0.5 * np.ones(q_set.shape)
     working_sample = np.hstack([q_set, l_set, c_set.reshape(len(theta), 1), theta.reshape(len(theta), 1)])
     return working_sample
+
+def generate_working_sample_q_grid(n, d, inv_cum_x, inv_cum_y, cost_f,
+                                   symmetrical = False,
+                                   monotone_x = False,
+                                   uniform_theta = True,
+                                   theta_prob = None):
+
+    # all combinations of quantiles on x cross y
+    if monotone_x:
+        n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
+        n_grid = np.hstack([np.tile(n_grid[:,0], (d-1, 1)).T, n_grid])   # repeat the xi's
+    else:
+        n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
+    q_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+    return  generate_working_sample_q_set(q_set, inv_cum_x, inv_cum_y, cost_f,
+                                          symmetrical,
+                                          monotone_x,
+                                          uniform_theta,
+                                          theta_prob)
 
 def plot_sample_2d(sample, label='sample'):
     figsize = [12,12]
