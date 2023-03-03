@@ -2,7 +2,8 @@
 
 This code implements dual optimization of VMOT based on the framework of Eckstein, Kupper (2019) and developed upon Python/Pytorch. It allows the analysis of performance improvements from monotone coupling based on the theoretical results from the reference research project.
 
-Reference research project: Hiew, Lim, Pass, Souza "Modularity, Convex conjugates and VMOT" (in development).
+Reference research project:
+- Hiew, Lim, Pass, Souza "Modularity, Convex conjugates and VMOT" (in development).
 
 Reference papers for the numerical procedure:
 - Eckstein, Guo, Lim, Obloj (2021) "Robust Pricing and Hedging of Options on Multiple Assets and Its Numerics".
