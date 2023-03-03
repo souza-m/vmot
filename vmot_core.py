@@ -2,7 +2,10 @@
 """
 Created on Mon May 24 17:35:25 2021
 @author: souzam
-PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
+Dual approximation of VMOT using neural networks
+References
+- Hiew, Lim Pass, Souza "Modularity, Convex conjugates and VMOT" (in development)
+- Eckstein and Kupper "Computation of Optimal Transport" (2021)
 """
 
 import numpy as np
@@ -17,7 +20,7 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'   # pytorch version issues
 
 
-# penalty function 
+# penalty function and derivative
 def beta_Lp(x, p, gamma):
     return (1 / gamma) * (1 / p) * torch.pow(torch.relu(gamma * x), p)
  
@@ -28,9 +31,8 @@ def beta_L2_prime(x, gamma):
     return gamma * torch.relu(x)
     
 
-# class for model for each hj (or gj) to be minimized (rhs of eq 2.8)
+# base class for each potential function phi_i, psi_i or h_i to be maximized
 class PotentialF(nn.Module):
- 
     def __init__(self, input_dimension, n_hidden_layers = 2, hidden_size = 32):
         super(PotentialF, self).__init__()
         layers = [nn.Linear(input_dimension, hidden_size), nn.ReLU()]
@@ -38,15 +40,12 @@ class PotentialF(nn.Module):
             layers += [nn.Linear(hidden_size, hidden_size), nn.ReLU()]
         layers += [nn.Linear(hidden_size, 1)]
         self.hi = nn.Sequential(*layers)
- 
     def forward(self, x):
         return self.hi(x)
 
 # extract from working sample
 # format:
-# -- X  -- | -- Y  -- | -- L -- | c | th |
-# or
-# -- QX -- | -- QY -- | -- L -- | c | th |
+# -- (Q)X -- | -- (Q)Y -- | -- L -- | c | th |
 def mtg_parse(model, sample):
     size, num_cols = sample.shape
     d = int((num_cols - 2) / 3)
@@ -55,9 +54,9 @@ def mtg_parse(model, sample):
     # calculate using model
     phi = torch.hstack([phi(sample[:,i].view(size, 1)) for i, phi in enumerate(phi_list)])
     psi = torch.hstack([psi(sample[:,i+d].view(size, 1)) for i, psi in enumerate(psi_list)])
+    h   = torch.hstack([h(sample[:,:d]) for h in h_list])
     
     # extract from the working sample
-    h   = torch.hstack([h(sample[:,:d]) for h in h_list])
     L     = sample[:,2*d:3*d]
     c     = sample[:,3*d]
     theta = sample[:,3*d+1]
@@ -161,7 +160,7 @@ def mtg_train(working_sample, opt_parameters, model = None, verbose = False):
                 print()
             D, s, H, P = mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer, verb)
             D_evolution.append(D)
-            s_evolution.append(D)
+            s_evolution.append(s)
             H_evolution.append(H)
             P_evolution.append(P)
             if verb:
@@ -186,64 +185,60 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     
     working_sample = torch.tensor(working_sample).float()
     phi, psi, h, L, c, theta = mtg_parse(working_sample, phi_list, psi_list, h_list)
-    D = (phi + psi).sum(axis=1)   # sum over dimensions
-    H = (h * L).sum(axis=1)       # sum over dimensions
-    deviation = D + H - c
-    pi_star = (theta * beta_prime(deviation, gamma)).detach().numpy()
+    D = (phi + psi).sum(axis=1).item()   # sum over dimensions
+    H = (h * L).sum(axis=1).item()       # sum over dimensions
+    deviation = D + H - c.item()
+    pi_star = (theta * beta_prime(deviation, gamma))
     
-    return D.mean().item(), H.mean().item(), pi_star
+    return D.mean(), D.std(), H.mean(), pi_star
 
 # working sample format:
 # -- X -- | -- Y -- | -- L -- | c | th |
 def generate_working_sample(xy_set, cost_f,
-                            uniform_theta = True,
-                            theta_prob = None):
+                            theta = None,
+                            uniform_theta = False):
     size, num_cols = xy_set.shape
     d = int(num_cols / 2)
     x = xy_set[:, :d]
     y = xy_set[:, d:]
-    l_set = y - x          # each column has (yi - xi)
-    c_set = cost_f(x, y)   # a vector of costs
-    if uniform_theta:
-        theta = np.ones(size) / size
-    else:
-        if theta is None:
+    l = y - x          # each column i has (yi - xi)
+    c = cost_f(x, y)   # vector of costs
+    if theta is None:
+        if uniform_theta:
+            theta = np.ones(size) / size
+        else:
             print('a theta probability must be specified')
-            return
-        theta = theta_prob(x, y)   # joint probability of each quantile
-    
-    # check and build working sample
-    working_sample = np.hstack([xy_set, l_set, c_set.reshape(size, 1), theta.reshape(size, 1)])
+            return None
+    working_sample = np.hstack([xy_set, l, c.reshape(size, 1), theta.reshape(size, 1)])
     assert working_sample.shape[1] == 3 * d + 2
     return working_sample
 
 # working sample format:
 # -- QX -- | -- QY -- | -- L -- | c | th |
 def generate_working_sample_q(q_set, inv_cum_x, inv_cum_y, cost_f,
-                              uniform_theta = True,
-                              theta_prob = None):
+                              theta = None,
+                              uniform_theta = False):
     size, num_cols = q_set.shape
     d = int(num_cols / 2)
     qx = q_set[:, :d]
     qy = q_set[:, d:]
     x = np.array([inv_cum_x(qx[:,i], i) for i in range(d)]).T
     y = np.array([inv_cum_y(qy[:,i], i) for i in range(d)]).T
-    l_set = y - x          # each column has (yi - xi)
-    c_set = cost_f(x, y)   # a vector of costs
-    if uniform_theta:
-        theta = np.ones(len(q_set)) / len(q_set)
-    else:
-        if theta is None:
+    l = y - x          # each column i has (yi - xi)
+    c = cost_f(x, y)   # vector of costs
+    if theta is None:
+        if uniform_theta:
+            theta = np.ones(size) / size
+        else:
             print('a theta probability must be specified')
-            return
-        theta = theta_prob(q_set, coupling = 'independent')   # joint probability of each quantile
-    working_sample = np.hstack([q_set, l_set, c_set.reshape(len(c_set), 1), theta.reshape(len(theta), 1)])
+            return None
+    working_sample = np.hstack([q_set, l, c.reshape(len(size), 1), theta.reshape(len(theta), 1)])
     return working_sample
 
 # utils - generate sample set from marginal samples
 def xi_yi_to_xy_set(xi_list, yi_list, monotone_x = False):
     if monotone_x:
-        print('not working')
+        print('not implemented')
         return None
         # order xi's, shuffle together and separate again
         # xi_sample_list = [np.sort(xi) for xi in xi_sample_list]
@@ -260,7 +255,7 @@ def xi_yi_to_xy_set(xi_list, yi_list, monotone_x = False):
         xy_set = np.array(list(itertools.product(*marginals_list)))
         return xy_set
         
-# utils - generate sample set from marginal samples
+# utils - generate sample set from grid
 def grid_to_q_set(n, d, monotone_x = False):
     # all combinations of quantiles on x cross y
     if monotone_x:
@@ -272,6 +267,7 @@ def grid_to_q_set(n, d, monotone_x = False):
     q_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
     return q_set
 
+# utils - 2d plot
 def plot_sample_2d(sample, label='sample'):
     figsize = [12,12]
     X1, X2, Y1, Y2 = sample[:,0], sample[:,1], sample[:,2], sample[:,3]

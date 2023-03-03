@@ -40,10 +40,10 @@ n = 40   # marginal sample/grid size
 full_size = n ** (2 * d)
 print(f'full size: {full_size}')
 opt_parameters = { 'penalization'    : 'L2',
-                   'beta_multiplier' : 1,
+                   'beta_multiplier' : .1,
                    'gamma'           : 1000,
                    'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 3,
+                   'macro_epochs'    : 2,
                    'micro_epochs'    : 10      }
 
 
@@ -155,17 +155,18 @@ model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1, opt_parameters, ver
 model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
 model3, D_evo3, s_evo3, H_evo3, P_evo3 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
 
+D_evo = []
 
 # convergence plots
 band_size = 1
-# labels = ['sample marginals', 'sample set', 'quantile grid', 'quantile set']
-# D_evo_list = [D_evo0, D_evo1, D_evo2, D_evo3]
-# H_evo_list = [H_evo0, H_evo1, H_evo2, H_evo3]
-# s_evo_list = [s_evo0, s_evo1, s_evo2, s_evo3]
-labels = ['sample set', 'quantile grid', 'quantile set']
-D_evo_list = [D_evo1, D_evo2, D_evo3]
-H_evo_list = [H_evo1, H_evo2, H_evo3]
-s_evo_list = [s_evo1, s_evo2, s_evo3]
+labels = ['sample marginals', 'sample set', 'quantile grid', 'quantile set']
+D_evo_list = [D_evo0, D_evo1, D_evo2, D_evo3]
+H_evo_list = [H_evo0, H_evo1, H_evo2, H_evo3]
+s_evo_list = [s_evo0, s_evo1, s_evo2, s_evo3]
+# labels = ['sample set', 'quantile grid', 'quantile set']
+# D_evo_list = [D_evo1, D_evo2, D_evo3]
+# H_evo_list = [H_evo1, H_evo2, H_evo3]
+# s_evo_list = [s_evo1, s_evo2, s_evo3]
 
 # convergence comparison (D)
 pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
@@ -188,9 +189,13 @@ for D_evo, H_evo, s_evo in zip(D_evo_list, H_evo_list, s_evo_list):
 pl.axhline(ref_value, linestyle=':', color='black')
 
 
-
-
 # tests
+D_evo_list_a = D_evo_list.copy()
+H_evo_list_a = H_evo_list.copy()
+
+
+
+
 # vmot.plot_sample_2d(working_sample, 'q_set sampling')
 # D_mean, H_mean, pi_star = vmot.dual_value(working_sample, opt_parameters, model4)
 
