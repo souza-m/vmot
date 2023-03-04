@@ -40,7 +40,7 @@ n = 40   # marginal sample/grid size
 full_size = n ** (2 * d)
 print(f'full size: {full_size}')
 opt_parameters = { 'penalization'    : 'L2',
-                   'beta_multiplier' : .1,
+                   'beta_multiplier' : 10,
                    'gamma'           : 1000,
                    'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
                    'macro_epochs'    : 2,
@@ -150,12 +150,39 @@ vmot.plot_sample_2d(q_set3, 'q_set sampling')
 
 
 
+# beta_multiplier = 10
 model0, D_evo0, s_evo0, H_evo0, P_evo0 = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
 model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
 model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
 model3, D_evo3, s_evo3, H_evo3, P_evo3 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
 
-D_evo = []
+
+opt_parameters = { 'penalization'    : 'L2',
+                   'beta_multiplier' : 100,
+                   'gamma'           : 1000,
+                   'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
+                   'macro_epochs'    : 2,
+                   'micro_epochs'    : 10      }
+
+# beta_multiplier = 100
+model0_100, D_evo0_100, s_evo0_100, H_evo0_100, P_evo0_100 = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
+model1_100, D_evo1_100, s_evo1_100, H_evo1_100, P_evo1_100 = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
+model2_100, D_evo2_100, s_evo2_100, H_evo2_100, P_evo2_100 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
+model3_100, D_evo3_100, s_evo3_100, H_evo3_100, P_evo3_100 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+
+opt_parameters = { 'penalization'    : 'L2',
+                   'beta_multiplier' : .001,
+                   'gamma'           : 10000,
+                   'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
+                   'macro_epochs'    : 2,
+                   'micro_epochs'    : 10      }
+
+# beta_multiplier = .01
+model0_001g10k, D_evo0_001g10k, s_evo0_001g10k, H_evo0_001g10k, P_evo0_001g10k = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
+model1_001g10k, D_evo1_001g10k, s_evo1_001g10k, H_evo1_001g10k, P_evo1_001g10k = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
+model2_001g10k, D_evo2_001g10k, s_evo2_001g10k, H_evo2_001g10k, P_evo2_001g10k = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
+model3_001g10k, D_evo3_001g10k, s_evo3_001g10k, H_evo3_001g10k, P_evo3_001g10k = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+
 
 # convergence plots
 band_size = 1
@@ -163,7 +190,13 @@ labels = ['sample marginals', 'sample set', 'quantile grid', 'quantile set']
 D_evo_list = [D_evo0, D_evo1, D_evo2, D_evo3]
 H_evo_list = [H_evo0, H_evo1, H_evo2, H_evo3]
 s_evo_list = [s_evo0, s_evo1, s_evo2, s_evo3]
-# labels = ['sample set', 'quantile grid', 'quantile set']
+D_evo_list = [D_evo0_pt01, D_evo1_pt01, D_evo2_pt01, D_evo3_pt01]
+H_evo_list = [H_evo0_pt01, H_evo1_pt01, H_evo2_pt01, H_evo3_pt01]
+s_evo_list = [s_evo0_pt01, s_evo1_pt01, s_evo2_pt01, s_evo3_pt01]
+labels = ['sample set', 'quantile grid', 'quantile set']
+D_evo_list = [D_evo1_pt01, D_evo2_pt01, D_evo3_pt01]
+H_evo_list = [H_evo1_pt01, H_evo2_pt01, H_evo3_pt01]
+s_evo_list = [s_evo1_pt01, s_evo2_pt01, s_evo3_pt01]
 # D_evo_list = [D_evo1, D_evo2, D_evo3]
 # H_evo_list = [H_evo1, H_evo2, H_evo3]
 # s_evo_list = [s_evo1, s_evo2, s_evo3]
@@ -190,9 +223,34 @@ pl.axhline(ref_value, linestyle=':', color='black')
 
 
 # tests
+
+# beta_multiplier = 1
 D_evo_list_a = D_evo_list.copy()
 H_evo_list_a = H_evo_list.copy()
 
+# beta_multiplier = .1
+D_evo_list_b = D_evo_list.copy()
+H_evo_list_b = H_evo_list.copy()
+
+
+D_evo_list_1 = D_evo_list_a.copy()
+H_evo_list_1 = H_evo_list_a.copy()
+
+D_evo_list_01 = D_evo_list_b.copy()
+H_evo_list_01 = H_evo_list_b.copy()
+
+D_evo_list_10 = D_evo_list.copy()
+H_evo_list_10 = H_evo_list.copy()
+
+D_evo_list_100 = D_evo_list.copy()
+H_evo_list_100 = H_evo_list.copy()
+
+D_evo_list_001 = D_evo_list.copy()
+H_evo_list_001 = H_evo_list.copy()
+
+
+
+D_evo_list_10 = D_evo_list.copy()
 
 
 
