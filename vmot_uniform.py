@@ -116,7 +116,6 @@ minus_cost, minus_cost_label = minus_f_portfolio_option, 'minus_portfolio_option
 
 n_points = 100000
 distribution = 'uniform'
-primal_obj = 'max'
 
 # cost function and reference value
 ref_value = 11 / 8                   # portfolio_option
@@ -161,7 +160,7 @@ for coupling in [['independent', 'independent'],
     print()
     print('first call')
     print('-------------------------------------------------------')
-    value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+    value, std, penalty = mmot.train_loop(cost, mu_loader, th_loader, 
                                           phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
                                           optimizer = None, verbose = True)
     
@@ -192,7 +191,7 @@ for coupling in [['independent', 'independent'],
             print('-------------------------------------------------------')
         else:
             print(f'epoch {t+1}...')
-        value, std, penalty = mmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+        value, std, penalty = mmot.train_loop(cost, mu_loader, th_loader, 
                                               phi_x_list, phi_y_list, h_list, mmot.beta_L2, gamma,
                                               optimizer = optimizer, verbose = verb)
         _value.append(value)
@@ -217,8 +216,7 @@ for coupling in [['independent', 'independent'],
     pl.axhline(ref_value, linestyle=':', color='black')    
     
     # summarize results
-    results = { 'primal_obj'    : primal_obj,
-                'distribution'  : distribution,
+    results = { 'distribution'  : distribution,
                 'coupling'      : [coupling[0], coupling[1]],
                 'cost_label'    : cost_label,
                 'ref_value'     : ref_value,
@@ -231,8 +229,8 @@ for coupling in [['independent', 'independent'],
     
     # dump
     _dir = '/model_dump/'
-    _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
-    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
+    _file = 'results_' + cost_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + f'_{epochs}.pickle'
+    # _file = 'results_' + f_label + '_' + distribution + '_' + coupling[0] + '_' + coupling[1] + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -402,30 +400,3 @@ for label in labels:
     pl.ylabel('X, Y 2')
     # pl.scatter(selection[:,2], selection[:,3], alpha=.05)
     pl.scatter(selection[:,0], selection[:,1], alpha=.05)
-    
-    # check potential functions individually
-    npoints = 201
-    
-    t = np.linspace(-5, 5, npoints)
-    pl.figure(figsize=figsize)
-    pl.xlabel('x1, x2')
-    pl.ylabel('phi')
-    pl.plot(t, h_x1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.plot(t, h_x2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.legend(['phi_1(x1)', 'phi_2(x2)'])
-    
-    pl.figure(figsize=figsize)
-    pl.xlabel('y1, y2')
-    pl.ylabel('psi')
-    pl.plot(t, h_y1(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.plot(t, h_y2(torch.tensor(t).float().view(len(t), 1)).detach().numpy())
-    pl.legend(['psi_1(y1)', 'psi_2(y2)'])
-    
-    x1x2 = torch.tensor(np.vstack([t,t]).T).float().view(len(t), 2)
-    pl.figure(figsize=figsize)
-    pl.xlabel('x1 (= x2)')
-    pl.ylabel('h')
-    pl.title('h')
-    pl.plot(t, g1(x1x2).detach().numpy())
-    pl.plot(t, g2(x1x2).detach().numpy())
-    pl.legend(['h1(x1, x2)', 'h2(x1, x2)'])

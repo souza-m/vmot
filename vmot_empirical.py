@@ -37,7 +37,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # --- sampling ---
  
-def sample(coupling = 'independent'):   # read from file
+def sample(n = 0, coupling = 'independent'):   # read from file
     
     # load from file
     _dir = './empirical_sample/'
@@ -50,6 +50,8 @@ def sample(coupling = 'independent'):   # read from file
     Y1 = np.loadtxt(_dir + asset_1 + ' ' + dt_Y + '.txt')
     Y2 = np.loadtxt(_dir + asset_2 + ' ' + dt_Y + '.txt')
     X, Y = np.array([X1, X2]).T, np.array([Y1, Y2]).T
+    if n == 0 or n > len(X):
+        n = len(X)
     
     # empirical coupling (allignment)
     if coupling == 'positive':
@@ -99,16 +101,16 @@ ref_value = None                   # unknown
 
 # optimization parameters
 d = 2
-primal_obj = 'max'
 batch_size = 10000
 gamma = 100
 
 if __name__ == "__main__":
 
-    epochs = 2000
+    epochs = 1000
     
     # choose
-    coupling = 'positive'
+    coupling = 'independent'
+    # coupling = 'positive'
     
     # --- new model ---
     hidden_size = 32
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     print('first call')
     print(f'learning rate:       {lr:0.7f}')
     print('-------------------------------------------------------')
-    value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+    value, std, penalty = vmot.train_loop(cost, mu_loader, th_loader, 
                                           phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                           optimizer = optimizer, verbose = True)
     print(f'value:               {value:7.4f}')
@@ -161,7 +163,7 @@ if __name__ == "__main__":
             print('-------------------------------------------------------')
         else:
             print(f'epoch {t+1}...')
-        value, std, penalty = vmot.train_loop(cost, primal_obj, mu_loader, th_loader, 
+        value, std, penalty = vmot.train_loop(cost, mu_loader, th_loader, 
                                               phi_x_list, phi_y_list, h_list, vmot.beta_L2, gamma,
                                               optimizer = optimizer, verbose = verb)
         _value.append(value)
@@ -177,62 +179,57 @@ if __name__ == "__main__":
     t1 = time.time() # timer
     print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
     
-    value_series = np.array(_value)
-    std_series = np.array(_std)
-    penalty_series = np.array(_penalty)
-    ref_value = 10 + 15 * np.sqrt(3)
-    
     # show
-    pl.plot(value_series)
-    pl.axhline(ref_value, linestyle=':', color='black') 
+    pl.plot(_value)
     
     # summarize results
-    results = { 'primal_obj'    : primal_obj,
-                'cost_label'    : cost_label,
-                'cost'          : cost,
+    results = { 'cost_label'    : cost_label,
                 'distribution'  : distribution,
-                'ref_value'     : ref_value,
                 'gamma'         : gamma,
                 'coupling'      : coupling,
                 'phi_x_list'    : phi_x_list,
                 'phi_y_list'    : phi_y_list,
                 'h_list'        : h_list,
-                'value_series'  : value_series,
-                'std_series'    : std_series,
-                'penalty_series': penalty_series  }
+                'value_series'  : _value,
+                'std_series'    : _std,
+                'penalty_series': _penalty  }
 
     # dump
     _dir = './model_dump/'
-    # _file = 'results_' + primal_obj + '_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
-    _file = 'results_' + primal_obj + '_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
+    # _file = 'results_' + f_label + '_' + distribution + '_' + coupling + f'_{epochs}.pickle'
+    _file = 'results_' + cost_label + '_' + distribution + '_' + coupling + '.pickle'
     _path = _dir + _file
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
     print('model saved to ' + _path)
 
-# --- adjustments ---
-labels = ['results_max_cross_product_y_normal_independent',
-          'results_max_cross_product_y_normal_positive',
-          'results_max_cross_product_y_normal_direct' ]
-
-for label in labels:
-    file = label + '.pickle'
-    _path = _dir + file
-    with open(_path, 'rb') as file:
-        results = pickle.load(file)
-    print('model loaded from ' + _path)
+    # --- adjustments ---
     
-    # adjustments
-    # results.keys()
-    # print(f'reference value {results["ref_value"]:8.4f}')
-    # results['ref_value'] = ref_value
-    # del results['f_label']
-    # del results['cost']
-    # results['cost_label'] = module.cost_label
-    # ...
-    # ---
+    labels = ['results_cross_product_empirical_positive',
+              'results_cross_product_empirical_independent' ]
     
-    with open(_path, 'wb') as file:
-        pickle.dump(results, file)
-    print('model saved to ' + _path)
-
+    for label in labels:
+        file = label + '.pickle'
+        _path = _dir + file
+        with open(_path, 'rb') as file:
+            results = pickle.load(file)
+        print('model loaded from ' + _path)
+        
+        _values0 = results['value_series']
+        _std0 = results['std_series']
+        _penalty0 = results['penalty_series']
+        
+        # adjustments
+        # results.keys()
+        # print(f'reference value {results["ref_value"]:8.4f}')
+        # results['ref_value'] = None
+        # del results['primal_obj']
+        # del results['ref_value']
+        # results['cost_label'] = module.cost_label
+        # ...
+        # ---
+        
+        with open(_path, 'wb') as file:
+            pickle.dump(results, file)
+        print('model saved to ' + _path)
+    

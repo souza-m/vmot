@@ -115,19 +115,13 @@ def beta_L2_prime(x, gamma):
     
 
 # main function
-def train_loop(cost, primal_obj, mu_loader, th_loader,
+def train_loop(cost, mu_loader, th_loader,
                phi_x_list, phi_y_list, h_list, beta, gamma,
                optimizer = None, verbose = False):
     
-    # NOTE: primal_obj=min is unstable; use primal_obj=max with a negative of the cost function instead
-    
-    # f:      cost function (primal)
-    # h_list: list of potential functions (dual)
-    # beta:   penalization function
-    
-    # primal maximization => dual minimization => sign is positive
-    # primal minimization => dual maximization => sign is negative
-    sign = 1 if primal_obj == 'max' else -1
+    # f:        cost function to be maximized (primal)
+    # phi_list: list of potential functions as neural networks (dual)
+    # beta:     penalization function
     
     full_size = len(mu_loader.dataset)
     if verbose:
@@ -162,7 +156,7 @@ def train_loop(cost, primal_obj, mu_loader, th_loader,
         phi_y_th = sum(phi_y_values_th)         # array of values
         h_th     = sum(h_values_th)             # array of values
         dual_th = phi_x_th + phi_y_th + h_th    # array of values
-        deviation = sign * (cost_th - dual_th)  # array of values
+        deviation = (cost_th - dual_th)  # array of values
         penalty = torch.mean(beta(deviation, gamma))   # "integral"
         
         _value.append(value.item())
@@ -171,8 +165,8 @@ def train_loop(cost, primal_obj, mu_loader, th_loader,
         
         # backpropagation
         if not optimizer is None:
-            loss = (sign * value) + penalty
-            # loss = (sign * (value + value_h)) + penalty   # if intended to include h_mu
+            loss = value + penalty
+            # loss = (value + value_h) + penalty   # if intended to include h_mu
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
