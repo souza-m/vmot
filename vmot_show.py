@@ -5,7 +5,7 @@ Created on Mon May 24 17:35:25 2021
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 """
 
-import mmot_dual_nn as mmot
+import vmot_dual_nn as mmot
 import numpy as np
 import matplotlib.pyplot as pl
 
@@ -16,8 +16,9 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # choose
-# import mmot_uniform as module
-import mmot_normal_2d as module
+# import vmot_uniform as module
+# import vmot_normal_2d as module
+import vmot_empirical as module
 
 # module functions to be used:
 # module.cost
@@ -32,13 +33,16 @@ _dir = './model_dump/'
 
 # choose:
 # 2d normal
-labels = ['results_max_cross_product_y_normal_independent',
-          'results_max_cross_product_y_normal_positive',
-          'results_max_cross_product_y_normal_direct' ]
+# labels = ['results_max_cross_product_y_normal_independent',
+#           'results_max_cross_product_y_normal_positive',
+#           'results_max_cross_product_y_normal_direct' ]
 
 # uniform max
 # labels = ...
 
+# empirical
+labels = ['results_cross_product_empirical_positive',
+          'results_cross_product_empirical_independent']
 # uniform min
 # labels = ...
 
@@ -79,7 +83,6 @@ for label in labels:
     with open(_path, 'rb') as file:
         results = pickle.load(file)
         print('model loaded from ' + _path)
-    primal_obj     = results['primal_obj']
     distribution   = results['distribution']
     cost_label     = results['cost_label']
     coupling       = results['coupling']
@@ -89,18 +92,19 @@ for label in labels:
     value_series   = results['value_series']
     std_series     = results['std_series']
     penalty_series = results['penalty_series']
-    ref_value      = results['ref_value']
+    if 'ref_value' in results.keys():
+        ref_value      = results['ref_value']
     
-    print('primal objective:  ' + primal_obj)
     print('distribution:      ' + distribution)
     print('cost function:     ' + cost_label)
     print('coupling:          ' + coupling)
-    print(f'reference value:   {ref_value:8.4f}')
+    if 'ref_value' in results.keys():
+        print(f'reference value:   {ref_value:8.4f}')
     
     # new sample
     n_points = 100000
     clip_normal = 4
-    sample_mu_X, sample_mu_Y = module.sample(n_points, seed=1)
+    sample_mu_X, sample_mu_Y = module.sample(n_points)
     sample_th_X, sample_th_Y = module.sample(n_points, coupling=coupling)
     
     # plot samples
@@ -115,8 +119,7 @@ for label in labels:
     print()
     print('single call')
     print('-------------------------------------------------------')
-    value, std, penalty = mmot.train_loop(module.cost, module.primal_obj,
-                                          mu_loader, th_loader, 
+    value, std, penalty = mmot.train_loop(module.cost, mu_loader, th_loader, 
                                           phi_x_list, phi_y_list, h_list, mmot.beta_L2, module.gamma,
                                           optimizer = None, verbose = True)
 
@@ -124,26 +127,15 @@ for label in labels:
     print(f'standard deviation:  {std:7.4f}')
     print(f'penalty:             {penalty:7.4f}')
     
-    # _mu_X = torch.tensor(sample_mu_X).float()
-    # _mu_Y = torch.tensor(sample_mu_Y).float()
-    # _th_X = torch.tensor(sample_th_X).float()
-    # _th_Y = torch.tensor(sample_th_Y).float()
-    
-    # graph sample
-    # fix_x = False
-    # if fix_x:
-    #     # tentative pi_x
-    #     fix_x = sample_single_x(distribution=distribution)
-    #     _, _th = sample(n_points, distribution=distribution, theta_x_coupling=theta_x_coupling, theta_fix_x = fix_x, clip_normal = 3)
-    #     th = torch.tensor(np.array([_th[:,0], _th[:,1], _th[:,2], _th[:,3]]).T).float()
-
+    # convert to tensor
+    sample_size = len(sample_mu_X)
     _, __, _th_X, _th_Y = mmot.generate_tensors(sample_mu_X, sample_mu_Y, sample_th_X, sample_th_Y)
-    
-    sample_size = len(_th_X)
     th_X1 = _th_X[:, 0].view(sample_size, 1)
     th_X2 = _th_X[:, 1].view(sample_size, 1)
     th_Y1 = _th_Y[:, 0].view(sample_size, 1)
     th_Y2 = _th_Y[:, 1].view(sample_size, 1)
+    
+    # NOTE: code not adapted for d > 2
     
     # potential functions
     phi_x1 = phi_x_list[0]
@@ -154,12 +146,11 @@ for label in labels:
     h2     = h_list[1]
     
     # apply pi_hat logic to theta
-    sign = 1 if primal_obj == 'max' else -1
     f_th = module.cost(_th_X, _th_Y).view(sample_size, 1)
     phi_th = phi_x1(th_X1) + phi_x2(th_X2) + phi_y1(th_Y1) + phi_y2(th_Y2)
     h_th = h1(torch.cat([th_X1, th_X2]).view(sample_size, 2)) * (th_Y1 - th_X1) + \
            h2(torch.cat([th_X1, th_X2]).view(sample_size, 2)) * (th_Y2 - th_X2)
-    b_prime = mmot.beta_L2_prime(sign * (f_th - (phi_th + h_th)), gamma=module.gamma)
+    b_prime = mmot.beta_L2_prime(f_th - (phi_th + h_th), gamma=module.gamma)
     b_prime = b_prime.detach().numpy()[:,0]
     
     # draw points from theta and discard according to beta'(f - h)
