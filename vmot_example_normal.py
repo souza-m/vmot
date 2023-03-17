@@ -146,105 +146,138 @@ assert np.isclose(xy_set1, xy_set3).all()
 ws3 = vmot.generate_working_sample_q(q_set3, inv_cum_x, inv_cum_y, minus_cost_f, uniform_theta = True)
 
 
+# 4. grid on original domain
+
+xy_set4 = q_set_to_sample(q_set2)
+ws4 = vmot.generate_working_sample(xy_set4, minus_cost_f, uniform_theta = True)
+
+
 # vmot.plot_sample_2d(xy_set0, 'q_set sampling')
 # vmot.plot_sample_2d(xy_set1, 'q_set sampling')
 # vmot.plot_sample_2d(q_set2, 'q_set sampling')
 # vmot.plot_sample_2d(q_set3, 'q_set sampling')
+# vmot.plot_sample_2d(xy_set4, 'q_set sampling')
 
 
 
 # beta_multiplier = 10
-model0, D_evo0, s_evo0, H_evo0, P_evo0 = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
-model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
-model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
-model3, D_evo3, s_evo3, H_evo3, P_evo3 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+# model0, D_evo0, s_evo0, H_evo0, P_evo0 = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
+# model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
+# model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
+# model3, D_evo3, s_evo3, H_evo3, P_evo3 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+# model4, D_evo4, s_evo4, H_evo4, P_evo4 = vmot.mtg_train(ws4, opt_parameters, verbose = 100)
 
-D0, s0, H0, theta_star0 = vmot.mtg_dual_value(model0, ws0, opt_parameters)
-D1, s1, H1, theta_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
-D2, s2, H2, theta_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
-D3, s3, H3, theta_star3 = vmot.mtg_dual_value(model3, ws3, opt_parameters)
+# D0, s0, H0, theta_star0 = vmot.mtg_dual_value(model0, ws0, opt_parameters)
+# D1, s1, H1, theta_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
+# D2, s2, H2, theta_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
+# D3, s3, H3, theta_star3 = vmot.mtg_dual_value(model3, ws3, opt_parameters)
+# D4, s4, H4, theta_star4 = vmot.mtg_dual_value(model4, ws4, opt_parameters)
 
-# outputs
-print(f'target {ref_value:8.4f}    D0 {-D0:8.4f}    D1 {-D1:8.4f}    D2 {-D2:8.4f}    D3 {-D3:8.4f}')
+# # outputs
+# print(f'target {ref_value:8.4f}    D0 {-D0:8.4f}    D1 {-D1:8.4f}    D2 {-D2:8.4f}    D3 {-D3:8.4f}')
 
-theta_star0 = theta_star0 / theta_star0.sum()
-theta_star1 = theta_star1 / theta_star1.sum()
-theta_star2 = theta_star2 / theta_star2.sum()
-theta_star3 = theta_star3 / theta_star3.sum()
-theta_star0 = 0.5 * theta_star0 + 0.5 * np.ones(len(theta_star0)) / len(theta_star0)
-theta_star1 = 0.5 * theta_star1 + 0.5 * np.ones(len(theta_star1)) / len(theta_star1)
-theta_star2 = 0.5 * theta_star2 + 0.5 * np.ones(len(theta_star2)) / len(theta_star2)
-theta_star3 = 0.5 * theta_star3 + 0.5 * np.ones(len(theta_star3)) / len(theta_star3)
+# theta_star0 = theta_star0 / theta_star0.sum()
+# theta_star1 = theta_star1 / theta_star1.sum()
+# theta_star2 = theta_star2 / theta_star2.sum()
+# theta_star3 = theta_star3 / theta_star3.sum()
+# theta_star4 = theta_star4 / theta_star4.sum()
+# theta_star0 = 0.5 * theta_star0 + 0.5 * np.ones(len(theta_star0)) / len(theta_star0)
+# theta_star1 = 0.5 * theta_star1 + 0.5 * np.ones(len(theta_star1)) / len(theta_star1)
+# theta_star2 = 0.5 * theta_star2 + 0.5 * np.ones(len(theta_star2)) / len(theta_star2)
+# theta_star3 = 0.5 * theta_star3 + 0.5 * np.ones(len(theta_star3)) / len(theta_star3)
+# theta_star4 = 0.5 * theta_star4 + 0.5 * np.ones(len(theta_star4)) / len(theta_star4)
 
-# new round with same old weights for comparison
-_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws0, opt_parameters, model = model0, verbose = 100)
-_model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, verbose = 100)
-_model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, verbose = 100)
-_model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3 = vmot.mtg_train(ws3, opt_parameters, model = model3, verbose = 100)
+# # new round with same old weights for comparison
+# _model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws0, opt_parameters, model = model0, verbose = 100)
+# _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, verbose = 100)
+# _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, verbose = 100)
+# _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3 = vmot.mtg_train(ws3, opt_parameters, model = model3, verbose = 100)
+# _model4, _D_evo4, _s_evo4, _H_evo4, _P_evo4 = vmot.mtg_train(ws4, opt_parameters, model = model4, verbose = 100)
 
-# update weights
-_ws0 = vmot.update_theta(ws0, theta_star0)
-_ws1 = vmot.update_theta(ws1, theta_star1)
-_ws2 = vmot.update_theta(ws2, theta_star2)
-_ws3 = vmot.update_theta(ws3, theta_star3)
+# # update weights
+# _ws0 = vmot.update_theta(ws0, theta_star0)
+# _ws1 = vmot.update_theta(ws1, theta_star1)
+# _ws2 = vmot.update_theta(ws2, theta_star2)
+# _ws3 = vmot.update_theta(ws3, theta_star3)
+# _ws4 = vmot.update_theta(ws4, theta_star4)
 
-# new round with new weights
-__model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0 = vmot.mtg_train(_ws0, opt_parameters, model = model0, verbose = 100)
-__model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1 = vmot.mtg_train(_ws1, opt_parameters, model = model1, verbose = 100)
-__model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2 = vmot.mtg_train(_ws2, opt_parameters, model = model2, verbose = 100)
-__model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3 = vmot.mtg_train(_ws3, opt_parameters, model = model3, verbose = 100)
+# # new round with new weights
+# __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0 = vmot.mtg_train(_ws0, opt_parameters, model = model0, verbose = 100)
+# __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1 = vmot.mtg_train(_ws1, opt_parameters, model = model1, verbose = 100)
+# __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2 = vmot.mtg_train(_ws2, opt_parameters, model = model2, verbose = 100)
+# __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3 = vmot.mtg_train(_ws3, opt_parameters, model = model3, verbose = 100)
+# __model4, __D_evo4, __s_evo4, __H_evo4, __P_evo4 = vmot.mtg_train(_ws4, opt_parameters, model = model4, verbose = 100)
 
-_model0 = model0 + _model0
-_D_evo0 = D_evo0 + _D_evo0
-_s_evo0 = s_evo0 + _s_evo0
-_H_evo0 = H_evo0 + _H_evo0
-_P_evo0 = P_evo0 + _P_evo0
-_model1 = model1 + _model1
-_D_evo1 = D_evo1 + _D_evo1
-_s_evo1 = s_evo1 + _s_evo1
-_H_evo1 = H_evo1 + _H_evo1
-_P_evo1 = P_evo1 + _P_evo1
-_model2 = model2 + _model2
-_D_evo2 = D_evo2 + _D_evo2
-_s_evo2 = s_evo2 + _s_evo2
-_H_evo2 = H_evo2 + _H_evo2
-_P_evo2 = P_evo2 + _P_evo2
-_model3 = model3 + _model3
-_D_evo3 = D_evo3 + _D_evo3
-_s_evo3 = s_evo3 + _s_evo3
-_H_evo3 = H_evo3 + _H_evo3
-_P_evo3 = P_evo3 + _P_evo3
+# _model0 = model0 + _model0
+# _D_evo0 = D_evo0 + _D_evo0
+# _s_evo0 = s_evo0 + _s_evo0
+# _H_evo0 = H_evo0 + _H_evo0
+# _P_evo0 = P_evo0 + _P_evo0
+# _model1 = model1 + _model1
+# _D_evo1 = D_evo1 + _D_evo1
+# _s_evo1 = s_evo1 + _s_evo1
+# _H_evo1 = H_evo1 + _H_evo1
+# _P_evo1 = P_evo1 + _P_evo1
+# _model2 = model2 + _model2
+# _D_evo2 = D_evo2 + _D_evo2
+# _s_evo2 = s_evo2 + _s_evo2
+# _H_evo2 = H_evo2 + _H_evo2
+# _P_evo2 = P_evo2 + _P_evo2
+# _model3 = model3 + _model3
+# _D_evo3 = D_evo3 + _D_evo3
+# _s_evo3 = s_evo3 + _s_evo3
+# _H_evo3 = H_evo3 + _H_evo3
+# _P_evo3 = P_evo3 + _P_evo3
+# _model4 = model4 + _model4
+# _D_evo4 = D_evo4 + _D_evo4
+# _s_evo4 = s_evo4 + _s_evo4
+# _H_evo4 = H_evo4 + _H_evo4
+# _P_evo4 = P_evo4 + _P_evo4
 
-__model0 = model0 + __model0
-__D_evo0 = D_evo0 + __D_evo0
-__s_evo0 = s_evo0 + __s_evo0
-__H_evo0 = H_evo0 + __H_evo0
-__P_evo0 = P_evo0 + __P_evo0
-__model1 = model1 + __model1
-__D_evo1 = D_evo1 + __D_evo1
-__s_evo1 = s_evo1 + __s_evo1
-__H_evo1 = H_evo1 + __H_evo1
-__P_evo1 = P_evo1 + __P_evo1
-__model2 = model2 + __model2
-__D_evo2 = D_evo2 + __D_evo2
-__s_evo2 = s_evo2 + __s_evo2
-__H_evo2 = H_evo2 + __H_evo2
-__P_evo2 = P_evo2 + __P_evo2
-__model3 = model3 + __model3
-__D_evo3 = D_evo3 + __D_evo3
-__s_evo3 = s_evo3 + __s_evo3
-__H_evo3 = H_evo3 + __H_evo3
-__P_evo3 = P_evo3 + __P_evo3
+# __model0 = model0 + __model0
+# __D_evo0 = D_evo0 + __D_evo0
+# __s_evo0 = s_evo0 + __s_evo0
+# __H_evo0 = H_evo0 + __H_evo0
+# __P_evo0 = P_evo0 + __P_evo0
+# __model1 = model1 + __model1
+# __D_evo1 = D_evo1 + __D_evo1
+# __s_evo1 = s_evo1 + __s_evo1
+# __H_evo1 = H_evo1 + __H_evo1
+# __P_evo1 = P_evo1 + __P_evo1
+# __model2 = model2 + __model2
+# __D_evo2 = D_evo2 + __D_evo2
+# __s_evo2 = s_evo2 + __s_evo2
+# __H_evo2 = H_evo2 + __H_evo2
+# __P_evo2 = P_evo2 + __P_evo2
+# __model3 = model3 + __model3
+# __D_evo3 = D_evo3 + __D_evo3
+# __s_evo3 = s_evo3 + __s_evo3
+# __H_evo3 = H_evo3 + __H_evo3
+# __P_evo3 = P_evo3 + __P_evo3
+# __model4 = model4 + __model4
+# __D_evo4 = D_evo4 + __D_evo4
+# __s_evo4 = s_evo4 + __s_evo4
+# __H_evo4 = H_evo4 + __H_evo4
+# __P_evo4 = P_evo4 + __P_evo4
 
-results = [_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1, _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2, _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0, __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1, __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2, __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3]
+# results = [_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1, _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2, _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3, _model4, _D_evo4, _s_evo4, _H_evo4, _P_evo4, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0, __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1, __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2, __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3, __model4, __D_evo4, __s_evo4, __H_evo4, __P_evo4]
 
-# dump
+# # dump
+# _dir = './model_dump/'
+# _file = 'quantile_results.pickle'
+# _path = _dir + _file
+# with open(_path, 'wb') as file:
+#     pickle.dump(results, file)
+# print('model saved to ' + _path)
+
+# load
 _dir = './model_dump/'
 _file = 'quantile_results.pickle'
 _path = _dir + _file
-with open(_path, 'wb') as file:
-    pickle.dump(results, file)
-print('model saved to ' + _path)
+with open(_path, 'rb') as file:
+    results = pickle.load(file)
+print('model loaded from ' + _path)
+_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1, _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2, _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3, _model4, _D_evo4, _s_evo4, _H_evo4, _P_evo4, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0, __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1, __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2, __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3, __model4, __D_evo4, __s_evo4, __H_evo4, __P_evo4 = results
 
 # convergence plots
 prop_cycle = pl.rcParams['axes.prop_cycle']
@@ -252,29 +285,25 @@ colors = prop_cycle.by_key()['color']
 
 band_size = 1
 labels = ['marginal sampling (original)', 'full random (original)', 'grid (quantile)', 'full random (quantile)']
-D_evo_list = [D_evo0, D_evo1, D_evo2, D_evo3]
-H_evo_list = [H_evo0, H_evo1, H_evo2, H_evo3]
-s_evo_list = [s_evo0, s_evo1, s_evo2, s_evo3]
-_D_evo_list = [_D_evo0, _D_evo1, _D_evo2, _D_evo3]
-_H_evo_list = [_H_evo0, _H_evo1, _H_evo2, _H_evo3]
-_s_evo_list = [_s_evo0, _s_evo1, _s_evo2, _s_evo3]
-__D_evo_list = [__D_evo0, __D_evo1, __D_evo2, __D_evo3]
-__H_evo_list = [__H_evo0, __H_evo1, __H_evo2, __H_evo3]
-__s_evo_list = [__s_evo0, __s_evo1, __s_evo2, __s_evo3]
+_D_evo_list = [_D_evo0, _D_evo1, _D_evo2, _D_evo3, _D_evo4]
+_H_evo_list = [_H_evo0, _H_evo1, _H_evo2, _H_evo3, _H_evo4]
+_s_evo_list = [_s_evo0, _s_evo1, _s_evo2, _s_evo3, _s_evo4]
+__D_evo_list = [__D_evo0, __D_evo1, __D_evo2, __D_evo3, __D_evo4]
+__H_evo_list = [__H_evo0, __H_evo1, __H_evo2, __H_evo3, __H_evo4]
+__s_evo_list = [__s_evo0, __s_evo1, __s_evo2, __s_evo3, __s_evo4]
 
 # convergence comparison (D)
-pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-[pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list]
-[pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list)]
-pl.legend(labels)
-for D_evo, s_evo in zip(_D_evo_list, _s_evo_list):
-    pl.fill_between(range(len(D_evo)),
-                    -np.array(D_evo) + np.array(band_size * s_evo),
-                    -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
-pl.axhline(ref_value, linestyle=':', color='black')
+# pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
+# [pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list]
+# [pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list)]
+# pl.legend(labels)
+# for D_evo, s_evo in zip(_D_evo_list, _s_evo_list):
+#     pl.fill_between(range(len(D_evo)),
+#                     -np.array(D_evo) + np.array(band_size * s_evo),
+#                     -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
+# pl.axhline(ref_value, linestyle=':', color='black')
 
-
-# convergence comparison (D)
+# convergence comparison (D) (discard 0. marginal sampling)
 pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
 [pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list[1:]]
 [pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list[1:])]
@@ -284,18 +313,8 @@ for D_evo, s_evo in zip(_D_evo_list[1:], _s_evo_list[1:]):
                     -np.array(D_evo) + np.array(band_size * s_evo),
                     -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
 pl.axhline(ref_value, linestyle=':', color='black')
-pl.axvline(len(D_evo0)-1, color='grey')
+pl.axvline(len(_D_evo_list[0])-1, color='grey')
 
-
-# convergence comparison (D + H)
-pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-[pl.plot(np.array(D_evo) + np.array(H_evo)) for D_evo, H_evo in zip(D_evo_list, H_evo_list)]
-pl.legend(labels)
-for D_evo, H_evo, s_evo in zip(D_evo_list, H_evo_list, s_evo_list):
-    pl.fill_between(range(len(D_evo)),
-                    np.array(D_evo) + np.array(H_evo) + band_size * np.array(s_evo),
-                    np.array(D_evo) + np.array(H_evo) - band_size * np.array(s_evo), alpha = .3, facecolor = 'grey')
-pl.axhline(ref_value, linestyle=':', color='black')
 
 
 
@@ -307,6 +326,16 @@ pl.axhline(ref_value, linestyle=':', color='black')
 
 # tests
 
+
+# convergence comparison (D + H)
+# pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
+# [pl.plot(np.array(D_evo) + np.array(H_evo)) for D_evo, H_evo in zip(D_evo_list, H_evo_list)]
+# pl.legend(labels)
+# for D_evo, H_evo, s_evo in zip(D_evo_list, H_evo_list, s_evo_list):
+#     pl.fill_between(range(len(D_evo)),
+#                     np.array(D_evo) + np.array(H_evo) + band_size * np.array(s_evo),
+#                     np.array(D_evo) + np.array(H_evo) - band_size * np.array(s_evo), alpha = .3, facecolor = 'grey')
+# pl.axhline(ref_value, linestyle=':', color='black')
 # model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws0, opt_parameters, model = model0, verbose = 100)
 # model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, verbose = 100)
 # model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, verbose = 100)
