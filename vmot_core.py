@@ -184,13 +184,13 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     phi_list, psi_list, h_list = model
     
     working_sample = torch.tensor(working_sample).float()
-    phi, psi, h, L, c, theta = mtg_parse(working_sample, phi_list, psi_list, h_list)
-    D = (phi + psi).sum(axis=1).item()   # sum over dimensions
-    H = (h * L).sum(axis=1).item()       # sum over dimensions
-    deviation = D + H - c.item()
-    pi_star = (theta * beta_prime(deviation, gamma))
+    phi, psi, h, L, c, theta = mtg_parse(model, working_sample)
+    D = (phi + psi).sum(axis=1)   # sum over dimensions
+    H = (h * L).sum(axis=1)       # sum over dimensions
+    deviation = D + H - c
+    theta_star = (theta * beta_prime(deviation, gamma))
     
-    return D.mean(), D.std(), H.mean(), pi_star
+    return D.mean().item(), D.std().item(), H.mean().item(), theta_star.detach().numpy()
 
 # working sample format:
 # -- X -- | -- Y -- | -- L -- | c | th |
@@ -232,7 +232,7 @@ def generate_working_sample_q(q_set, inv_cum_x, inv_cum_y, cost_f,
         else:
             print('a theta probability must be specified')
             return None
-    working_sample = np.hstack([q_set, l, c.reshape(len(size), 1), theta.reshape(len(theta), 1)])
+    working_sample = np.hstack([q_set, l, c.reshape(size, 1), theta.reshape(size, 1)])
     return working_sample
 
 # utils - generate sample set from marginal samples
@@ -266,6 +266,10 @@ def grid_to_q_set(n, d, monotone_x = False):
         n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
     q_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
     return q_set
+
+def update_theta(working_sample, theta_star):
+    working_sample[:, -1] = theta_star
+    return working_sample
 
 # utils - 2d plot
 def plot_sample_2d(sample, label='sample'):

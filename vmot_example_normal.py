@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from scipy.stats import norm
 import scipy.stats as stats
+import pickle
 
 import vmot_core as vmot
 
@@ -25,6 +26,9 @@ B = 1
 def cost_f(x, y):
     # cost = A.x1.x2 + B.y1.y2
     return A * x[:,0] * x[:,1] + B * y[:,0] * y[:,1]
+
+def minus_cost_f(x, y):
+    return -cost_f(x, y)
 
 # reference value (Prop. 3.7)
 sig1 = x_normal_scale[0]
@@ -43,7 +47,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 10,
                    'gamma'           : 1000,
                    'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 2,
+                   'macro_epochs'    : 3,
                    'micro_epochs'    : 10      }
 
 
@@ -71,8 +75,7 @@ np.random.seed(0)
 xi_list = [generate_xi(n, i) for i in range(d)]
 yi_list = [generate_yi(n, i) for i in range(d)]
 xy_set0 = vmot.xi_yi_to_xy_set(xi_list, yi_list, monotone_x = False)
-ws0 = vmot.generate_working_sample(xy_set0, cost_f, uniform_theta = True)
-
+ws0 = vmot.generate_working_sample(xy_set0, minus_cost_f, uniform_theta = True)
 
 # 1. full sampling example
 
@@ -88,7 +91,7 @@ def generate_xy_set(n_points, clip_normal = None):
 
 np.random.seed(0)
 xy_set1 = generate_xy_set(n_points = full_size)
-ws1 = vmot.generate_working_sample(xy_set1, cost_f, uniform_theta = True)
+ws1 = vmot.generate_working_sample(xy_set1, minus_cost_f, uniform_theta = True)
 
 
 # 2. quantile grid example
@@ -106,7 +109,7 @@ def cum_y(q, i):
     return norm.cdf(q / y_normal_scale[i])
 
 q_set2 = vmot.grid_to_q_set(n, d, monotone_x = False)
-ws2 = vmot.generate_working_sample_q(q_set2, inv_cum_x, inv_cum_y, cost_f, uniform_theta = True)
+ws2 = vmot.generate_working_sample_q(q_set2, inv_cum_x, inv_cum_y, minus_cost_f, uniform_theta = True)
 
 
 # 3. quantile set example
@@ -140,13 +143,13 @@ q_set3 = xy_set_to_q_set(xy_set1)    # same sample as in number 1
 xy_set3 = q_set_to_sample(q_set3)   # consistency check
 assert np.isclose(xy_set1, xy_set3).all()
 
-ws3 = vmot.generate_working_sample_q(q_set3, inv_cum_x, inv_cum_y, cost_f, uniform_theta = True)
+ws3 = vmot.generate_working_sample_q(q_set3, inv_cum_x, inv_cum_y, minus_cost_f, uniform_theta = True)
 
 
-vmot.plot_sample_2d(xy_set0, 'q_set sampling')
-vmot.plot_sample_2d(xy_set1, 'q_set sampling')
-vmot.plot_sample_2d(q_set2, 'q_set sampling')
-vmot.plot_sample_2d(q_set3, 'q_set sampling')
+# vmot.plot_sample_2d(xy_set0, 'q_set sampling')
+# vmot.plot_sample_2d(xy_set1, 'q_set sampling')
+# vmot.plot_sample_2d(q_set2, 'q_set sampling')
+# vmot.plot_sample_2d(q_set3, 'q_set sampling')
 
 
 
@@ -156,60 +159,133 @@ model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1, opt_parameters, ver
 model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
 model3, D_evo3, s_evo3, H_evo3, P_evo3 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
 
+D0, s0, H0, theta_star0 = vmot.mtg_dual_value(model0, ws0, opt_parameters)
+D1, s1, H1, theta_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
+D2, s2, H2, theta_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
+D3, s3, H3, theta_star3 = vmot.mtg_dual_value(model3, ws3, opt_parameters)
 
-opt_parameters = { 'penalization'    : 'L2',
-                   'beta_multiplier' : 100,
-                   'gamma'           : 1000,
-                   'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 2,
-                   'micro_epochs'    : 10      }
+# outputs
+print(f'target {ref_value:8.4f}    D0 {-D0:8.4f}    D1 {-D1:8.4f}    D2 {-D2:8.4f}    D3 {-D3:8.4f}')
 
-# beta_multiplier = 100
-model0_100, D_evo0_100, s_evo0_100, H_evo0_100, P_evo0_100 = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
-model1_100, D_evo1_100, s_evo1_100, H_evo1_100, P_evo1_100 = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
-model2_100, D_evo2_100, s_evo2_100, H_evo2_100, P_evo2_100 = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
-model3_100, D_evo3_100, s_evo3_100, H_evo3_100, P_evo3_100 = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+theta_star0 = theta_star0 / theta_star0.sum()
+theta_star1 = theta_star1 / theta_star1.sum()
+theta_star2 = theta_star2 / theta_star2.sum()
+theta_star3 = theta_star3 / theta_star3.sum()
+theta_star0 = 0.5 * theta_star0 + 0.5 * np.ones(len(theta_star0)) / len(theta_star0)
+theta_star1 = 0.5 * theta_star1 + 0.5 * np.ones(len(theta_star1)) / len(theta_star1)
+theta_star2 = 0.5 * theta_star2 + 0.5 * np.ones(len(theta_star2)) / len(theta_star2)
+theta_star3 = 0.5 * theta_star3 + 0.5 * np.ones(len(theta_star3)) / len(theta_star3)
 
-opt_parameters = { 'penalization'    : 'L2',
-                   'beta_multiplier' : .001,
-                   'gamma'           : 10000,
-                   'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 2,
-                   'micro_epochs'    : 10      }
+# new round with same old weights for comparison
+_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws0, opt_parameters, model = model0, verbose = 100)
+_model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, verbose = 100)
+_model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, verbose = 100)
+_model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3 = vmot.mtg_train(ws3, opt_parameters, model = model3, verbose = 100)
 
-# beta_multiplier = .01
-model0_001g10k, D_evo0_001g10k, s_evo0_001g10k, H_evo0_001g10k, P_evo0_001g10k = vmot.mtg_train(ws0, opt_parameters, verbose = 100)
-model1_001g10k, D_evo1_001g10k, s_evo1_001g10k, H_evo1_001g10k, P_evo1_001g10k = vmot.mtg_train(ws1, opt_parameters, verbose = 100)
-model2_001g10k, D_evo2_001g10k, s_evo2_001g10k, H_evo2_001g10k, P_evo2_001g10k = vmot.mtg_train(ws2, opt_parameters, verbose = 100)
-model3_001g10k, D_evo3_001g10k, s_evo3_001g10k, H_evo3_001g10k, P_evo3_001g10k = vmot.mtg_train(ws3, opt_parameters, verbose = 100)
+# update weights
+_ws0 = vmot.update_theta(ws0, theta_star0)
+_ws1 = vmot.update_theta(ws1, theta_star1)
+_ws2 = vmot.update_theta(ws2, theta_star2)
+_ws3 = vmot.update_theta(ws3, theta_star3)
 
+# new round with new weights
+__model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0 = vmot.mtg_train(_ws0, opt_parameters, model = model0, verbose = 100)
+__model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1 = vmot.mtg_train(_ws1, opt_parameters, model = model1, verbose = 100)
+__model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2 = vmot.mtg_train(_ws2, opt_parameters, model = model2, verbose = 100)
+__model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3 = vmot.mtg_train(_ws3, opt_parameters, model = model3, verbose = 100)
+
+_model0 = model0 + _model0
+_D_evo0 = D_evo0 + _D_evo0
+_s_evo0 = s_evo0 + _s_evo0
+_H_evo0 = H_evo0 + _H_evo0
+_P_evo0 = P_evo0 + _P_evo0
+_model1 = model1 + _model1
+_D_evo1 = D_evo1 + _D_evo1
+_s_evo1 = s_evo1 + _s_evo1
+_H_evo1 = H_evo1 + _H_evo1
+_P_evo1 = P_evo1 + _P_evo1
+_model2 = model2 + _model2
+_D_evo2 = D_evo2 + _D_evo2
+_s_evo2 = s_evo2 + _s_evo2
+_H_evo2 = H_evo2 + _H_evo2
+_P_evo2 = P_evo2 + _P_evo2
+_model3 = model3 + _model3
+_D_evo3 = D_evo3 + _D_evo3
+_s_evo3 = s_evo3 + _s_evo3
+_H_evo3 = H_evo3 + _H_evo3
+_P_evo3 = P_evo3 + _P_evo3
+
+__model0 = model0 + __model0
+__D_evo0 = D_evo0 + __D_evo0
+__s_evo0 = s_evo0 + __s_evo0
+__H_evo0 = H_evo0 + __H_evo0
+__P_evo0 = P_evo0 + __P_evo0
+__model1 = model1 + __model1
+__D_evo1 = D_evo1 + __D_evo1
+__s_evo1 = s_evo1 + __s_evo1
+__H_evo1 = H_evo1 + __H_evo1
+__P_evo1 = P_evo1 + __P_evo1
+__model2 = model2 + __model2
+__D_evo2 = D_evo2 + __D_evo2
+__s_evo2 = s_evo2 + __s_evo2
+__H_evo2 = H_evo2 + __H_evo2
+__P_evo2 = P_evo2 + __P_evo2
+__model3 = model3 + __model3
+__D_evo3 = D_evo3 + __D_evo3
+__s_evo3 = s_evo3 + __s_evo3
+__H_evo3 = H_evo3 + __H_evo3
+__P_evo3 = P_evo3 + __P_evo3
+
+results = [_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1, _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2, _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0, __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1, __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2, __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3]
+
+# dump
+_dir = './model_dump/'
+_file = 'quantile_results.pickle'
+_path = _dir + _file
+with open(_path, 'wb') as file:
+    pickle.dump(results, file)
+print('model saved to ' + _path)
 
 # convergence plots
+prop_cycle = pl.rcParams['axes.prop_cycle']
+colors = prop_cycle.by_key()['color']
+
 band_size = 1
-labels = ['sample marginals', 'sample set', 'quantile grid', 'quantile set']
+labels = ['marginal sampling (original)', 'full random (original)', 'grid (quantile)', 'full random (quantile)']
 D_evo_list = [D_evo0, D_evo1, D_evo2, D_evo3]
 H_evo_list = [H_evo0, H_evo1, H_evo2, H_evo3]
 s_evo_list = [s_evo0, s_evo1, s_evo2, s_evo3]
-D_evo_list = [D_evo0_pt01, D_evo1_pt01, D_evo2_pt01, D_evo3_pt01]
-H_evo_list = [H_evo0_pt01, H_evo1_pt01, H_evo2_pt01, H_evo3_pt01]
-s_evo_list = [s_evo0_pt01, s_evo1_pt01, s_evo2_pt01, s_evo3_pt01]
-labels = ['sample set', 'quantile grid', 'quantile set']
-D_evo_list = [D_evo1_pt01, D_evo2_pt01, D_evo3_pt01]
-H_evo_list = [H_evo1_pt01, H_evo2_pt01, H_evo3_pt01]
-s_evo_list = [s_evo1_pt01, s_evo2_pt01, s_evo3_pt01]
-# D_evo_list = [D_evo1, D_evo2, D_evo3]
-# H_evo_list = [H_evo1, H_evo2, H_evo3]
-# s_evo_list = [s_evo1, s_evo2, s_evo3]
+_D_evo_list = [_D_evo0, _D_evo1, _D_evo2, _D_evo3]
+_H_evo_list = [_H_evo0, _H_evo1, _H_evo2, _H_evo3]
+_s_evo_list = [_s_evo0, _s_evo1, _s_evo2, _s_evo3]
+__D_evo_list = [__D_evo0, __D_evo1, __D_evo2, __D_evo3]
+__H_evo_list = [__H_evo0, __H_evo1, __H_evo2, __H_evo3]
+__s_evo_list = [__s_evo0, __s_evo1, __s_evo2, __s_evo3]
 
 # convergence comparison (D)
 pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-[pl.plot(D_evo) for D_evo in D_evo_list]
+[pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list]
+[pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list)]
 pl.legend(labels)
-for D_evo, s_evo in zip(D_evo_list, s_evo_list):
+for D_evo, s_evo in zip(_D_evo_list, _s_evo_list):
     pl.fill_between(range(len(D_evo)),
-                    np.array(D_evo) + np.array(band_size * s_evo),
-                    np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
+                    -np.array(D_evo) + np.array(band_size * s_evo),
+                    -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
 pl.axhline(ref_value, linestyle=':', color='black')
+
+
+# convergence comparison (D)
+pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
+[pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list[1:]]
+[pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list[1:])]
+pl.legend(labels[1:])
+for D_evo, s_evo in zip(_D_evo_list[1:], _s_evo_list[1:]):
+    pl.fill_between(range(len(D_evo)),
+                    -np.array(D_evo) + np.array(band_size * s_evo),
+                    -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
+pl.axhline(ref_value, linestyle=':', color='black')
+pl.axvline(len(D_evo0)-1, color='grey')
+
 
 # convergence comparison (D + H)
 pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
@@ -222,7 +298,48 @@ for D_evo, H_evo, s_evo in zip(D_evo_list, H_evo_list, s_evo_list):
 pl.axhline(ref_value, linestyle=':', color='black')
 
 
+
+
+
+
+
+
+
 # tests
+
+# model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws0, opt_parameters, model = model0, verbose = 100)
+# model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, verbose = 100)
+# model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, verbose = 100)
+# model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3 = vmot.mtg_train(ws3, opt_parameters, model = model3, verbose = 100)
+
+# D_evo0 = D_evo0 + _D_evo0
+# s_evo0 = s_evo0 + _s_evo0
+# H_evo0 = H_evo0 + _H_evo0
+# P_evo0 = P_evo0 + _P_evo0
+
+# D_evo1 = D_evo1 + _D_evo1
+# s_evo1 = s_evo1 + _s_evo1
+# H_evo1 = H_evo1 + _H_evo1
+# P_evo1 = P_evo1 + _P_evo1
+
+# D_evo2 = D_evo2 + _D_evo2
+# s_evo2 = s_evo2 + _s_evo2
+# H_evo2 = H_evo2 + _H_evo2
+# P_evo2 = P_evo2 + _P_evo2
+
+# D_evo3 = D_evo3 + _D_evo3
+# s_evo3 = s_evo3 + _s_evo3
+# H_evo3 = H_evo3 + _H_evo3
+# P_evo3 = P_evo3 + _P_evo3
+
+# opt_parameters['macro_epochs'] = 1
+
+
+
+opt_parameters['beta_multiplier'] = 10
+opt_parameters['beta_multiplier'] = 100
+opt_parameters['beta_multiplier'] = 1/10
+opt_parameters['beta_multiplier'] = 1/100
 
 # beta_multiplier = 1
 D_evo_list_a = D_evo_list.copy()
