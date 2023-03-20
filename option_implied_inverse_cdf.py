@@ -1,10 +1,11 @@
 import csv
 import numpy as np
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pl
 
 # open the CSV file for reading
-with open('AMZN_call_price.csv', newline='') as csvfile:
+_dir = './data/'
+with open(_dir + 'AMZN_call_price.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip the header row
 
@@ -13,7 +14,7 @@ with open('AMZN_call_price.csv', newline='') as csvfile:
     AMZNstrikes = data[:, 0]
     AMZNcallPrices = data[:, 1:4]
 
-with open('AMZN_put_price.csv', newline='') as csvfile:
+with open(_dir + 'AMZN_put_price.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip the header row
 
@@ -25,7 +26,7 @@ with open('AMZN_put_price.csv', newline='') as csvfile:
 AMZNSpot = 95
 AMZNStep = 5
 
-with open('AAPL_call_price.csv', newline='') as csvfile:
+with open(_dir + 'AAPL_call_price.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip the header row
 
@@ -34,7 +35,7 @@ with open('AAPL_call_price.csv', newline='') as csvfile:
     AAPLstrikes = data[:, 0]
     AAPLcallPrices = data[:, 1:3]
 
-with open('AAPL_put_price.csv', newline='') as csvfile:
+with open(_dir + 'AAPL_put_price.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip the header row
 
@@ -143,7 +144,7 @@ random_numbers = np.random.rand(100)
 AMZN_sample = AMZN_inv_cdf(random_numbers)
 AAPL_sample = AAPL_inv_cdf(random_numbers)
 
-fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
+fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
 
 # Plot the density function
 AMZN_sorted_indices = np.argsort(AMZN_sample)
@@ -155,5 +156,4 @@ AAPL_sorted_indices = np.argsort(AAPL_sample)
 ax2.plot(AAPL_sample[AAPL_sorted_indices])
 ax2.set_title('AAPL sample')
 
-plt.tight_layout()
-plt.show()
+pl.show()
