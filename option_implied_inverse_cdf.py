@@ -23,9 +23,6 @@ with open(_dir + 'AMZN_put_price.csv', newline='') as csvfile:
     AMZNstrikes = data[:, 0]
     AMZNputPrices = data[:, 1:4]
 
-AMZNSpot = 95
-AMZNStep = 5
-
 with open(_dir + 'AAPL_call_price.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip the header row
@@ -43,9 +40,6 @@ with open(_dir + 'AAPL_put_price.csv', newline='') as csvfile:
     data = np.array(list(reader), dtype=float)
     AAPLstrikes = data[:, 0]
     AAPLputPrices = data[:, 1:3]
-
-AAPLSpot = 151.07
-AAPLStep = 5
 
 def second_derivative(price, strike):
     firstD = np.diff(price, axis=0) / np.diff(strike).reshape(-1,1)
@@ -95,7 +89,11 @@ def pdf_approx(spotPrice, stepSize, callPrice, putPrice, strike):
         combineDensity[mid-start:end-start, i] = call_col[mid:end]
         combineStrike[:end-start, i] = newstrikeC[start:end]
     
+    # normalize density integral (sum * step) to 1
+    # ...
+    
     return combineStrike, combineDensity, strikeLength
+
 
 def create_inv_cdf(density, position):
     # compute step size
@@ -131,10 +129,27 @@ def create_inv_cdf(density, position):
     # return desired inverse CDF value
     return inv_cdf
 
+AMZNSpot = 95.0
+AMZNStep = 5.0   # mkt practice
+
+AAPLSpot = 151.07
+AAPLStep = 5.0   # mkt practice
+
 AMZNcombineStrike, AMZNcombineDensity, AMZNstrikeLength = pdf_approx(AMZNSpot, AMZNStep, AMZNcallPrices, AMZNputPrices, AMZNstrikes)
 AAPLcombineStrike, AAPLcombineDensity, AAPLstrikeLength = pdf_approx(AAPLSpot, AAPLStep, AAPLcallPrices, AAPLputPrices, AAPLstrikes)
 AMZNstrikeLength = AMZNstrikeLength.astype(int)
 AAPLstrikeLength = AAPLstrikeLength.astype(int)
+
+# check sum to 1
+AMZNcombineDensity.sum(axis=0)
+AAPLcombineDensity.sum(axis=0)
+
+# show pdf
+fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
+[ax1.plot(AMZNcombineStrike[:,i], AMZNcombineDensity[:,i]) for i in range(AMZNcombineStrike.shape[1])]
+[ax2.plot(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0], AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0]) for i in range(AAPLcombineStrike.shape[1])]
+pl.show()
+
 
 # these are the inverse cdf functions
 AMZN_inv_cdf = create_inv_cdf(AMZNcombineDensity[:AMZNstrikeLength[1],1], AMZNcombineStrike[:AMZNstrikeLength[1],1])

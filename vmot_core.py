@@ -254,7 +254,27 @@ def xi_yi_to_xy_set(xi_list, yi_list, monotone_x = False):
         marginals_list = xi_list + yi_list
         xy_set = np.array(list(itertools.product(*marginals_list)))
         return xy_set
-        
+
+# utils - generate probability from marginal probabilities
+def marginal_w_to_w(xi_w_list, yi_w_list, monotone_x = False):
+    if monotone_x:
+        print('not implemented')
+        return None
+        # order xi's, shuffle together and separate again
+        # xi_sample_list = [np.sort(xi) for xi in xi_sample_list]
+        # x_set = np.vstack(xi_sample_list).T
+        # np.random.shuffle(x_sample)
+        # # xi_sample_list = [x_sample[:,i] for i in range(x_sample.shape[1])]
+        # # couple each instance of x as a block with all possible combinations of yi's
+        # # y_combination = np.array(list(itertools.product(*yi_sample_list)))
+        # marginals_list = list(x_sample) + yi_sample_list
+        # xy_set = np.array(list(itertools.product(*marginals_list)))
+    else:
+        # all combinations of x cross y
+        marginals_list = xi_w_list + yi_w_list
+        w = np.array(list(itertools.product(*marginals_list)))
+        return w.prod(axis=1)
+      
 # utils - generate sample set from grid
 def grid_to_q_set(n, d, monotone_x = False):
     # all combinations of quantiles on x cross y
@@ -278,8 +298,8 @@ def plot_sample_2d(sample, label='sample'):
     pl.figure(figsize=figsize)
     pl.title(label)
     pl.axis('equal')
-    pl.xlabel('X Y 1')
+    pl.xlabel('X,Y 1')
     pl.ylabel('X,Y 2')
     pl.scatter(Y1, Y2, alpha=.05)
     pl.scatter(X1, X2, alpha=.05)
-    pl.legend(['X sample', 'Y sample'])
+    pl.legend(['Y sample', 'X sample'])
