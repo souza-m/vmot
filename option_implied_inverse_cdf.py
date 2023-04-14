@@ -112,14 +112,14 @@ def create_inv_cdf(density, position):
     num_cdf_points = 1000
     cdf_vals = np.linspace(position[0] -0.5 * step_size, position[0] + (num_points + 0.5) * step_size, num_cdf_points)
 
-    print(cdf_vals)
+    # print(cdf_vals)
 
     # compute CDF
     cdf = np.zeros(num_cdf_points)
     for i in range(num_cdf_points):
         cdf[i] = np.trapz(f(cdf_vals[cdf_vals <= cdf_vals[i]]), cdf_vals[cdf_vals <= cdf_vals[i]])
 
-    print(cdf)
+    # print(cdf)
 
     # compute inverse CDF
     inv_cdf = interp1d(cdf, cdf_vals)
@@ -146,9 +146,24 @@ AAPLcombineDensity.sum(axis=0)
 
 # show pdf
 fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
-[ax1.plot(AMZNcombineStrike[:,i], AMZNcombineDensity[:,i]) for i in range(AMZNcombineStrike.shape[1])]
-[ax2.plot(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0], AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0]) for i in range(AAPLcombineStrike.shape[1])]
+[ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(2)]
+[ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
 pl.show()
+
+fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
+[ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(AMZNcombineStrike.shape[1])]
+[ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
+pl.show()
+
+# # check
+# x1.shape
+# x2.shape
+# y1.shape
+# y2.shape
+# x1_pdf.shape
+# x2_pdf.shape
+# y1_pdf.shape
+# y2_pdf.shape
 
 
 # these are the inverse cdf functions

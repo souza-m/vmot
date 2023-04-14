@@ -8,7 +8,6 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 
 import numpy as np
 import matplotlib.pyplot as pl
-from scipy.stats import norm
 import pickle
 
 import vmot_core as vmot
@@ -38,9 +37,8 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 10,
                    'gamma'           : 1000,
                    'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 10,
-                   'micro_epochs'    : 10      }
-
+                   'macro_epochs'    : 20,
+                   'micro_epochs'    : 20      }
 
 # define marginal strike samples from empirical implied pdf
 x1 = empirical.AMZNcombineStrike[:,0]
@@ -68,10 +66,69 @@ x2_pdf = x2_pdf / x2_pdf.sum()
 y1_pdf = y1_pdf / y1_pdf.sum()
 y2_pdf = y2_pdf / y2_pdf.sum()
 
-xy_set0 = vmot.xi_yi_to_xy_set([x1, x2], [y1, y2], monotone_x = False)
-theta = vmot.marginal_w_to_w([x1_pdf, x2_pdf], [y1_pdf, y2_pdf], monotone_x = False)
-ws0 = vmot.generate_working_sample(xy_set0, minus_cost_f, theta = theta)
-ws0.shape
+# xy_set0 = vmot.xi_yi_to_xy_set([x1, x2], [y1, y2], monotone_x = False)
+# theta = vmot.marginal_w_to_w([x1_pdf, x2_pdf], [y1_pdf, y2_pdf], monotone_x = False)
+# ws0 = vmot.generate_working_sample(xy_set0, minus_cost_f, theta = theta)
+# ws0.shape
+
+
+if __name__ == '__main__':
+    
+    # tests - monotone coupling and discrete prob plot
+    # xi=[x1[:4],x2[:4]]
+    # yi=[y1[:4],y2[4:8]]
+    # np.array(xi)
+    # np.array(yi)
+    # wxi=[np.array([0.2,  0.3,  0.4,  0.1]),
+    #      np.array([0.15, 0.3,  0.35, 0.2])]
+    # wyi=[np.array([0.3,  0.2,  0.3,  0.2]),
+    #      np.array([0.05, 0.35, 0.3,  0.3])]
+    
+    # ?
+    # theta = vmot.marginal_w_to_w([x1_pdf, x2_pdf], [y1_pdf, y2_pdf], monotone_x = False)
+    # ws0 = vmot.generate_working_sample(xy_set_m0, minus_cost_f, theta = theta)
+    
+    # xy_set = vmot.combine_marginals(xi, yi)
+    # xy_set_mon = vmot.combine_marginals_monotone(xi, yi)
+    # xy_set_m, wm = vmot.combine_marginals_monotone_weighted(xi, yi, wxi, wyi)
+    # ws = vmot.generate_working_sample(xy_set_m, minus_cost_f,theta = wm)
+    
+    # vmot.plot_discrete_prob_2d(ws)
+    
+    
+    # test monotone with full set
+    # xy_set_m0, wm0 = vmot.combine_marginals_monotone_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
+    # ws0 = vmot.generate_working_sample(xy_set_m0, minus_cost_f,theta = wm0)
+    # vmot.plot_discrete_prob_2d(xy_set_m0[:, 0], xy_set_m0[:, 1], wm0)
+    
+    # a = vmot.combine_marginals([x1, x2], [y1, y2])
+    # b = vmot.combine_marginals_monotone([x1[:12], x2[:12]], [y1[:12], y2[:12]])
+    
+    # weighted combinations, independent vs monotone
+    xy_set_ind, w_ind = vmot.combine_marginals_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
+    ws_ind = vmot.generate_working_sample(xy_set_ind, minus_cost_f,theta = w_ind)
+    vmot.plot_discrete_prob_2d(xy_set_ind[:, 0], xy_set_ind[:, 1], w_ind)
+    
+    xy_set_mon, w_mon = vmot.combine_marginals_monotone_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
+    ws_mon = vmot.generate_working_sample(xy_set_mon, minus_cost_f,theta = w_mon)
+    vmot.plot_discrete_prob_2d(xy_set_mon[:, 0], xy_set_mon[:, 1], w_mon)
+    
+    # fair convergence comparison - monotone has more epochs to compensate for smaller size
+    opt_parameters_mon = opt_parameters.copy()
+    opt_parameters_mon['micro_epochs'] = int(opt_parameters['micro_epochs'] * len(ws_ind) / len(ws_mon))
+    
+    # train and approximate dual
+    _model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0 = vmot.mtg_train(ws_ind, opt_parameters, verbose = 100)
+    _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1 = vmot.mtg_train(ws_mon, opt_parameters_mon, verbose = 100)
+
+    
+    
+w_ind.sum()
+w_mon.sum()
+
+
+
+
 
 # vmot.plot_sample_2d(xy_set0, 'strike sampling')
 
@@ -102,7 +159,7 @@ _path = _dir + _file
 with open(_path, 'wb') as file:
     pickle.dump(results, file)
 print('model saved to ' + _path)
-
+'''
 # load
 _dir = './model_dump/'
 _file = 'quantile_results.pickle'
@@ -110,14 +167,15 @@ _path = _dir + _file
 with open(_path, 'rb') as file:
     results = pickle.load(file)
 print('model loaded from ' + _path)
-_model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, _model1, _D_evo1, _s_evo1, _H_evo1, _P_evo1, _model2, _D_evo2, _s_evo2, _H_evo2, _P_evo2, _model3, _D_evo3, _s_evo3, _H_evo3, _P_evo3, _model4, _D_evo4, _s_evo4, _H_evo4, _P_evo4, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0, __model1, __D_evo1, __s_evo1, __H_evo1, __P_evo1, __model2, __D_evo2, __s_evo2, __H_evo2, __P_evo2, __model3, __D_evo3, __s_evo3, __H_evo3, __P_evo3, __model4, __D_evo4, __s_evo4, __H_evo4, __P_evo4 = results
+model0, D_evo0, s_evo0, H_evo0, P_evo0, _model0, _D_evo0, _s_evo0, _H_evo0, _P_evo0, __model0, __D_evo0, __s_evo0, __H_evo0, __P_evo0 = results
+'''
 
 # convergence plots
 prop_cycle = pl.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 band_size = 1
-labels = ['strike sampling (empirical)']
+labels = ['independent', 'monotone']
 _D_evo_list = [D_evo0 + _D_evo0]
 _H_evo_list = [H_evo0 + _H_evo0]
 _s_evo_list = [s_evo0 + _s_evo0]
@@ -125,20 +183,29 @@ __D_evo_list = [D_evo0 + __D_evo0]
 __H_evo_list = [H_evo0 + __H_evo0]
 __s_evo_list = [s_evo0 + __s_evo0]
 
+_D_evo_list = [_D_evo0, _D_evo1]
+_H_evo_list = [_H_evo0, _H_evo1]
+_s_evo_list = [_s_evo0, _s_evo1]
+
+
 # convergence comparison (D)
 pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-[pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list]
-[pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list)]
+# [pl.plot(-np.array(D_evo)) for D_evo in _D_evo_list]
+# [pl.plot(-np.array(D_evo), color=colors[i], linestyle=':') for i, D_evo in enumerate(__D_evo_list)]
+
 pl.legend(labels)
 for D_evo, s_evo in zip(_D_evo_list, _s_evo_list):
     pl.fill_between(range(len(D_evo)),
                     -np.array(D_evo) + np.array(band_size * s_evo),
                     -np.array(D_evo) - np.array(band_size * s_evo), alpha = .3, facecolor = 'grey')
 # pl.axhline(ref_value, linestyle=':', color='black')
-pl.axvline(len(_D_evo_list[0])-1, color='grey')
+# pl.axvline(len(D_evo0)-1, color='grey')
 
 
-
+pl.figure(figsize = [12,12])
+pl.plot(-np.array(_D_evo0))
+# pl.plot(-np.array(_D_evo0).repeat(int(len(_D_evo1)/len(_D_evo0))))
+pl.plot(-np.array(_D_evo1))
 
 
 
