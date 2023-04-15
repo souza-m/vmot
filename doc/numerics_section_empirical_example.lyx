@@ -1,0 +1,232 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\begin_modules
+theorems-std
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Paragraph*
+Empirical example.
+\end_layout
+
+\begin_layout Standard
+To test our method with real world data, we construct implicit marginal
+ distributions for the prices of Apple and Amazon stocks at times Jan 20th
+ and Feb 17th, 2023 based on call and put option prices as of Dec 16th,
+ 2022 [note: update dates and prices before the last version of the paper]
+ using the method described at [method used by Joshua].
+ We then solve the problem of an investor who wants to calculate upper and
+ lower bounds for the fair price of a contract that pays off the covariance
+ between the two stock prices on Feb 17th among all admissible joint distributio
+ns.
+ [Note: motivation with portfolio mean-variance optimization to be provided
+ in the section introduction.] As in [21], we analyze how the introduction
+ of the information about an intermediate date (Jan 20th) affects the bounds.
+ Formally, we define the payoff 
+\begin_inset Formula 
+\[
+f\left(X_{1},X_{2},Y_{1},Y_{2}\right)=Y_{1}Y_{2}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $X_{1},X_{2}$
+\end_inset
+
+ are random variables denoting the prices of Amazon and Apple on Jan 20th
+ and 
+\begin_inset Formula $Y_{1},Y_{2}$
+\end_inset
+
+ denote those prices on Feb 17th.
+ 
+\begin_inset Formula $\mu_{i}\left(\nu_{i}\right)$
+\end_inset
+
+ is the (market implied) distribution of 
+\begin_inset Formula $X_{i}\left(Y_{i}\right)$
+\end_inset
+
+, and 
+\begin_inset Formula $\mathcal{M}\left(\vec{\mu},\vec{\nu}\right)$
+\end_inset
+
+ is the set of possible martingale joint distributions.
+ We want to calculate 
+\begin_inset Formula 
+\begin{align*}
+p^{+} & =\max_{\pi\in\mathcal{M}\left(\vec{\mu},\vec{\nu}\right)}\mathbb{E}_{\pi}f\left(x\right)\\
+p^{-} & =\min_{\pi\in\mathcal{M}\left(\vec{\mu},\vec{\nu}\right)}\mathbb{E}_{\pi}f\left(x\right)
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We report the results of a few different approaches to the construction
+ of our numeric sample.
+ First notice that the structure of the implied marginal distributions is
+ based on probability levels for a finite set of strike prices, typically
+ multiples of $5 or $10 depending on the market practice.
+ The probability density function is then calculated as a linear interpolation
+ of those levels.
+ Our first sampling method (
+\begin_inset Quotes eld
+\end_inset
+
+random sampling
+\begin_inset Quotes erd
+\end_inset
+
+?) consists in sampling random points directly from a coupling of these
+ resulting PDF's.
+ A second method (
+\begin_inset Quotes eld
+\end_inset
+
+strike sampling
+\begin_inset Quotes erd
+\end_inset
+
+?) is to take the set of all the possible combinations of strikes, coupling
+ their associated probabilities in some sensible way.
+ With that, we avoid the necessity of interpolation, which can lead to loss
+ of information.
+ [Discuss.] After deciding on that, as before we decide between a fully independe
+nt coupling or a monotone coupling on 
+\begin_inset Formula $X$
+\end_inset
+
+.
+ The resulting samples are illustrated on the graph below, where the first
+ row presents the random sampling, the second row has the strike sampling;
+ 
+\begin_inset Formula $X$
+\end_inset
+
+ points are shown in the first column with independent coupling and in the
+ second coupling with monotone coupling, while the 
+\begin_inset Formula $Y$
+\end_inset
+
+ points are shown in the third column.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename U:/git-projects/vmot/graphs/random_x_independent.png
+	scale 13
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename U:/git-projects/vmot/graphs/random_x_monotone.png
+	scale 13
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename U:/git-projects/vmot/graphs/random_y.png
+	scale 13
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename U:/git-projects/vmot/graphs/strike_xy.png
+	scale 62
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

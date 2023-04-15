@@ -71,7 +71,26 @@ def sample(n = 0, coupling = 'independent'):   # read from file
     
 figsize = [12,12]
 def plot_sample(X, Y, label):
+    
     X1, X2, Y1, Y2 = X[:,0], X[:,1], Y[:,0], Y[:,1]
+    
+    pl.figure(figsize=figsize)
+    pl.title('Jan 20th')
+    pl.axis('equal')
+    pl.xlabel('AMZN')
+    pl.ylabel('AAPL')
+    pl.scatter(Y1, Y2, color='red', alpha=.05)
+    
+    pl.figure(figsize=figsize)
+    pl.title('Feb 17th')
+    pl.axis('equal')
+    pl.xlabel('AMZN')
+    pl.ylabel('AAPL')
+    pl.scatter(Y1, Y2, color='darkred', alpha=.05)
+    
+    
+    
+    
     pl.figure(figsize=figsize)
     pl.title(label)
     pl.axis('equal')

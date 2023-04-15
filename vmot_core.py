@@ -380,7 +380,7 @@ def plot_sample_2d(sample, label='sample'):
     
 # utils - plot discrete probability (separated by x and y)
 # note: proportions are not working properly, adjust manually before reporting
-def plot_discrete_prob_2d(x1, x2, w, label='total measure'):
+def plot_discrete_prob_2d(x1, x2, w, label='Probability', x1label = 'x1', x2label = 'X2'):
     # use pandas to reindex and group by
     WS = pd.DataFrame({'x1': x1, 'x2': x2, 'w': w})
     xw = WS[['x1', 'x2', 'w']].groupby(['x1', 'x2']).sum().reset_index()
@@ -415,13 +415,14 @@ def plot_discrete_prob_2d(x1, x2, w, label='total measure'):
     gs = fig.add_gridspec(2, 2, hspace=0, wspace=0)
     (ax1, ax2), (ax3, ax4) = gs.subplots(sharex='col', sharey='row')
     
-    ax2.set_title('X density')
+    ax2.set_title(label)
     # fig.delaxes(ax3)
     ax3.remove()
     
     # ax1.set_aspect('equal')
     ax1.pcolormesh(x1[:2], x2_grid, x2_cum.values.reshape([len(x2_cum), 1]), vmin=min_z, vmax=max_z, cmap=cmap)
     ax1.get_xaxis().set_visible(False)
+    ax1.set_ylabel(x2label)
     ax1.set_aspect('equal', anchor='SE')
     
     ax2.set_aspect('equal', anchor='SW')
@@ -432,6 +433,7 @@ def plot_discrete_prob_2d(x1, x2, w, label='total measure'):
     ax4.set_aspect('equal', anchor='NW')
     ax4.pcolormesh(x1_grid, x2[:2], x1_cum.values.reshape([1, len(x1_cum)]), vmin=min_z, vmax=max_z, cmap=cmap)
     ax4.get_yaxis().set_visible(False)
+    ax4.set_xlabel(x1label)
     
     for ax in fig.get_axes():
         ax.label_outer()

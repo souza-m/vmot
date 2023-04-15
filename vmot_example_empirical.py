@@ -107,7 +107,8 @@ if __name__ == '__main__':
     # weighted combinations, independent vs monotone
     xy_set_ind, w_ind = vmot.combine_marginals_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
     ws_ind = vmot.generate_working_sample(xy_set_ind, minus_cost_f,theta = w_ind)
-    vmot.plot_discrete_prob_2d(xy_set_ind[:, 0], xy_set_ind[:, 1], w_ind)
+    vmot.plot_discrete_prob_2d(xy_set_ind[:, 0], xy_set_ind[:, 1], w_ind, label = 'Jan 20th', x1label = 'AMZN', x2label = 'AAPL')
+    vmot.plot_discrete_prob_2d(xy_set_ind[:, 2], xy_set_ind[:, 3], w_ind, label = 'Feb 17th', x1label = 'AMZN', x2label = 'AAPL')
     
     xy_set_mon, w_mon = vmot.combine_marginals_monotone_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
     ws_mon = vmot.generate_working_sample(xy_set_mon, minus_cost_f,theta = w_mon)
