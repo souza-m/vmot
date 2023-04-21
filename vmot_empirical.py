@@ -79,14 +79,14 @@ def plot_sample(X, Y, label):
     pl.axis('equal')
     pl.xlabel('AMZN')
     pl.ylabel('AAPL')
-    pl.scatter(Y1, Y2, color='red', alpha=.05)
+    pl.scatter(X1, X2, color='darkred', alpha=.05)
     
     pl.figure(figsize=figsize)
     pl.title('Feb 17th')
     pl.axis('equal')
     pl.xlabel('AMZN')
     pl.ylabel('AAPL')
-    pl.scatter(Y1, Y2, color='darkred', alpha=.05)
+    pl.scatter(Y1, Y2, color='darkred', alpha=.02)
     
     
     
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     h_list     = nn.ModuleList([vmot.Phi(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
     
     # construct samples
-    sample_mu_X, sample_mu_Y = sample(coupling='independent')
+    sample_mu_X, sample_mu_Y = sample(coupling='positive')
     sample_th_X, sample_th_Y = sample(coupling=coupling)
     if False:
         plot_sample(sample_mu_X, sample_mu_Y, 'mu')

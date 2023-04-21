@@ -37,7 +37,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 10,
                    'gamma'           : 1000,
                    'batch_size'      : n ** d,   # no special formula for this, using sqrt of working sample size
-                   'macro_epochs'    : 20,
+                   'macro_epochs'    : 30,
                    'micro_epochs'    : 20      }
 
 # define marginal strike samples from empirical implied pdf
@@ -112,7 +112,8 @@ if __name__ == '__main__':
     
     xy_set_mon, w_mon = vmot.combine_marginals_monotone_weighted([x1, x2], [y1, y2], [x1_pdf, x2_pdf], [y1_pdf, y2_pdf])
     ws_mon = vmot.generate_working_sample(xy_set_mon, minus_cost_f,theta = w_mon)
-    vmot.plot_discrete_prob_2d(xy_set_mon[:, 0], xy_set_mon[:, 1], w_mon)
+    vmot.plot_discrete_prob_2d(xy_set_mon[:, 0], xy_set_mon[:, 1], w_mon, label = 'Jan 20th', x1label = 'AMZN', x2label = 'AAPL')
+    vmot.plot_discrete_prob_2d(xy_set_mon[:, 2], xy_set_mon[:, 3], w_mon, label = 'Feb 17th', x1label = 'AMZN', x2label = 'AAPL')
     
     # fair convergence comparison - monotone has more epochs to compensate for smaller size
     opt_parameters_mon = opt_parameters.copy()
@@ -205,8 +206,8 @@ for D_evo, s_evo in zip(_D_evo_list, _s_evo_list):
 
 pl.figure(figsize = [12,12])
 pl.plot(-np.array(_D_evo0))
-# pl.plot(-np.array(_D_evo0).repeat(int(len(_D_evo1)/len(_D_evo0))))
-pl.plot(-np.array(_D_evo1))
+# pl.plot(-np.array(_D_evo1))
+pl.plot(-np.array(_D_evo0).repeat(int(len(_D_evo1)/len(_D_evo0))))
 
 
 
