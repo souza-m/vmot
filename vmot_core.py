@@ -52,15 +52,22 @@ def mtg_parse(model, sample):
     d = int((num_cols - 2) / 3)
     phi_list, psi_list, h_list = model
     
-    # calculate using model
-    phi = torch.hstack([phi(sample[:,i].view(size, 1)) for i, phi in enumerate(phi_list)])
-    psi = torch.hstack([psi(sample[:,i+d].view(size, 1)) for i, psi in enumerate(psi_list)])
-    h   = torch.hstack([h(sample[:,:d]) for h in h_list])
+    # input lengths (depend on dimensionality)
+    nx = len(phi_list)
+    ny = len(psi_list)
+    # print(nx, ny)
     
     # extract from the working sample
-    L     = sample[:,2*d:3*d]
-    c     = sample[:,3*d]
-    theta = sample[:,3*d+1]
+    X     = sample[:, : nx]
+    Y     = sample[:, nx : nx + ny]
+    L     = sample[:, nx + ny : nx + ny + d]
+    c     = sample[:, nx + ny + d]
+    theta = sample[:, nx + ny + d + 1]
+    
+    # calculate using model
+    phi = torch.hstack([phi(X[:, i].view(size, 1)) for i, phi in enumerate(phi_list)])
+    psi = torch.hstack([psi(Y[:, j].view(size, 1)) for j, psi in enumerate(psi_list)])
+    h   = torch.hstack([h(X) for h in h_list])
     
     return phi, psi, h, L, c, theta
     
@@ -81,9 +88,10 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         
         # time series of dual value, mtg component and penalization
         phi, psi, h, L, c, theta = mtg_parse(model, sample)
-        D = (phi + psi).sum(axis=1)   # sum over dimensions
+        D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
         H = (h * L).sum(axis=1)       # sum over dimensions
-        deviation = D + H - c
+        # deviation = D + H - c
+        deviation = c - (D + H)   # ?!
         P = beta(deviation, gamma)
         
         _D = np.append(_D, D.detach().numpy())
@@ -111,11 +119,15 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         
     return _D.mean(), _D.std(), _H.mean(), _P.mean()
 
-def mtg_train(working_sample, opt_parameters, model = None, verbose = False):
+def mtg_train(working_sample, opt_parameters, model = None, monotone = False, verbose = False):
     
     # check inputs
     n, num_cols = working_sample.shape
-    d = int((num_cols - 2) / 3)
+    if monotone:
+        d = int((num_cols - 3) / 2)
+    else:
+        d = int((num_cols - 2) / 3)
+    # print('d', d)
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
@@ -136,10 +148,15 @@ def mtg_train(working_sample, opt_parameters, model = None, verbose = False):
     hidden_size = 32
     n_hidden_layers = 2
     if model is None:
-        phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        model = nn.ModuleList([phi_list, psi_list, h_list])   # pending test!!!
+        if monotone:
+            phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size)])
+            psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+            h_list   = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+        else:
+            phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+            psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+            h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
+        model = nn.ModuleList([phi_list, psi_list, h_list])
     # else:
     #     phi_list, psi_list, h_list = model
     # optimizer = torch.optim.Adam(list(phi_list.parameters()) + list(psi_list.parameters()) + list(h_list.parameters()), lr=lr)
@@ -216,15 +233,35 @@ def generate_working_sample(xy_set, cost_f,
 
 # working sample format:
 # -- QX -- | -- QY -- | -- L -- | c | th |
-def generate_working_sample_q(q_set, inv_cum_x, inv_cum_y, cost_f,
+def generate_working_sample_q(q_set, inv_cum_xi, inv_cum_yi, cost_f,
                               theta = None,
                               uniform_theta = False):
     size, num_cols = q_set.shape
     d = int(num_cols / 2)
     qx = q_set[:, :d]
     qy = q_set[:, d:]
-    x = np.array([inv_cum_x(qx[:,i], i) for i in range(d)]).T
-    y = np.array([inv_cum_y(qy[:,i], i) for i in range(d)]).T
+    x = np.array([inv_cum_xi(qx[:,i], i) for i in range(d)]).T
+    y = np.array([inv_cum_yi(qy[:,i], i) for i in range(d)]).T
+    l = y - x          # each column i has (yi - xi)
+    c = cost_f(x, y)   # vector of costs
+    if theta is None:
+        if uniform_theta:
+            theta = np.ones(size) / size
+        else:
+            print('a theta probability must be specified')
+            return None
+    working_sample = np.hstack([q_set, l, c.reshape(size, 1), theta.reshape(size, 1)])
+    return working_sample
+
+def generate_working_sample_q_monotone(q_set, inv_cum_x, inv_cum_yi, cost_f,
+                              theta = None,
+                              uniform_theta = False):
+    size, num_cols = q_set.shape
+    d = int(num_cols - 1)
+    qx = q_set[:, 0]        # n x 1
+    qy = q_set[:, 1:d+1]    # n x d
+    x = inv_cum_x(qx)       # n x d
+    y = np.array([inv_cum_yi(qy[:,i], i) for i in range(d)]).T   # n x d
     l = y - x          # each column i has (yi - xi)
     c = cost_f(x, y)   # vector of costs
     if theta is None:
