@@ -48,14 +48,11 @@ class PotentialF(nn.Module):
 # format:
 # -- (Q)X -- | -- (Q)Y -- | -- L -- | c | th |
 def mtg_parse(model, sample):
-    size, num_cols = sample.shape
-    d = int((num_cols - 2) / 3)
-    phi_list, psi_list, h_list = model
     
-    # input lengths (depend on dimensionality)
-    nx = len(phi_list)
-    ny = len(psi_list)
-    # print(nx, ny)
+    phi_list, psi_list, h_list = model
+    size, num_cols = sample.shape
+    nx, ny = len(phi_list), len(psi_list)    # input lengths (depend on dimensionality)
+    d = num_cols - nx - ny - 2
     
     # extract from the working sample
     X     = sample[:, : nx]
@@ -74,6 +71,10 @@ def mtg_parse(model, sample):
 # train loop
 def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer = None, verbose = 0):
     
+    #   Primal:          min C
+    #   Dual:            max D + H  st  D + H <= C
+    #   Penalized dual:  min -(D + H) + b(D + H - C)
+    
     full_size = len(working_loader.dataset)
     if verbose > 0:
         print('   batch              D              H      deviation              P' + (not optimizer is None) * '                 loss')
@@ -90,8 +91,7 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         phi, psi, h, L, c, theta = mtg_parse(model, sample)
         D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
         H = (h * L).sum(axis=1)       # sum over dimensions
-        # deviation = D + H - c
-        deviation = c - (D + H)   # ?!
+        deviation = D + H - c
         P = beta(deviation, gamma)
         
         _D = np.append(_D, D.detach().numpy())

@@ -9,13 +9,13 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 #
 #   Cost function:   cost_f(x, y) = y1 * y2
 #
-#   Primal:          min cost_f
-#            equiv.  max minus_cost_f
+#   Primal:          max cost
+#            equiv.  min C := minus_cost
 #
-#   Dual:            min phi
-#                    st  phi >= minus_cost_f
+#   Dual:            max D := sum{phi} + sum{psi} + sum{h.L}
+#                    st  D <= minus_cost
 #
-#   Penalized dual:  min phi + b(minus_cost_f - phi)
+#   Penalized dual:  min (-D) + b(D - minus_cost)
 #
 # Coupling structure:
 #   (1)   independent (4 dimensions))
@@ -62,8 +62,9 @@ ref_value = (A + B) * sig1 * sig2 + B * lam1 * lam2
 # common parameters
 n = 40   # marginal sample/grid size
 full_size = n ** (2 * d)
+# mono_size = n ** (d + 1)
+mono_size = full_size
 print(f'full size: {full_size}')
-mono_size = n ** (d + 1)
 print(f'mono size: {mono_size}')
 opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 10,
@@ -73,7 +74,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'micro_epochs'    : 10      }
 
 
-# 1. independent sampling
+# 1. independent
 
 def generate_qset(n_points, d):
     uniform_sample = np.random.random((n_points, 2*d))
@@ -93,10 +94,13 @@ def cum_y(q, i):
 
 n_points = full_size
 np.random.seed(0)
-qset1 = generate_qset(n_points, d)   # new random independent sample
+qset1 = generate_qset(n_points, d)
 ws1 = vmot.generate_working_sample_q(qset1, inv_cum_xi, inv_cum_yi, minus_cost_f, uniform_theta = True)
 
 print('independent coupling sample shape ', qset1.shape)
+
+
+# 2. monotone
 
 def generate_qset_mono(n_points, d):
     uniform_sample = np.random.random((n_points, d+1))
@@ -107,12 +111,41 @@ def inv_cum_x(q):
     return np.array([z * x_normal_scale[i] for i in range(d)]).T
 
 n_points = mono_size
-np.random.seed(0)
-qset2 = generate_qset_mono(n_points, d)   # new random independent sample
+np.random.seed(123)
+qset2 = generate_qset_mono(n_points, d)
 ws2 = vmot.generate_working_sample_q_monotone(qset2, inv_cum_x, inv_cum_yi, minus_cost_f, uniform_theta = True)
 
 print('monotone coupling sample shape ', qset2.shape)
 
+
+# check
+qset1
+ws1[:,:4]
+
+# q_set = qset1
+# qx = q_set[:, :d]
+# qy = q_set[:, d:]
+# x = np.array([inv_cum_xi(qx[:,i], i) for i in range(d)]).T
+# y = np.array([inv_cum_yi(qy[:,i], i) for i in range(d)]).T
+# x
+# y
+# ws1[:,[4,5]]
+    
+qset2
+ws2[:,:3]
+
+# q_set = qset2
+# qx = q_set[:, 0]        # n x 1
+# qy = q_set[:, 1:d+1]    # n x d
+# x = inv_cum_x(qx)       # n x d
+# y = np.array([inv_cum_yi(qy[:,i], i) for i in range(d)]).T
+# x
+# y
+# ws2[:,[3,4]]
+
+pl.figure()
+pl.plot(ws1[:,6])
+pl.plot(ws2[:,5])
 
 # train
 
@@ -121,20 +154,27 @@ model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1,
                      'beta_multiplier' : 10,
                      'gamma'           : 1000,
                      'batch_size'      : n ** d,
-                     'macro_epochs'    : 2,
-                     'micro_epochs'    : 10      }, monotone = False, verbose = 100)
+                     'macro_epochs'    : 10,
+                     'micro_epochs'    : 20      }, monotone = False, verbose = 100)
 
 model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2,
                    { 'penalization'    : 'L2',
                      'beta_multiplier' : 10,
                      'gamma'           : 1000,
                      'batch_size'      : n ** d,
-                     'macro_epochs'    : 2,
-                     'micro_epochs'    : 40      }, monotone = True, verbose = 100)
+                     'macro_epochs'    : 10,
+                     'micro_epochs'    : 20      }, monotone = True, verbose = 100)
 
 
+# test
 
+sample = torch.tensor(ws1[:5]).float()
+model = model1
+phi1, psi1, h1, L1, c1, theta1 = mtg_parse(model, sample)
 
+sample = torch.tensor(ws2[:5]).float()
+model = model2
+phi2, psi2, h2, L2, c2, theta2 = mtg_parse(model, sample)
 
 def convergence_plot(value_series_list, labels, ref_value = None):
     pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
@@ -151,6 +191,35 @@ evo2 = -np.array(D_evo2)
 # convergence_plot([evo1], ['independent'], ref_value)
 convergence_plot([evo1, evo2], ['independent', 'monotone'], ref_value)
 
+
+
+# _D_evo1, _s_evo1, _H_evo1, _P_evo1 = D_evo1.copy(), s_evo1.copy(), H_evo1.copy(), P_evo1.copy()
+# _D_evo2, _s_evo2, _H_evo2, _P_evo2 = D_evo2.copy(), s_evo2.copy(), H_evo2.copy(), P_evo2.copy()
+
+model1, D_evo1, s_evo1, H_evo1, P_evo1 = vmot.mtg_train(ws1,
+                   { 'penalization'    : 'L2',
+                     'beta_multiplier' : 10,
+                     'gamma'           : 1000,
+                     'batch_size'      : n ** d,
+                     'macro_epochs'    : 2,
+                     'micro_epochs'    : 20      }, model = model1, monotone = False, verbose = 100)
+
+model2, D_evo2, s_evo2, H_evo2, P_evo2 = vmot.mtg_train(ws2,
+                   { 'penalization'    : 'L2',
+                     'beta_multiplier' : 10,
+                     'gamma'           : 1000,
+                     'batch_size'      : n ** d,
+                     'macro_epochs'    : 2,
+                     'micro_epochs'    : 20      }, model = model2, monotone = True, verbose = 100)
+
+
+
+
+
+evo1a = -np.array(D_evo1a)
+evo2a = -np.array(D_evo2a)
+# convergence_plot([evo1], ['independent'], ref_value)
+convergence_plot([evo1a, evo2a], ['independent', 'monotone'], ref_value)
 
 
 
