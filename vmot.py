@@ -141,6 +141,7 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
 
 # main training function
 def mtg_train(working_sample, opt_parameters, model = None, monotone = False, verbose = False):
+    global device
     
     # check inputs
     n, num_cols = working_sample.shape
@@ -215,6 +216,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     return model, D_series, H_series, P_series, ds_series, hs_series
     
 def mtg_dual_value(model, working_sample, opt_parameters):
+    global device
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
