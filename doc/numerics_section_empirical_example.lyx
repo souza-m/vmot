@@ -80,8 +80,39 @@ theorems-std
 
 \begin_body
 
-\begin_layout Standard
+\begin_layout Paragraph*
+Example - normal marginals.
+\end_layout
 
+\begin_layout Standard
+In our simulations, we are especially interested in the simplified cross
+ product cost function 
+\begin_inset Formula $c\left(x,y\right)=y_{1}y_{2}$
+\end_inset
+
+, which relates to the problem of robust pricing of the covariance of financial
+ assets.
+ From a Finance point of view, knowing the marginals of 
+\begin_inset Formula $X_{i}$
+\end_inset
+
+ and 
+\begin_inset Formula $Y_{i}$
+\end_inset
+
+, 
+\begin_inset Formula $i=1,2$
+\end_inset
+
+, is equivalent to knowing the future distribution of two assets at two
+ distinct future points in time.
+ Since their joint distribution is unknown, we look for an upper bound for
+ the covariance among all the admissible such distributions.
+ this formulation is equivalent to the case when the , which can be interpreted
+ as a robust version of the of assets in Finance.
+ In fact, as with aTo test our method with real world data, we construct
+ implicit marginal distributions for the prices of Apple and Amazon stocks
+ at times Jan 20th a
 \end_layout
 
 \begin_layout Paragraph*
@@ -91,9 +122,13 @@ Empirical example.
 \begin_layout Standard
 To test our method with real world data, we construct implicit marginal
  distributions for the prices of Apple and Amazon stocks at times Jan 20th
- and Feb 17th, 2023 based on call and put option prices as of Dec 16th,
- 2022 [note: update dates and prices before the last version of the paper]
- using the method described at [method used by Joshua].
+ a
+\end_layout
+
+\begin_layout Standard
+nd Feb 17th, 2023 based on call and put option prices as of Dec 16th, 2022
+ [note: update dates and prices before the last version of the paper] using
+ the method described at [method used by Joshua].
  We then solve the problem of an investor who wants to calculate upper and
  lower bounds for the fair price of a contract that pays off the covariance
  between the two stock prices on Feb 17th among all admissible joint distributio

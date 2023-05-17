@@ -85,8 +85,9 @@ def mtg_parse(model, sample):
 def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer = None, verbose = 0):
     
     #   Primal:          min C
-    #   Dual:            max D + H  st  D + H <= C
-    #   Penalized dual:  min -(D + H) + b(D + H - C)
+    #   Dual:            max D  st  D + H <= C
+    #   Penalized dual:  min -D + b(D + H - C)
+    #    (?) alternate:  max D + H  st  D + H <= C   |   min -(D + H) + b(D + H - C)       CHECK (!)
     full_size = len(working_loader.dataset)
     
     # report
@@ -264,7 +265,8 @@ def generate_working_sample_uv(uv_set, inv_cum_xi, inv_cum_yi, cost_f,
             print('a weight must be specified')
             return None
     working_sample = np.hstack([uv_set, l, c.reshape(size, 1), weight.reshape(size, 1)])
-    return working_sample
+    xy_set = np.hstack([x, y])
+    return working_sample, xy_set
 
 # from a sample of (u,v) in the domain [0,1] x [0,1]^d
 # X is now monotone
@@ -286,7 +288,8 @@ def generate_working_sample_uv_mono(uv_set, inv_cum_x, inv_cum_yi, cost_f,
             print('a weight must be specified')
             return None
     working_sample = np.hstack([uv_set, l, c.reshape(size, 1), weight.reshape(size, 1)])
-    return working_sample
+    xy_set = np.hstack([x, y])
+    return working_sample, xy_set
 
 
 # utils - monotonically couple a pair of discrete probabilities

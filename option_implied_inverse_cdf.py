@@ -144,16 +144,16 @@ AAPLstrikeLength = AAPLstrikeLength.astype(int)
 AMZNcombineDensity.sum(axis=0)
 AAPLcombineDensity.sum(axis=0)
 
-# show pdf
-fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
-[ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(2)]
-[ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
-pl.show()
+# show discrete probabilities
+# fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
+# [ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(2)]
+# [ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
+# pl.show()
 
-fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
-[ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(AMZNcombineStrike.shape[1])]
-[ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
-pl.show()
+# fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
+# [ax1.bar(AMZNcombineStrike[:,i]+0.25*i, AMZNcombineDensity[:,i], width = 0.25) for i in range(AMZNcombineStrike.shape[1])]
+# [ax2.bar(AAPLcombineStrike[:,i][AAPLcombineStrike[:,i] > 0]+0.25*i, AAPLcombineDensity[:,i][AAPLcombineStrike[:,i] > 0], width = 0.25) for i in range(AAPLcombineStrike.shape[1])]
+# pl.show()
 
 # # check
 # x1.shape
@@ -167,23 +167,27 @@ pl.show()
 
 
 # these are the inverse cdf functions
-AMZN_inv_cdf = create_inv_cdf(AMZNcombineDensity[:AMZNstrikeLength[1],1], AMZNcombineStrike[:AMZNstrikeLength[1],1])
-AAPL_inv_cdf = create_inv_cdf(AAPLcombineDensity[:AAPLstrikeLength[1],1], AAPLcombineStrike[:AAPLstrikeLength[1],1])
+# AMZN_inv_cdf = create_inv_cdf(AMZNcombineDensity[:AMZNstrikeLength[1],1], AMZNcombineStrike[:AMZNstrikeLength[1],1])
+# AAPL_inv_cdf = create_inv_cdf(AAPLcombineDensity[:AAPLstrikeLength[1],1], AAPLcombineStrike[:AAPLstrikeLength[1],1])
 
-random_numbers = np.random.rand(100)
-AMZN_sample = AMZN_inv_cdf(random_numbers)
-AAPL_sample = AAPL_inv_cdf(random_numbers)
+# random_numbers = np.random.rand(100)
+# AMZN_sample = AMZN_inv_cdf(random_numbers)
+# AAPL_sample = AAPL_inv_cdf(random_numbers)
 
-fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
+# fig, (ax1, ax2) = pl.subplots(nrows=2, ncols=1, figsize=(8, 8))
 
-# Plot the density function
-AMZN_sorted_indices = np.argsort(AMZN_sample)
-ax1.plot(AMZN_sample[AMZN_sorted_indices])
-ax1.set_title('AMZN sample')
+# # Plot the density function
+# AMZN_sorted_indices = np.argsort(AMZN_sample)
+# ax1.plot(AMZN_sample[AMZN_sorted_indices])
+# ax1.set_title('AMZN sample')
 
-# Plot the two sets of random points
-AAPL_sorted_indices = np.argsort(AAPL_sample)
-ax2.plot(AAPL_sample[AAPL_sorted_indices])
-ax2.set_title('AAPL sample')
+# # Plot the two sets of random points
+# AAPL_sorted_indices = np.argsort(AAPL_sample)
+# ax2.plot(AAPL_sample[AAPL_sorted_indices])
+# ax2.set_title('AAPL sample')
 
-pl.show()
+# pl.show()
+
+
+AMZN_inv_cdf = [create_inv_cdf(AMZNcombineDensity[:AMZNstrikeLength[i],i], AMZNcombineStrike[:AMZNstrikeLength[i],i]) for i in range(2)]
+AAPL_inv_cdf = [create_inv_cdf(AAPLcombineDensity[:AAPLstrikeLength[i],i], AAPLcombineStrike[:AAPLstrikeLength[i],i]) for i in range(2)]
