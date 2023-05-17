@@ -20,6 +20,12 @@ import datetime as dt, time
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'   # pytorch version issues
 
+
+# CUDA if available
+use_cuda = True
+device = torch.device('cuda' if torch.cuda.is_available() and use_cuda else 'cpu')
+print('Using device:', device)
+
 '''
 1. Use the ultils functions to construct a "working sample" that includes
     - x and y (or u, v) which are used as inputs to the neural networks
@@ -155,7 +161,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     
     # loader
     shuffle        = True     # must be True to avoid some bias towards the last section of the quantile grid
-    working_sample = torch.tensor(working_sample).float()
+    working_sample = torch.tensor(working_sample, device=device).float()
     working_loader = DataLoader(working_sample, batch_size = batch_size, shuffle = shuffle)
     
     # model creation (or recycling)
@@ -171,7 +177,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
             phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
             psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
             h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        model = nn.ModuleList([phi_list, psi_list, h_list])
+        model = nn.ModuleList([phi_list, psi_list, h_list], device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     # iterative calls to train_loop
@@ -216,7 +222,7 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     gamma        = opt_parameters['gamma']
     phi_list, psi_list, h_list = model
     
-    working_sample = torch.tensor(working_sample).float()
+    working_sample = torch.tensor(working_sample, device=device).float()
     phi, psi, h, L, C, w = mtg_parse(model, working_sample)
     D = (phi + psi).sum(axis=1)   # sum over dimensions
     H = (h * L).sum(axis=1)       # sum over dimensions
