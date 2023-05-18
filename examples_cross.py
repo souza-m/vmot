@@ -64,10 +64,12 @@ def grid_uvset(n_points, d):
 
 def grid_uvset_mono(n_points, d, compensate=False):
     if compensate:
-        n_grid = np.array(list(itertools.product(*[list(range(n**2)) + list(range(n)) for i in range(d)])))   # compensate for smaller size with greater number of x points
+        n_grid = np.array(list(itertools.product(*([list(range(n**2))] + [list(range(n)) for i in range(d)]))))   # compensate for smaller size with greater number of x points
+        uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+        uv_set[:,0] = uv_set[:,0] / n
     else:
         n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+        uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
     return uv_set
 
 # utils - file dump
@@ -237,10 +239,11 @@ convergence_plot([evo2, evo1], ['monotone', 'original'], sample_mean_cost)
 
 
 # compensate size in grid mono
-uvset5 = grid_uvset_mono(n, d)
-ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f, compensate=True)
+uvset5 = grid_uvset_mono(n, d, compensate=True)
+print('monotone grid       ', uvset5.shape)
+ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f)
 model5_normal, D_evo5_normal, H_evo5_normal, P_evo5_normal, ds_evo5_normal, hs_evo5_normal = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
-ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f, compensate=True)
+ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
 model5_empirical, D_evo5_empirical, H_evo5_empirical, P_evo5_empirical, ds_evo5_empirical, hs_evo5_empirical = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
 
 
