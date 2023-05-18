@@ -11,7 +11,7 @@ References
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
-import itertools
+# import itertools
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -114,9 +114,9 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         H = (h * L).sum(axis=1)       # sum over dimensions
         deviation = D + H - C
         P = beta(deviation, gamma)
-        _D = np.append(_D, D.detach().numpy())
-        _H = np.append(_H, H.detach().numpy())
-        _P = np.append(_P, P.detach().numpy())
+        _D = np.append(_D, D.detach().cpu().numpy())
+        _H = np.append(_H, H.detach().cpu().numpy())
+        _P = np.append(_P, P.detach().cpu().numpy())
         
         # loss and backpropagation
         # loss = (-D + b_multiplier * P).mean()
@@ -141,7 +141,7 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
 
 # main training function
 def mtg_train(working_sample, opt_parameters, model = None, monotone = False, verbose = False):
-    global device
+    # global device
     
     # check inputs
     n, num_cols = working_sample.shape
@@ -178,7 +178,8 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
             phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
             psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
             h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        model = nn.ModuleList([phi_list, psi_list, h_list], device=device)
+        model = nn.ModuleList([phi_list, psi_list, h_list])
+        model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     # iterative calls to train_loop
@@ -216,7 +217,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     return model, D_series, H_series, P_series, ds_series, hs_series
     
 def mtg_dual_value(model, working_sample, opt_parameters):
-    global device
+    # global device
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
@@ -373,19 +374,7 @@ def combine_marginals_monotone_weighted(xi, yi, wxi, wyi):
     w = w.prod(axis=1)
     
     return xy_set, w
-      
-# utils - generate sample set from grid
-def grid_to_uv_set(n, d, monotone_x = False):
-    # all combinations of quantiles on x cross y
-    if monotone_x:
-        # pending test
-        n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-        n_grid = np.hstack([np.tile(n_grid[:,0], (d-1, 1)).T, n_grid])   # repeat the xi's
-    else:
-        n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-    return uv_set
-
+    
 def update_weight(working_sample, new_weight):
     working_sample[:, -1] = new_weight
     return working_sample
