@@ -177,19 +177,16 @@ dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
                model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
                model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('normal')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('normal')
 
 # plot
 evo1 = -np.array(D_evo1) # random, independent
 evo2 = -np.array(D_evo2) # random, monotone
 convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
-
-
-
-# evo3 = -np.array(D_evo3) # grid, independent
-# evo4 = -np.array(D_evo4) # grid, monotone
-# convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'original', 'grid-monotone', 'grid-independent'], ref_value)
+evo3 = -np.array(D_evo3) # grid, independent
+evo4 = -np.array(D_evo4) # grid, monotone
+convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], ref_value)
 
 
 # example 2 - empirical
@@ -228,12 +225,16 @@ dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
               model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
               model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'empirical')
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('empirical')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('empirical')
 
 # plot
 evo1 = -np.array(D_evo1)
 evo2 = -np.array(D_evo2)
 convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
+
+evo3 = -np.array(D_evo3) # grid, independent
+evo4 = -np.array(D_evo4) # grid, monotone
+convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], sample_mean_cost)
 
 
 
