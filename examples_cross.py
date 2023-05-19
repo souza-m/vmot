@@ -57,19 +57,14 @@ def random_uvset_mono(n_points, d):
     return uniform_sample
 
 # utils - grid (u,v) numbers from hypercube
-def grid_uvset(n_points, d):
+def grid_uvset(n, d):
     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
     return uv_set
 
-def grid_uvset_mono(n_points, d, compensate=False):
-    if compensate:
-        n_grid = np.array(list(itertools.product(*([list(range(n**2))] + [list(range(n)) for i in range(d)]))))   # compensate for smaller size with greater number of x points
-        uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-        uv_set[:,0] = uv_set[:,0] / n
-    else:
-        n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-        uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+def grid_uvset_mono(n, d):
+    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
+    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
     return uv_set
 
 # utils - file dump
@@ -124,15 +119,15 @@ print(f'sample size: {n_points}')
 opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
-                   'batch_size'      : 10000,   # no special formula for this
+                   'batch_size'      : 2000,   # no special formula for this
                    'macro_epochs'    : 10,
-                   'micro_epochs'    : 10      }
+                   'micro_epochs'    : 20      }
 
 # sets of (u,v) points
 uvset1 = random_uvset(n_points, d)
 uvset2 = random_uvset_mono(n_points, d)
 uvset3 = grid_uvset(n, d)
-uvset4 = grid_uvset_mono(n, d)
+uvset4 = grid_uvset_mono(int(n**(2*d/(d+1))), d)   # compensate smaller size
 print('sample shapes')
 print('independent random  ', uvset1.shape)
 print('monotone random     ', uvset2.shape)
@@ -180,16 +175,21 @@ model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3 = vmot.mtg_train(ws3, opt_param
 model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
 dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
-              model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
-              model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
+               model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
+               model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
 # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('normal')
 
 # plot
 evo1 = -np.array(D_evo1) # random, independent
 evo2 = -np.array(D_evo2) # random, monotone
-evo3 = -np.array(D_evo3) # grid, independent
-evo4 = -np.array(D_evo4) # grid, monotone
-convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'original', 'grid-monotone', 'grid-independent'], ref_value)
+convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
+
+
+
+
+# evo3 = -np.array(D_evo3) # grid, independent
+# evo4 = -np.array(D_evo4) # grid, monotone
+# convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'original', 'grid-monotone', 'grid-independent'], ref_value)
 
 
 # example 2 - empirical
@@ -233,18 +233,9 @@ dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
 # plot
 evo1 = -np.array(D_evo1)
 evo2 = -np.array(D_evo2)
-convergence_plot([evo2, evo1], ['monotone', 'original'], sample_mean_cost)
+convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
 
 
-
-
-# compensate size in grid mono
-uvset5 = grid_uvset_mono(n, d, compensate=True)
-print('monotone grid       ', uvset5.shape)
-ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f)
-model5_normal, D_evo5_normal, H_evo5_normal, P_evo5_normal, ds_evo5_normal, hs_evo5_normal = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
-ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
-model5_empirical, D_evo5_empirical, H_evo5_empirical, P_evo5_empirical, ds_evo5_empirical, hs_evo5_empirical = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
 
 
 
@@ -289,3 +280,18 @@ dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, 
 # dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'normal')
 # dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical')
 # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('test')
+
+
+
+
+
+
+# compensate size in grid mono
+# uvset5 = grid_uvset_mono(n, d, compensate=True)
+# print('monotone grid       ', uvset5.shape)
+# ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f)
+# model5_normal, D_evo5_normal, H_evo5_normal, P_evo5_normal, ds_evo5_normal, hs_evo5_normal = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
+# ws5, xyset5 = vmot.generate_working_sample_uv_mono(uvset5, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
+# model5_empirical, D_evo5_empirical, H_evo5_empirical, P_evo5_empirical, ds_evo5_empirical, hs_evo5_empirical = vmot.mtg_train(ws5, opt_parameters, monotone = True, verbose = 100)
+
+
