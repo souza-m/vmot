@@ -22,7 +22,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'   # pytorch version issues
 
 
 # CUDA if available
-use_cuda = True
+use_cuda = True   # if available...
 device = torch.device('cuda' if torch.cuda.is_available() and use_cuda else 'cpu')
 print('Using device:', device)
 
