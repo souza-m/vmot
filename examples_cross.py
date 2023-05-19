@@ -73,6 +73,9 @@ _file_prefix = 'results_'
 _file_suffix = '.pickle'
 
 def dump_results(results, label='test'):
+    # to do: move to cpu before dumping
+    # cpu_device = torch.device('cpu')
+    # ...
     _path = _dir + _file_prefix + label + _file_suffix
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -169,23 +172,23 @@ ws3, xyset3 = vmot.generate_working_sample_uv(uvset3, normal_inv_cum_xi, normal_
 ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f)
 
 # train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
-model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3 = vmot.mtg_train(ws3, opt_parameters, monotone = False, verbose = 100)
-model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
-dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
-               model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
-               model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
+# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
+# model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3 = vmot.mtg_train(ws3, opt_parameters, monotone = False, verbose = 100)
+# model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
+# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
+#                model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
+#                model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('normal')
 
 # plot
-evo1 = -np.array(D_evo1) # random, independent
-evo2 = -np.array(D_evo2) # random, monotone
+evo1 = -np.array(D_evo1[:50]) # random, independent
+evo2 = -np.array(D_evo2[:50]) # random, monotone
 convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
-evo3 = -np.array(D_evo3) # grid, independent
-evo4 = -np.array(D_evo4) # grid, monotone
+evo3 = -np.array(D_evo3[:50]) # grid, independent
+evo4 = -np.array(D_evo4[:50]) # grid, monotone
 convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], ref_value)
 
 
@@ -217,23 +220,23 @@ ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, empirical_inv_cum_x, 
 sample_mean_cost = -0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
 
 # train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
-model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3 = vmot.mtg_train(ws3, opt_parameters, monotone = False, verbose = 100)
-model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
-dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
-              model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
-              model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'empirical')
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
+# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
+# model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3 = vmot.mtg_train(ws3, opt_parameters, monotone = False, verbose = 100)
+# model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
+# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
+#               model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
+#               model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'empirical')
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('empirical')
 
 # plot
-evo1 = -np.array(D_evo1)
-evo2 = -np.array(D_evo2)
+evo1 = -np.array(D_evo1[:50])
+evo2 = -np.array(D_evo2[:50])
 convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
 
-evo3 = -np.array(D_evo3) # grid, independent
-evo4 = -np.array(D_evo4) # grid, monotone
+evo3 = -np.array(D_evo3[:50]) # grid, independent
+evo4 = -np.array(D_evo4[:50]) # grid, monotone
 convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], sample_mean_cost)
 
 
