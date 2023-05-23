@@ -36,17 +36,6 @@ import vmot
 import option_implied_inverse_cdf as empirical
 import torch   # used only for to-cuda when models area loaded
 
-# cost function to be minimized
-A = 0
-B = 1
-def cost_f(x, y):
-    # cost = A.x1.x2 + B.y1.y2
-    return A * x[:,0] * x[:,1] + B * y[:,0] * y[:,1]
-
-# (-cost), to be maximized
-def minus_cost_f(x, y):
-    return -cost_f(x, y)
-
 # utils - random (u,v) numbers from hypercube
 def random_uvset(n_points, d):
     uniform_sample = np.random.random((n_points, 2*d))
@@ -113,6 +102,7 @@ def convergence_plot_std(value_series_list, std_series_list, labels, ref_value =
         pl.axhline(ref_value, linestyle=':', color='black')
     pl.show()
 
+
 # processing parameters
 d = 2
 n = 40   # marginal sample/grid size
@@ -125,6 +115,17 @@ opt_parameters = { 'penalization'    : 'L2',
                    'batch_size'      : 2000,   # no special formula for this
                    'macro_epochs'    : 10,
                    'micro_epochs'    : 20      }
+
+# cost function to be minimized
+A = 0
+B = 1
+def cost_f(x, y):
+    # cost = A.x1.x2 + B.y1.y2
+    return A * x[:,0] * x[:,1] + B * y[:,0] * y[:,1]
+
+# (-cost), to be maximized
+def minus_cost_f(x, y):
+    return -cost_f(x, y)
 
 # sets of (u,v) points
 uvset1 = random_uvset(n_points, d)
@@ -152,7 +153,7 @@ y_normal_scale = [rho1, rho2]
 lam1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
 lam2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
 ref_value = (A + B) * sig1 * sig2 + B * lam1 * lam2
-print(f'normal marginals exact solution = {ref_value:8.4f}')
+print(f'normal marginals exact solution: {ref_value:8.4f}')
 
 # inverse cumulatives
 def normal_inv_cum_xi(q, i):
