@@ -110,7 +110,7 @@ print(f'sample size: {n_points}')
 opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
-                   'batch_size'      : 2000,   # no special formula for this
+                   'batch_size'      : 200,   # no special formula for this
                    'macro_epochs'    : 10,
                    'micro_epochs'    : 10      }
 
@@ -183,3 +183,10 @@ evo1 = -np.array(D_evo1) # random, independent
 evo2 = -np.array(D_evo2) # random, monotone
 convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
+
+
+
+# tests
+
+_model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
+_model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)

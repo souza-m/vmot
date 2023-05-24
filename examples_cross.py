@@ -62,9 +62,14 @@ _file_prefix = 'results_'
 _file_suffix = '.pickle'
 
 def dump_results(results, label='test'):
-    # to do: move to cpu before dumping
-    # cpu_device = torch.device('cpu')
-    # ...
+    # move to cpu before dumping
+    cpu_device = torch.device('cpu')
+    for i in range(len(results)):
+        if isinstance(results[i], torch.nn.modules.container.ModuleList):
+            print(i, type(results[i]))
+            results[i] = results[i].to(cpu_device)
+    
+    # dump
     _path = _dir + _file_prefix + label + _file_suffix
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
@@ -179,8 +184,8 @@ ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, normal_inv_cum_x, nor
 # model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = vmot.mtg_train(ws4, opt_parameters, monotone = True, verbose = 100)
 # dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
 #               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2,
-#                model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
-#                model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
+#                 model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3,
+#                 model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4  ], 'normal')
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2, model3, D_evo3, H_evo3, P_evo3, ds_evo3, hs_evo3, model4, D_evo4, H_evo4, P_evo4, ds_evo4, hs_evo4 = load_results('normal')
 
 # plot
