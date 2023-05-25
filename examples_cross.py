@@ -247,16 +247,31 @@ convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-mon
 
 
 
+# pi_star
+D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
+D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
 
+pi_star1.sum()
+pi_star2.sum()
 
+pl.figure()
+pl.hist(deviation.detach().numpy())
 
 # test mode - reiterate train recycling the model
 # note: load correct working samples above before running
 
-_model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model = model1, monotone = False, verbose = 100)
-_model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model = model2, monotone = True, verbose = 100)
-_model3, _D_evo3, _H_evo3, _P_evo3, _ds_evo3, _hs_evo3 = vmot.mtg_train(ws3, opt_parameters, model = model1, monotone = False, verbose = 100)
-_model4, _D_evo4, _H_evo4, _P_evo4, _ds_evo4, _hs_evo4 = vmot.mtg_train(ws4, opt_parameters, model = model2, monotone = True, verbose = 100)
+_opt_parameters = { 'penalization'    : 'L2',
+                    'beta_multiplier' : 1,
+                    'gamma'           : 100,
+                    'batch_size'      : 2000,   # no special formula for this
+                    'macro_epochs'    : 1,
+                    'micro_epochs'    : 1      }
+
+
+_model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, _opt_parameters, model = model1, monotone = False, verbose = 100)
+_model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, _opt_parameters, model = model2, monotone = True, verbose = 100)
+_model3, _D_evo3, _H_evo3, _P_evo3, _ds_evo3, _hs_evo3 = vmot.mtg_train(ws3, _opt_parameters, model = model1, monotone = False, verbose = 100)
+_model4, _D_evo4, _H_evo4, _P_evo4, _ds_evo4, _hs_evo4 = vmot.mtg_train(ws4, _opt_parameters, model = model2, monotone = True, verbose = 100)
 
 D_evo1  = D_evo1  + _D_evo1
 H_evo1  = H_evo1  + _H_evo1

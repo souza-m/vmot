@@ -74,16 +74,16 @@ def mtg_parse(model, sample):
     d = num_cols - nx - ny - 2
     
     # extract from the working sample
-    X = sample[:, : nx]
-    Y = sample[:, nx : nx + ny]
+    u = sample[:, : nx]
+    v = sample[:, nx : nx + ny]
     L = sample[:, nx + ny : nx + ny + d]
     C = sample[:, nx + ny + d]
     w = sample[:, nx + ny + d + 1]
     
     # calculate using model
-    phi = torch.hstack([phi(X[:, i].view(size, 1)) for i, phi in enumerate(phi_list)])
-    psi = torch.hstack([psi(Y[:, j].view(size, 1)) for j, psi in enumerate(psi_list)])
-    h   = torch.hstack([h(X) for h in h_list])
+    phi = torch.hstack([phi(u[:, i].view(size, 1)) for i, phi in enumerate(phi_list)])
+    psi = torch.hstack([psi(v[:, j].view(size, 1)) for j, psi in enumerate(psi_list)])
+    h   = torch.hstack([h(u) for h in h_list])
     
     return phi, psi, h, L, C, w
     
@@ -230,7 +230,10 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     D = (phi + psi).sum(axis=1)   # sum over dimensions
     H = (h * L).sum(axis=1)       # sum over dimensions
     deviation = D + H - C
-    pi_star = (w * beta_prime(deviation, gamma))
+    pi_star = w * beta_prime(deviation, gamma)
+    sum_pi_star = pi_star.sum()
+    if sum_pi_star > 0:
+        pi_star = sum_pi_star
     
     return D.mean().item(), H.mean().item(), pi_star.detach().numpy()
 
