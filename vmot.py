@@ -11,7 +11,6 @@ References
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
-# import itertools
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -90,10 +89,9 @@ def mtg_parse(model, sample):
 # train loop
 def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer = None, verbose = 0):
     
-    #   Primal:          min C
-    #   Dual:            max D  st  D + H <= C
-    #   Penalized dual:  min -D + b(D + H - C)
-    #    (?) alternate:  max D + H  st  D + H <= C   |   min -(D + H) + b(D + H - C)       CHECK (!)
+    #   Primal:          max C
+    #   Dual:            min D  st  D + H >= C
+    #   Penalized dual:  min D + b(C - D - H)
     full_size = len(working_loader.dataset)
     
     # report
@@ -112,7 +110,7 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         phi, psi, h, L, C, w = mtg_parse(model, sample)
         D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
         H = (h * L).sum(axis=1)       # sum over dimensions
-        deviation = D + H - C
+        deviation = C - D - H
         P = beta(deviation, gamma)
         _D = np.append(_D, D.detach().cpu().numpy())
         _H = np.append(_H, H.detach().cpu().numpy())
@@ -120,7 +118,7 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
         
         # loss and backpropagation
         # loss = (-D + b_multiplier * P).mean()
-        loss = -(1 / full_size) * D.sum() + beta_multiplier * (w * P).sum()
+        loss = (1 / full_size) * D.sum() + beta_multiplier * (w * P).sum()
         if not optimizer is None:
             optimizer.zero_grad()
             loss.backward()
@@ -157,8 +155,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     beta_multiplier = opt_parameters['beta_multiplier']
     gamma           = opt_parameters['gamma']
     batch_size      = opt_parameters['batch_size']
-    macro_epochs    = opt_parameters['macro_epochs']
-    micro_epochs    = opt_parameters['micro_epochs']
+    epochs          = opt_parameters['epochs']
     
     # loader
     shuffle        = True     # must be True to avoid some bias towards the last section of the quantile grid
@@ -190,26 +187,26 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     hs_series = []
     if verbose > 0:
         t0 = time.time() # timer
-    for i in range(macro_epochs):
-        for j in range(micro_epochs):
-            verb = (j + 1 == micro_epochs) * verbose
-            if verbose > 0 and j+1 % 10 == 0:
-                print(f'{i+1:4d}, {j+1:3d}')
-            if verb:
-                print()
-            D, H, P, ds, hs = mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer, verb)
-            D_series.append(D)
-            H_series.append(H)
-            P_series.append(P)
-            ds_series.append(ds)
-            hs_series.append(hs)
-            if verb:
-                print('\nmeans')
-                print(f'   D   = {D:12.4f}')
-                print(f'   H   = {H:12.4f}')
-                print(f'   P   = {P:12.4f}\n')
-                print(f'   D std = {ds:12.4f}')
-                print(f'   H std = {hs:12.4f}')
+    for i in range(epochs):
+        # if verbose > 0 and (i==0 or (i+1)%verbose == 0):
+        print(f'epoch {i+1:4d}')
+        verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * verbose
+        if verb:
+            print()
+        D, H, P, ds, hs = mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer, verb)
+        D_series.append(D)
+        H_series.append(H)
+        P_series.append(P)
+        ds_series.append(ds)
+        hs_series.append(hs)
+        if verb:
+            print('\nmeans')
+            print(f'   D   = {D:12.4f}')
+            print(f'   H   = {H:12.4f}')
+            print(f'   P   = {P:12.4f}\n')
+            print(f'   D std = {ds:12.4f}')
+            print(f'   H std = {hs:12.4f}')
+            print()
     if verbose > 0:
         t1 = time.time() # timer
         print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
