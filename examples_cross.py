@@ -20,7 +20,7 @@ PyTorch implementation of Eckstein and Kupper 2021 - Computation of Optimal Tran
 
 import numpy as np
 import matplotlib.pyplot as pl
-import itertools
+# import itertools
 from scipy.stats import norm
 import pickle
 
@@ -102,7 +102,7 @@ def convergence_plot_std(value_series_list, std_series_list, labels, ref_value =
 
 # processing parameters
 d = 2
-n = 30   # marginal sample/grid size
+n = 40   # marginal sample/grid size
 n_points = n ** (2 * d)
 print(f'd: {d}')
 print(f'sample size: {n_points}')
@@ -110,7 +110,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
                    'batch_size'      : 2000,   # no special formula for this
-                   'epochs'          : 10      }
+                   'epochs'          : 60      }
 
 # cost function to be maximized
 A = 0
@@ -169,15 +169,15 @@ ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, nor
 # ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
 
 # train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 5)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 5)
-dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2    ], 'normal')
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2    ], 'normal')
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('normal')
 
 # plot
-evo1 = np.array(D_evo1[:50]) # random, independent
-evo2 = np.array(D_evo2[:50]) # random, monotone
+evo1 = np.array(D_evo1) # random, independent
+evo2 = np.array(D_evo2) # random, monotone
 convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
 # evo3 = np.array(D_evo3[:50]) # grid, independent
@@ -210,18 +210,18 @@ ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empi
 ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
 # ws3, xyset3 = vmot.generate_working_sample_uv(uvset3, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
 # ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
-sample_mean_cost = -0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
+sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
 
 # train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
-dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'empirical')
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'empirical')
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('empirical')
 
 # plot
-evo1 = np.array(D_evo1[:50])
-evo2 = np.array(D_evo2[:50])
+evo1 = np.array(D_evo1)
+evo2 = np.array(D_evo2)
 convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
 
 # evo3 = np.array(D_evo3[:50]) # grid, independent
@@ -234,8 +234,11 @@ convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
 D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
 D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
 
-# pi_star1.sum()
-# pi_star2.sum()
+vmot.plot_sample_2d(ws1, label='ws1', w=pi_star1, random_sample_size=100000)
+vmot.plot_sample_2d(xyset2, label='ws2', w=pi_star2, random_sample_size=100000)
+
+pi_star1.sum()
+pi_star2.sum()
 
 # pl.figure()
 # pl.hist(deviation.detach().numpy())

@@ -164,7 +164,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     
     # model creation (or recycling)
     lr =1e-4
-    hidden_size = 32
+    hidden_size = 64
     n_hidden_layers = 2
     if model is None:
         if monotone:
@@ -190,7 +190,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     for i in range(epochs):
         # if verbose > 0 and (i==0 or (i+1)%verbose == 0):
         print(f'epoch {i+1:4d}')
-        verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * verbose
+        verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * 100
         if verb:
             print()
         D, H, P, ds, hs = mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer, verb)
@@ -226,13 +226,13 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     phi, psi, h, L, C, w = mtg_parse(model, working_sample)
     D = (phi + psi).sum(axis=1)   # sum over dimensions
     H = (h * L).sum(axis=1)       # sum over dimensions
-    deviation = D + H - C
+    deviation = C - D - H
     pi_star = w * beta_prime(deviation, gamma)
     sum_pi_star = pi_star.sum()
     if sum_pi_star > 0:
-        pi_star = sum_pi_star
+        pi_star = pi_star / sum_pi_star
     
-    return D.mean().item(), H.mean().item(), pi_star.detach().numpy()
+    return D.detach().mean().cpu().numpy(), H.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
 
 
 # utils - construct working sample from various sources
@@ -380,8 +380,11 @@ def update_weight(working_sample, new_weight):
     return working_sample
 
 # utils - 2d plot
-def plot_sample_2d(sample, label='sample'):
+def plot_sample_2d(sample, label='sample', w=None, random_sample_size=1000):
     figsize = [12,12]
+    if not w is None:
+        selection = np.random.choice(range(len(sample)), size=random_sample_size, p=w)
+        sample = sample[selection]
     X1, X2, Y1, Y2 = sample[:,0], sample[:,1], sample[:,2], sample[:,3]
     pl.figure(figsize=figsize)
     pl.title(label)

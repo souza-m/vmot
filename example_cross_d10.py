@@ -28,7 +28,7 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 
 import numpy as np
 import matplotlib.pyplot as pl
-import itertools
+# import itertools
 from scipy.stats import norm
 import pickle
 
@@ -45,15 +45,15 @@ def random_uvset_mono(n_points, d):
     return uniform_sample
 
 # utils - grid (u,v) numbers from hypercube
-def grid_uvset(n, d):
-    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-    return uv_set
+# def grid_uvset(n, d):
+#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
+#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+#     return uv_set
 
-def grid_uvset_mono(n, d):
-    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-    return uv_set
+# def grid_uvset_mono(n, d):
+#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
+#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+#     return uv_set
 
 # utils - file dump
 _dir = './model_dump/'
@@ -116,8 +116,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
                    'batch_size'      : 200,   # no special formula for this
-                   'macro_epochs'    : 10,
-                   'micro_epochs'    : 10      }
+                   'epochs'          : 100      }
 
 # cost function to be minimized
 A = np.empty((d, d)) * np.nan
@@ -136,8 +135,8 @@ def cost_f(x, y):
     return cost
 
 # (-cost), to be maximized
-def minus_cost_f(x, y):
-    return -cost_f(x, y)
+# def minus_cost_f(x, y):
+#     return -cost_f(x, y)
 
 # sets of (u,v) points
 uvset1 = random_uvset(n_points, d)
@@ -171,8 +170,8 @@ def normal_inv_cum_x(q):
     return np.array([z * sig[i] for i in range(d)]).T
 
 # working samples
-ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, minus_cost_f)
-ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, minus_cost_f)
+ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
 ws1.shape
 ws2.shape
 
