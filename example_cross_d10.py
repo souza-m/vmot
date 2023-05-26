@@ -115,8 +115,8 @@ print(f'sample size: {n_points}')
 opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
-                   'batch_size'      : 200,   # no special formula for this
-                   'epochs'          : 100      }
+                   'batch_size'      : 2000,   # no special formula for this
+                   'epochs'          : 200      }
 
 # cost function to be minimized
 A = np.empty((d, d)) * np.nan
@@ -176,15 +176,19 @@ ws1.shape
 ws2.shape
 
 # train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
-# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'normal_10')
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('normal_10')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 1)
+model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 1)
+dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'normal_10')
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('normal_10')
 
 # plot
-evo1 = -np.array(D_evo1) # random, independent
-evo2 = -np.array(D_evo2) # random, monotone
+evo1 = np.array(D_evo1) # random, independent
+evo2 = np.array(D_evo2) # random, monotone
+convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
+
+evo1 = np.array(D_evo1) + np.array(H_evo1)   # random, independent
+evo2 = np.array(D_evo2) + np.array(H_evo2)   # random, monotone
 convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
 
@@ -192,5 +196,22 @@ convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
 # tests
 
-_model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 100)
-_model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 100)
+_model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
+_model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
+
+D_evo1  = D_evo1  + _D_evo1
+H_evo1  = H_evo1  + _H_evo1
+P_evo1  = P_evo1  + _P_evo1
+ds_evo1 = ds_evo1 + _ds_evo1
+hs_evo1 = hs_evo1 + _hs_evo1
+model1 = _model1
+
+D_evo2  = D_evo2  + _D_evo2
+H_evo2  = H_evo2  + _H_evo2
+P_evo2  = P_evo2  + _P_evo2
+ds_evo2 = ds_evo2 + _ds_evo2
+hs_evo2 = hs_evo2 + _hs_evo2
+model2 = _model2
+
+dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'normal_10a')

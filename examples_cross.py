@@ -103,7 +103,8 @@ def convergence_plot_std(value_series_list, std_series_list, labels, ref_value =
 # processing parameters
 d = 2
 n = 40   # marginal sample/grid size
-n_points = n ** (2 * d)
+# n_points = n ** (2 * d)
+n_points = 2000000
 print(f'd: {d}')
 print(f'sample size: {n_points}')
 opt_parameters = { 'penalization'    : 'L2',
