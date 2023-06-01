@@ -214,7 +214,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
         
     return model, D_series, H_series, P_series, ds_series, hs_series
     
-def mtg_dual_value(model, working_sample, opt_parameters):
+def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     # global device
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
@@ -229,8 +229,9 @@ def mtg_dual_value(model, working_sample, opt_parameters):
     H = (h * L).sum(axis=1)       # sum over dimensions
     deviation = C - D - H
     pi_star = w * beta_prime(deviation, gamma)
+    print(deviation.max().detach().numpy())
     sum_pi_star = pi_star.sum()
-    if sum_pi_star > 0:
+    if normalize_pi and sum_pi_star > 0:
         pi_star = pi_star / sum_pi_star
     
     return D.detach().mean().cpu().numpy(), H.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
@@ -330,7 +331,7 @@ def couple(X1, X2, w1, w2):
         _w1[0] = w1[0] - w2[0]
         _X, _w = couple(X1, X2[1:], _w1, w2[1:])
     X = np.vstack([X_, _X])
-    w  = np.vstack([w_, _w])
+    w = np.vstack([w_, _w])
     return X, w
     
 # utils - generate sample set from marginal samples - all possible combinations

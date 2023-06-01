@@ -19,8 +19,9 @@ PyTorch implementation of Eckstein and Kupper 2021 - Computation of Optimal Tran
 
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as pl
-# import itertools
+import itertools
 from scipy.stats import norm
 import pickle
 
@@ -38,15 +39,15 @@ def random_uvset_mono(n_points, d):
     return uniform_sample
 
 # utils - grid (u,v) numbers from hypercube
-# def grid_uvset(n, d):
-#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
-#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-#     return uv_set
+def grid_uvset(n, d):
+    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
+    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+    return uv_set
 
-# def grid_uvset_mono(n, d):
-#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-#     return uv_set
+def grid_uvset_mono(n, d):
+    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
+    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+    return uv_set
 
 # utils - file dump
 _dir = './model_dump/'
@@ -125,10 +126,10 @@ def cost_f(x, y):
 #     return -cost_f(x, y)
 
 # sets of (u,v) points
-uvset1 = random_uvset(n_points, d)
-uvset2 = random_uvset_mono(n_points, d)
-# uvset3 = grid_uvset(n, d)
-# uvset4 = grid_uvset_mono(int(n**(2*d/(d+1))), d)   # compensate smaller size
+uvset1  = random_uvset(n_points, d)
+uvset2  = random_uvset_mono(n_points, d)
+uvset1g = grid_uvset(n, d)
+uvset2g = grid_uvset_mono(int(n**(2*d/(d+1))), d)
 print('sample shapes')
 print('independent random  ', uvset1.shape)
 print('monotone random     ', uvset2.shape)
@@ -166,8 +167,8 @@ def normal_inv_cum_x(q):
 # working samples
 ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
 ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
-# ws3, xyset3 = vmot.generate_working_sample_uv(uvset3, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-# ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+ws2g, grid2 = vmot.generate_working_sample_uv_mono(uvset2g, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
 
 # train/store/load
 # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
@@ -184,6 +185,43 @@ convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 # evo3 = np.array(D_evo3[:50]) # grid, independent
 # evo4 = np.array(D_evo4[:50]) # grid, monotone
 # convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], ref_value)
+
+D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1g, opt_parameters, normalize_pi = False)
+D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2g, opt_parameters, normalize_pi = False)
+
+pi_star1.sum()
+pi_star2.sum()
+pi_star1 = pi_star1 / pi_star1.sum()
+pi_star2 = pi_star2 / pi_star2.sum()
+
+vmot.plot_sample_2d(ws1g, label='ws1', w=pi_star1, random_sample_size=100000)
+vmot.plot_sample_2d(ws1g, label='ws2', w=pi_star2, random_sample_size=100000)
+
+
+def heatmap(X, pi):
+    # generate heatmap matrix
+    DF = pd.DataFrame(X)[[0,1]]
+    DF.columns = ['X1', 'X2']
+    DF['pi'] = pi
+    DF = DF.groupby(['X1', 'X2']).sum()
+    heat = DF.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
+    heat[heat==0] = np.nan
+    
+    #plot
+    fig, ax = pl.subplots()
+    im = ax.imshow(heat, cmap = "Reds")
+    ax.invert_yaxis()
+    ax.figure.colorbar(im)
+    
+    return heat
+    
+heat1 = heatmap(grid1, pi_star1)
+heat2 = heatmap(grid2, pi_star2)
+
+h_marginal = np.nansum(heat1, axis=0)
+fig, ax = pl.subplots()
+ax.set_ylim(0, max(h_marginal))
+ax.plot(h_marginal)
 
 
 # example 2 - empirical
@@ -209,8 +247,8 @@ def empirical_inv_cum_x(q):
 # working samples
 ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
 ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
-# ws3, xyset3 = vmot.generate_working_sample_uv(uvset3, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
-# ws4, xyset4 = vmot.generate_working_sample_uv_mono(uvset4, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+ws2g, grid2 = vmot.generate_working_sample_uv_mono(uvset2g, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
 sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
 
 # train/store/load
@@ -225,22 +263,33 @@ evo1 = np.array(D_evo1)
 evo2 = np.array(D_evo2)
 convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
 
-# evo3 = np.array(D_evo3[:50]) # grid, independent
-# evo4 = np.array(D_evo4[:50]) # grid, monotone
-# convergence_plot([evo2, evo1, evo4, evo3], ['monotone', 'independent', 'grid-monotone', 'grid-independent'], sample_mean_cost)
+evo1 = np.array(D_evo1) + np.array(H_evo1)   # random, independent
+evo2 = np.array(D_evo2) + np.array(H_evo2)   # random, monotone
+convergence_plot([evo2, evo1], ['monotone', 'independent'], sample_mean_cost)
+
 
 
 
 # pi_star
-D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1, opt_parameters)
-D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2, opt_parameters)
+D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws3, opt_parameters, normalize_pi = True)
+D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws4, opt_parameters, normalize_pi = True)
 
-vmot.plot_sample_2d(ws1, label='ws1', w=pi_star1, random_sample_size=100000)
-vmot.plot_sample_2d(xyset2, label='ws2', w=pi_star2, random_sample_size=100000)
+vmot.plot_sample_2d(ws3, label='ws1', w=pi_star1, random_sample_size=100000)
+vmot.plot_sample_2d(ws4, label='ws2', w=pi_star2, random_sample_size=100000)
 
 pi_star1.sum()
 pi_star2.sum()
 
+fig, ax = pl.subplots()
+ax.imshow(pi_star1, cmap = 'Blues')
+
+
+
+
+    
+    
+heatmap(ws3, pi_star1)
+    
 # pl.figure()
 # pl.hist(deviation.detach().numpy())
 
