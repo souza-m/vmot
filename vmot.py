@@ -176,7 +176,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
             psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
             h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
         model = nn.ModuleList([phi_list, psi_list, h_list])
-        model = model.to(device)
+    model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     # iterative calls to train_loop
@@ -210,6 +210,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     if verbose > 0:
         t1 = time.time() # timer
         print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
+        print()
         
     return model, D_series, H_series, P_series, ds_series, hs_series
     
