@@ -169,18 +169,27 @@ def normal_inv_cum_x(q):
     z = norm.ppf(q)
     return np.array([z * sig[i] for i in range(d)]).T
 
-# working samples
-ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
-ws1.shape
-ws2.shape
+# existing_i = -1   # new
+existing_i = 1
 
-# train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 1)
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 1)
-dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-              model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}')
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results('normal_10')
+if existing_i < 0:
+    
+    # new random sample
+    uvset1 = random_uvset(n_points, d)
+    uvset2 = random_uvset_mono(n_points, d)
+    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+    
+    # train/store
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 1)
+    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 1)
+    dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+                  model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i}')
+    existing_i = 0
+
+else:
+    # load
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results(f'normal_{d}_{existing_i}')
 
 # plot
 evo1 = np.array(D_evo1) # random, independent
@@ -194,7 +203,7 @@ convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
 
 # iterate
 
-for i in range(100):
+for i in range(existing_i+1, 101):
     
     # new random sample
     uvset1 = random_uvset(n_points, d)
@@ -230,8 +239,4 @@ for i in range(100):
     evo1 = np.array(D_evo1) + np.array(H_evo1)   # random, independent
     evo2 = np.array(D_evo2) + np.array(H_evo2)   # random, monotone
     convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
-    
-    
-    
-    
-results = model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2
+

@@ -335,51 +335,51 @@ def couple(X1, X2, w1, w2):
     return X, w
     
 # utils - generate sample set from marginal samples - all possible combinations
-def combine_marginals(xi, yi):
-    marginals_list = xi + yi
-    xy_set = np.array(list(itertools.product(*marginals_list)))
-    return xy_set
+# def combine_marginals(xi, yi):
+#     marginals_list = xi + yi
+#     xy_set = np.array(list(itertools.product(*marginals_list)))
+#     return xy_set
 
-def combine_marginals_monotone(xi, yi):
-    # xi's must be of same size and be ordered before function call
-    assert np.min([len(x) for x in xi]) == np.max([len(x) for x in xi]), 'marginals must have same size'
-    xi = np.array(xi).T
-    marginals_list = [xi] + yi
-    inhomogeneous_xy = list(itertools.product(*marginals_list))
-    xy_set = np.vstack([np.hstack(inhomogeneous_xy[t]) for t in range(len(inhomogeneous_xy))])
-    return xy_set
+# def combine_marginals_monotone(xi, yi):
+#     # xi's must be of same size and be ordered before function call
+#     assert np.min([len(x) for x in xi]) == np.max([len(x) for x in xi]), 'marginals must have same size'
+#     xi = np.array(xi).T
+#     marginals_list = [xi] + yi
+#     inhomogeneous_xy = list(itertools.product(*marginals_list))
+#     xy_set = np.vstack([np.hstack(inhomogeneous_xy[t]) for t in range(len(inhomogeneous_xy))])
+#     return xy_set
 
-def combine_marginals_weighted(xi, yi, wxi, wyi):
-    marginals_list = xi + yi
-    xy_set = np.array(list(itertools.product(*marginals_list)))
-    w_list = wxi + wyi
-    w = np.array(list(itertools.product(*w_list)))
-    w = w.prod(axis=1)
-    return xy_set, w
+# def combine_marginals_weighted(xi, yi, wxi, wyi):
+#     marginals_list = xi + yi
+#     xy_set = np.array(list(itertools.product(*marginals_list)))
+#     w_list = wxi + wyi
+#     w = np.array(list(itertools.product(*w_list)))
+#     w = w.prod(axis=1)
+#     return xy_set, w
 
-def combine_marginals_monotone_weighted(xi, yi, wxi, wyi):
-    # only for d = 2
-    assert len(xi) == 2, 'restricted to d=2, higher dimension not implemented'
-    X1 = xi[0]
-    X2 = xi[1]
-    w1 = wxi[0]
-    w2 = wxi[1]
-    X, wx = couple(X1, X2, w1, w2)
+# def combine_marginals_monotone_weighted(xi, yi, wxi, wyi):
+#     # only for d = 2
+#     assert len(xi) == 2, 'restricted to d=2, higher dimension not implemented'
+#     X1 = xi[0]
+#     X2 = xi[1]
+#     w1 = wxi[0]
+#     w2 = wxi[1]
+#     X, wx = couple(X1, X2, w1, w2)
     
-    marginals_list = [X] + yi
-    inhomogeneous_xy = list(itertools.product(*marginals_list))
-    xy_set = np.vstack([np.hstack(inhomogeneous_xy[t]) for t in range(len(inhomogeneous_xy))])
+#     marginals_list = [X] + yi
+#     inhomogeneous_xy = list(itertools.product(*marginals_list))
+#     xy_set = np.vstack([np.hstack(inhomogeneous_xy[t]) for t in range(len(inhomogeneous_xy))])
     
-    w_list = [wx] + wyi
-    inhomogeneous_w = list(itertools.product(*w_list))
-    w = np.vstack([np.hstack(inhomogeneous_w[t]) for t in range(len(inhomogeneous_w))])
-    w = w.prod(axis=1)
+#     w_list = [wx] + wyi
+#     inhomogeneous_w = list(itertools.product(*w_list))
+#     w = np.vstack([np.hstack(inhomogeneous_w[t]) for t in range(len(inhomogeneous_w))])
+#     w = w.prod(axis=1)
     
-    return xy_set, w
+#     return xy_set, w
     
-def update_weight(working_sample, new_weight):
-    working_sample[:, -1] = new_weight
-    return working_sample
+# def update_weight(working_sample, new_weight):
+#     working_sample[:, -1] = new_weight
+#     return working_sample
 
 # utils - 2d plot
 def plot_sample_2d(sample, label='sample', w=None, random_sample_size=1000):
