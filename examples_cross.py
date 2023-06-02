@@ -94,11 +94,10 @@ ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, nor
 # train/store/load
 # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
 # model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-# dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-#               model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2    ], 'normal')
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('normal')
-vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'normal')
-vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'normal_mono')
+# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'normal')
+# vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'normal_mono')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('normal')
+model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('normal_mono')
 
 # plot
 evo1 = np.array(D_evo1) # random, independent
@@ -139,7 +138,6 @@ def heatmap(grid, pi, uplim=0):
     
     return heat
     
-    
 heat = heatmap(grid1[:,:2], pi_star1)   # X, independent
 heat = heatmap(grid1[:,2:], pi_star1, uplim=np.nanmax(heat))   # Y, independent
 heat = heatmap(grid2[:,:2], pi_star2)   # X, monotone
@@ -179,9 +177,10 @@ sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower referen
 # train/store/load
 # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
 # model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-#                    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], 'empirical')
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical')
+# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
+# vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('empirical')
+model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical_mono')
 
 # plot
 evo1 = np.array(D_evo1)
