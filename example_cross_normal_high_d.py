@@ -15,18 +15,25 @@ import vmot
 # processing parameters
 d = 10
 
-for d in [5]:
+for d in [5, 6, 7, 8, 10]:
+    
+    # iterations
+    I = 20
     existing_i = -1   # new
     if d == 5:
         existing_i = 11
+        I = 1
     if d == 6:
         existing_i = 11
+        I = 1
     if d == 7:
         existing_i = 21
+        I = 1
     if d == 8:
         existing_i = 21
+        I = 1
     if d == 10:
-        existing_i = 14
+        existing_i = 6
     
     n_points = 2000000
     print(f'd: {d}')
@@ -95,13 +102,14 @@ for d in [5]:
         # train/store
         model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-                           model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i}')
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'normal_{d}_{i}')
+        vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'normal_mono_{d}_{i}')
         existing_i = 0
     
     else:
         # load
-        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_{d}_{existing_i}')
+        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_{d}_{existing_i}')
+        model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_{d}_{existing_i}')
     
     # plot
     evo1 = np.array(D_evo1) # random, independent
@@ -113,11 +121,6 @@ for d in [5]:
     
     
     # iterate
-    I = 20
-    if d == 5:
-        I = 10
-    if d == 10:
-        I = 30
     for i in range(existing_i+1, I+1):
         
         # new random sample
@@ -143,8 +146,8 @@ for d in [5]:
         hs_evo2 = hs_evo2 + _hs_evo2
         model2 = _model2
         
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-                           model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i+1}')
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'normal_{d}_{i}')
+        vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'normal_mono_{d}_{i}')
         
         # plot
         evo1 = np.array(D_evo1) # random, independent
