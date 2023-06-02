@@ -5,249 +5,152 @@ Created on Mon May 24 17:35:25 2021
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 """
 
-# Example 1: solve cross-product cost with normal marginals, d = 2
-#
-#   Cost function:   cost_f(x, y) = y1 * y2
-#
-#   Primal:          max cost
-#            equiv.  min C := minus_cost
-#
-#   Dual:            max D := sum{phi} + sum{psi} + sum{h.L}
-#                    st  D <= minus_cost
-#
-#   Penalized dual:  min (-D) + b(D - minus_cost)
-#
-# Coupling structure:
-#   (1)   independent (4 dimensions))
-#   (2)   montone, dimension reduction on x (3 dimensions)
-#
-# Method: use vmot_core to generate "working sample" objects to be used in the optimization loop.
-# The optimization loop performs the dual approximation based on E&K21.
-# We experiment with dimensionlality reduction and random vs grid sampling methods.
+# Example 1.2: solve cross-product cost with normal marginals, d > 2
 
 
 import numpy as np
-import matplotlib.pyplot as pl
-# import itertools
 from scipy.stats import norm
-import pickle
-
 import vmot
-import torch   # used only for to-cuda when models area loaded
-
-# utils - random (u,v) numbers from hypercube
-def random_uvset(n_points, d):
-    uniform_sample = np.random.random((n_points, 2*d))
-    return uniform_sample
-
-def random_uvset_mono(n_points, d):
-    uniform_sample = np.random.random((n_points, d+1))
-    return uniform_sample
-
-# utils - grid (u,v) numbers from hypercube
-# def grid_uvset(n, d):
-#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
-#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-#     return uv_set
-
-# def grid_uvset_mono(n, d):
-#     n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-#     uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-#     return uv_set
-
-# utils - file dump
-_dir = './model_dump/'
-_file_prefix = 'results_'
-_file_suffix = '.pickle'
-
-def dump_results(results, label='test'):
-    # move to cpu before dumping
-    cpu_device = torch.device('cpu')
-    for i in range(len(results)):
-        if isinstance(results[i], torch.nn.modules.container.ModuleList):
-            print(i, type(results[i]))
-            results[i] = results[i].to(cpu_device)
-    
-    # dump
-    _path = _dir + _file_prefix + label + _file_suffix
-    with open(_path, 'wb') as file:
-        pickle.dump(results, file)
-    print('model saved to ' + _path)
-
-def load_results(label=''):
-    _path = _dir + _file_prefix + label + _file_suffix
-    with open(_path, 'rb') as file:
-        results = pickle.load(file)
-    print('model loaded from ' + _path)
-    for i in range(len(results)):
-        print(i, type(results[i]))
-        if isinstance(results[i], torch.nn.modules.container.ModuleList):
-            results[i] = results[i].to(vmot.device)
-    return results
-
-# utils - convergence plots
-def convergence_plot(value_series_list, labels, ref_value = None, ref_color = 'black', h_series_list = None):
-    pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-    for v in value_series_list:
-        pl.plot(range(1, len(v)+1), v)
-    if not ref_value is None:
-        pl.axhline(ref_value, linestyle='--', color=ref_color)
-    pl.legend(labels + ['reference'])
-    if not h_series_list is None:
-        pl.gca().set_prop_cycle(None)   # reset color cycler
-        for v, h in zip(value_series_list, h_series_list):
-            pl.plot(range(1, len(v)+1), v+h, linestyle=':')
-    # pl.xlabel('epoch')
-    pl.title('Numerical value - convergence')
-    pl.show()
-
-# def convergence_plot_std(value_series_list, std_series_list, labels, ref_value = None):
-#     pl.figure(figsize = [12,12])   # plot in two iterations to have a clean legend
-#     for v, std in zip(value_series_list, std_series_list):
-#         pl.plot(v)
-#     pl.legend(labels)
-#     for v, std in zip(value_series_list, std_series_list):
-#         pl.fill_between(range(len(v)), v + std, v - std, alpha = .5, facecolor = 'grey')
-#     if not ref_value is None:
-#         pl.axhline(ref_value, linestyle=':', color='black')
-#     pl.show()
-
 
 # processing parameters
 d = 10
-existing_i = -1   # new
-if d == 10:
-    existing_i = 14
 
-n_points = 2000000
-print(f'd: {d}')
-print(f'sample size: {n_points}')
-opt_parameters = { 'penalization'    : 'L2',
-                   'beta_multiplier' : 1,
-                   'gamma'           : 100,
-                   'batch_size'      : 2000,   # no special formula for this
-                   'epochs'          : 10     }
-
-# cost function to be minimized
-A = np.empty((d, d)) * np.nan
-B = np.empty((d, d)) * np.nan
-for i in range(0, d):
-    for j in range(i+1, d):
-        A[i,j] = 0.0
-        B[i,j] = 1.0
-B[0, 1] = 10.0
-
-def cost_f(x, y):
-    cost = 0.0
+for d in [5]:
+    existing_i = -1   # new
+    if d == 5:
+        existing_i = 11
+    if d == 6:
+        existing_i = 11
+    if d == 7:
+        existing_i = 21
+    if d == 8:
+        existing_i = 21
+    if d == 10:
+        existing_i = 14
+    
+    n_points = 2000000
+    print(f'd: {d}')
+    print(f'sample size: {n_points}')
+    opt_parameters = { 'penalization'    : 'L2',
+                       'beta_multiplier' : 1,
+                       'gamma'           : 100,
+                       'batch_size'      : 2000,   # no special formula for this
+                       'epochs'          : 10     }
+    
+    # cost function to be minimized
+    A = np.empty((d, d)) * np.nan
+    B = np.empty((d, d)) * np.nan
     for i in range(0, d):
         for j in range(i+1, d):
-            cost = cost + A[i,j] * x[:,i] * x[:,j] + B[i,j] * y[:,i] * y[:,j]
-    return cost
-
-# (-cost), to be maximized
-# def minus_cost_f(x, y):
-#     return -cost_f(x, y)
-
-# sets of (u,v) points
-uvset1 = random_uvset(n_points, d)
-uvset2 = random_uvset_mono(n_points, d)
-print('sample shapes')
-print('independent random  ', uvset1.shape)
-print('monotone random     ', uvset2.shape)
-
-
-# choose scales
-sig = np.ones(d)                 # x normal distribution scales (std)
-rho = np.sqrt(2.0) * np.ones(d)  # y normal distribution scales (std)
-
-# reference value (see proposition)
-lam = np.sqrt(rho ** 2 - sig ** 2)
-ref_value = 0.0
-for i in range(0, d):
-    for j in range(i+1, d):
-        ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
-print(f'normal marginals exact solution: {ref_value:8.4f}')
-
-# inverse cumulatives
-def normal_inv_cum_xi(q, i):
-    return norm.ppf(q) * sig[i]
-
-def normal_inv_cum_yi(q, i):
-    return norm.ppf(q) * rho[i]
-
-def normal_inv_cum_x(q):
-    z = norm.ppf(q)
-    return np.array([z * sig[i] for i in range(d)]).T
-
-if existing_i < 0:
+            A[i,j] = 0.0
+            B[i,j] = 1.0
+    B[0, 1] = 10.0
     
-    # new random sample
-    uvset1 = random_uvset(n_points, d)
-    uvset2 = random_uvset_mono(n_points, d)
-    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+    def cost_f(x, y):
+        cost = 0.0
+        for i in range(0, d):
+            for j in range(i+1, d):
+                cost = cost + A[i,j] * x[:,i] * x[:,j] + B[i,j] * y[:,i] * y[:,j]
+        return cost
     
-    # train/store
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-    dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-                  model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i}')
-    existing_i = 0
-
-else:
-    # load
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = load_results(f'normal_{d}_{existing_i}')
-
-# plot
-evo1 = np.array(D_evo1) # random, independent
-evo2 = np.array(D_evo2) # random, monotone
-convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
-
-evo1 = np.array(D_evo1) + np.array(H_evo1)   # random, independent
-evo2 = np.array(D_evo2) + np.array(H_evo2)   # random, monotone
-convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
-
-
-# iterate
-I = 20
-if d == 5:
-    I = 10
-if d == 10:
-    I = 30
-for i in range(existing_i+1, I+1):
+    # sets of (u,v) points
+    uvset1 = vmot.random_uvset(n_points, d)
+    uvset2 = vmot.random_uvset_mono(n_points, d)
+    print('sample shapes')
+    print('independent random  ', uvset1.shape)
+    print('monotone random     ', uvset2.shape)
     
-    # new random sample
-    uvset1 = random_uvset(n_points, d)
-    uvset2 = random_uvset_mono(n_points, d)
-    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
     
-    _model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
-    _model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
+    # choose scales
+    sig = np.ones(d)                 # x normal distribution scales (std)
+    rho = np.sqrt(2.0) * np.ones(d)  # y normal distribution scales (std)
     
-    D_evo1  = D_evo1  + _D_evo1
-    H_evo1  = H_evo1  + _H_evo1
-    P_evo1  = P_evo1  + _P_evo1
-    ds_evo1 = ds_evo1 + _ds_evo1
-    hs_evo1 = hs_evo1 + _hs_evo1
-    model1 = _model1
+    # reference value (see proposition)
+    lam = np.sqrt(rho ** 2 - sig ** 2)
+    ref_value = 0.0
+    for i in range(0, d):
+        for j in range(i+1, d):
+            ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
+    print(f'normal marginals exact solution: {ref_value:8.4f}')
     
-    D_evo2  = D_evo2  + _D_evo2
-    H_evo2  = H_evo2  + _H_evo2
-    P_evo2  = P_evo2  + _P_evo2
-    ds_evo2 = ds_evo2 + _ds_evo2
-    hs_evo2 = hs_evo2 + _hs_evo2
-    model2 = _model2
+    # inverse cumulatives
+    def normal_inv_cum_xi(q, i):
+        return norm.ppf(q) * sig[i]
     
-    dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
-                  model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i+1}')
+    def normal_inv_cum_yi(q, i):
+        return norm.ppf(q) * rho[i]
+    
+    def normal_inv_cum_x(q):
+        z = norm.ppf(q)
+        return np.array([z * sig[i] for i in range(d)]).T
+    
+    if existing_i < 0:
+        
+        # new random sample
+        uvset1 = vmot.random_uvset(n_points, d)
+        uvset2 = vmot.random_uvset_mono(n_points, d)
+        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+        
+        # train/store
+        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+        model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+                           model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i}')
+        existing_i = 0
+    
+    else:
+        # load
+        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_{d}_{existing_i}')
     
     # plot
     evo1 = np.array(D_evo1) # random, independent
     evo2 = np.array(D_evo2) # random, monotone
-    convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value)
-
     h1 = np.array(H_evo1)   # random, independent
     h2 = np.array(H_evo2)   # random, monotone
-    convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value, h_series_list=[h2, h1])
-
+    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
+    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
+    
+    
+    # iterate
+    I = 20
+    if d == 5:
+        I = 10
+    if d == 10:
+        I = 30
+    for i in range(existing_i+1, I+1):
+        
+        # new random sample
+        uvset1 = vmot.random_uvset(n_points, d)
+        uvset2 = vmot.random_uvset_mono(n_points, d)
+        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+        
+        _model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
+        _model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
+        
+        D_evo1  = D_evo1  + _D_evo1
+        H_evo1  = H_evo1  + _H_evo1
+        P_evo1  = P_evo1  + _P_evo1
+        ds_evo1 = ds_evo1 + _ds_evo1
+        hs_evo1 = hs_evo1 + _hs_evo1
+        model1 = _model1
+        
+        D_evo2  = D_evo2  + _D_evo2
+        H_evo2  = H_evo2  + _H_evo2
+        P_evo2  = P_evo2  + _P_evo2
+        ds_evo2 = ds_evo2 + _ds_evo2
+        hs_evo2 = hs_evo2 + _hs_evo2
+        model2 = _model2
+        
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1,
+                           model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2  ], f'normal_{d}_{i+1}')
+        
+        # plot
+        evo1 = np.array(D_evo1) # random, independent
+        evo2 = np.array(D_evo2) # random, monotone
+        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
+    
+        h1 = np.array(H_evo1)   # random, independent
+        h2 = np.array(H_evo2)   # random, monotone
+        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)

@@ -11,11 +11,14 @@ References
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
+import datetime as dt, time
+import pickle
+import itertools
+
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-import datetime as dt, time
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'   # pytorch version issues
 
@@ -334,6 +337,85 @@ def couple(X1, X2, w1, w2):
     w = np.vstack([w_, _w])
     return X, w
     
+# utils - random (u,v) numbers from hypercube
+def random_uvset(n_points, d):
+    uniform_sample = np.random.random((n_points, 2*d))
+    return uniform_sample
+
+def random_uvset_mono(n_points, d):
+    uniform_sample = np.random.random((n_points, d+1))
+    return uniform_sample
+
+# utils - grid (u,v) numbers from hypercube
+def grid_uvset(n, d):
+    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
+    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+    return uv_set
+
+def grid_uvset_mono(n, d):
+    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
+    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
+    return uv_set
+
+# utils - file dump
+_dir = './model_dump/'
+_file_prefix = 'results_'
+_file_suffix = '.pickle'
+
+def dump_results(results, label='test'):
+    # move to cpu before dumping
+    cpu_device = torch.device('cpu')
+    for i in range(len(results)):
+        if isinstance(results[i], torch.nn.modules.container.ModuleList):
+            print(i, type(results[i]))
+            results[i] = results[i].to(cpu_device)
+    
+    # dump
+    _path = _dir + _file_prefix + label + _file_suffix
+    with open(_path, 'wb') as file:
+        pickle.dump(results, file)
+    print('model saved to ' + _path)
+
+def load_results(label=''):
+    _path = _dir + _file_prefix + label + _file_suffix
+    with open(_path, 'rb') as file:
+        results = pickle.load(file)
+    print('model loaded from ' + _path)
+    for i in range(len(results)):
+        if isinstance(results[i], torch.nn.modules.container.ModuleList):
+            print(i, type(results[i]))
+            results[i] = results[i].to(device)
+    return results
+
+# utils - convergence plots
+def convergence_plot(value_series_list, labels, h_series_list=None,
+                     ref_value=None, ref_color='black', ref_label='reference',
+                     title='Numerical value - convergence'):
+    pl.figure(figsize = [10,10])   # plot in two iterations to have a clean legend
+    for v in value_series_list:
+        pl.plot(range(1, len(v)+1), v)
+    if not ref_value is None:
+        pl.axhline(ref_value, linestyle=':', color=ref_color)
+    pl.legend(labels + [ref_label])
+    if not h_series_list is None:
+        pl.gca().set_prop_cycle(None)   # reset color cycler
+        for v, h in zip(value_series_list, h_series_list):
+            pl.plot(range(1, len(v)+1), v+h, linestyle=':')
+    # pl.xlabel('epoch')
+    pl.title(title)
+    pl.show()
+
+# def convergence_plot_std(value_series_list, std_series_list, labels, ref_value = None):
+#     pl.figure(figsize = [10,10])   # plot in two iterations to have a clean legend
+#     for v, std in zip(value_series_list, std_series_list):
+#         pl.plot(v)
+#     pl.legend(labels)
+#     for v, std in zip(value_series_list, std_series_list):
+#         pl.fill_between(range(len(v)), v + std, v - std, alpha = .5, facecolor = 'grey')
+#     if not ref_value is None:
+#         pl.axhline(ref_value, linestyle=':', color='black')
+#     pl.show()
+
 # utils - generate sample set from marginal samples - all possible combinations
 # def combine_marginals(xi, yi):
 #     marginals_list = xi + yi
@@ -383,7 +465,7 @@ def couple(X1, X2, w1, w2):
 
 # utils - 2d plot
 def plot_sample_2d(sample, label='sample', w=None, random_sample_size=1000):
-    figsize = [12,12]
+    figsize = [10,10]
     if not w is None:
         selection = np.random.choice(range(len(sample)), size=random_sample_size, p=w)
         sample = sample[selection]
@@ -431,7 +513,8 @@ def plot_discrete_prob_2d(x1, x2, w, label='Probability', x1label = 'x1', x2labe
     # y2_grid = np.append(y2, y2[len(y2)-1] + y2_step) - 0.5 * y2_step
     
     cmap = pl.colormaps['Reds']
-    fig = pl.figure(figsize=[12,12])
+    figsize = [10,10]
+    fig = pl.figure(figsize=figsize)
     gs = fig.add_gridspec(2, 2, hspace=0, wspace=0)
     (ax1, ax2), (ax3, ax4) = gs.subplots(sharex='col', sharey='row')
     
