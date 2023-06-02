@@ -33,7 +33,8 @@ for d in [5, 6, 7, 8, 10]:
         existing_i = 21
         I = 1
     if d == 10:
-        existing_i = 6
+        existing_i = 14
+        I = 6
     
     n_points = 2000000
     print(f'd: {d}')
@@ -121,7 +122,7 @@ for d in [5, 6, 7, 8, 10]:
     
     
     # iterate
-    for i in range(existing_i+1, I+1):
+    for i in range(existing_i+1, existing_i+1+I):
         
         # new random sample
         uvset1 = vmot.random_uvset(n_points, d)
