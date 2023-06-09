@@ -15,26 +15,14 @@ import vmot
 # processing parameters
 d = 10
 
-for d in [5, 6, 7, 8, 10]:
+for d in [3]:
     
     # iterations
     I = 20
     existing_i = -1   # new
-    if d == 5:
-        existing_i = 11
-        I = 1
-    if d == 6:
-        existing_i = 11
-        I = 1
-    if d == 7:
-        existing_i = 21
-        I = 1
-    if d == 8:
-        existing_i = 21
-        I = 1
-    if d == 10:
-        existing_i = 14
-        I = 6
+    if d == 3:
+        existing_i = 10
+        I = 10
     
     n_points = 2000000
     print(f'd: {d}')
