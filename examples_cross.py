@@ -186,8 +186,8 @@ model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical_
 # plot
 evo1 = np.array(D_evo1)
 evo2 = np.array(D_evo2)
-# h1 = np.array(H_evo1)   # random, independent
-# h2 = np.array(H_evo2)   # random, monotone
+h1 = np.array(H_evo1)   # random, independent
+h2 = np.array(H_evo2)   # random, monotone
 vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'],
                       ref_value=sample_mean_cost, ref_label='lower reference',
                       title='Numerical value convergence - Empirical marginals (d=2)')
