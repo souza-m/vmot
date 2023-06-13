@@ -5,8 +5,7 @@ Created on Mon May 24 17:35:25 2021
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 """
 
-# Example 1.2: solve cross-product cost with normal marginals, d > 2
-
+# Example 1: solve cross-product cost with normal marginals, d >= 2
 
 import numpy as np
 from scipy.stats import norm
@@ -14,7 +13,7 @@ import vmot
 
 # random parameters for the marginal distributions
 np.random.seed(1)
-max_d = 8
+max_d = 10
 sig = np.around(np.random.random(max_d) + .05, 2)
 rho = sig + np.around(np.random.random(max_d), 2)
 print('sig', sig)
@@ -31,10 +30,10 @@ for i in range(0, max_d):
 print('A', A)
 print('B', B)
 
-for d in [2, 3]:#, 4, 5]:
+for d in [2, 3, 4, 5, 6, 7, 8, 10]:
     
     # iterations
-    I = 2
+    I = 10
     existing_i = 0   # new
     n_points = 2000000
     print()
@@ -44,7 +43,7 @@ for d in [2, 3]:#, 4, 5]:
                        'beta_multiplier' : 1,
                        'gamma'           : 100,
                        'batch_size'      : 2000,   # no special formula for this
-                       'epochs'          : 2     }
+                       'epochs'          : 10     }
     
     # cost function to be minimized
     def cost_f(x, y):
