@@ -130,24 +130,29 @@ def heatmap(grid, pi, uplim=0):
     # plot
     figsize = [10,8]
     fig, ax = pl.subplots(figsize=figsize)
-    im = ax.imshow(heat, cmap = "Reds")
+    im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
+    
+    # keep consistency between x and y scales
     if uplim > 0:
         im.set_clim(0, uplim)
+    
+    ax.set_xlabel('U1')
+    ax.set_ylabel('U2')
     ax.invert_yaxis()
     ax.figure.colorbar(im)
     
     return heat
     
 heat = heatmap(grid1[:,:2], pi_star1)   # X, independent
-heat = heatmap(grid1[:,2:], pi_star1, uplim=np.nanmax(heat))   # Y, independent
 heat = heatmap(grid2[:,:2], pi_star2)   # X, monotone
-heat = heatmap(grid2[:,2:], pi_star2)   # Y, monotone
 
 heat_marginal = np.nansum(heat, axis=0)
 fig, ax = pl.subplots()
 ax.set_ylim(0, max(heat_marginal))
 ax.plot(heat_marginal)
 
+pl.figure()
+pl.plot(pi_star2)
 
 # example 2 - empirical
 
