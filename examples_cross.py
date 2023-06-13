@@ -37,7 +37,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
                    'batch_size'      : 2000,   # no special formula for this
-                   'epochs'          : 60      }
+                   'epochs'          : 120      }
 
 # cost function to be maximized
 A = 0
@@ -154,6 +154,7 @@ ax.plot(heat_marginal)
 pl.figure()
 pl.plot(pi_star2)
 
+
 # example 2 - empirical
 
 AMZN_inv_cdf = empirical.AMZN_inv_cdf
@@ -180,10 +181,11 @@ ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, 
 sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
 
 # train/store/load
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
-# vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
+vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
+
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('empirical')
 model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical_mono')
 

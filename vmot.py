@@ -367,7 +367,7 @@ def dump_results(results, label='test'):
     cpu_device = torch.device('cpu')
     for i in range(len(results)):
         if isinstance(results[i], torch.nn.modules.container.ModuleList):
-            print(i, type(results[i]))
+            # print(i, type(results[i]))
             results[i] = results[i].to(cpu_device)
     
     # dump
@@ -383,7 +383,7 @@ def load_results(label=''):
     print('model loaded from ' + _path)
     for i in range(len(results)):
         if isinstance(results[i], torch.nn.modules.container.ModuleList):
-            print(i, type(results[i]))
+            # print(i, type(results[i]))
             results[i] = results[i].to(device)
     return results
 
