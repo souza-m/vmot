@@ -13,9 +13,9 @@ import vmot
 
 # random parameters for the marginal distributions
 np.random.seed(1)
-max_d = 10
-sig = np.around(np.random.random(max_d) + .05, 2)
-rho = sig + np.around(np.random.random(max_d), 2)
+max_d = 5
+sig = np.around(np.random.random(max_d), 2) + 1
+rho = np.around(np.random.random(max_d), 2) + 2
 print('sig', sig)
 print('rho', rho)
 
@@ -30,12 +30,12 @@ for i in range(0, max_d):
 print('A', A)
 print('B', B)
 
-for d in [2, 3, 4, 5, 6, 7, 8, 10]:
+for d in [2, 3, 4, 5]:
     
     # iterations
     I = 10
     existing_i = 0   # new
-    n_points = 2000000
+    n_points = 1000000
     print()
     print(f'd = {d}')
     print(f'sample size: {n_points}')
@@ -104,10 +104,10 @@ for d in [2, 3, 4, 5, 6, 7, 8, 10]:
     # plot
     evo1 = np.array(D_evo1) # random, independent
     evo2 = np.array(D_evo2) # random, monotone
-    h1 = np.array(H_evo1)   # random, independent
-    h2 = np.array(H_evo2)   # random, monotone
+    # h1 = np.array(H_evo1)   # random, independent
+    # h2 = np.array(H_evo2)   # random, monotone
     vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
-    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
+    # vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
     
     # iterate
     while existing_i < I:
@@ -145,7 +145,3 @@ for d in [2, 3, 4, 5, 6, 7, 8, 10]:
         evo1 = np.array(D_evo1) # random, independent
         evo2 = np.array(D_evo2) # random, monotone
         vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
-    
-        h1 = np.array(H_evo1)   # random, independent
-        h2 = np.array(H_evo2)   # random, monotone
-        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
