@@ -10,6 +10,7 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 import numpy as np
 from scipy.stats import norm
 import vmot
+import matplotlib.pyplot as pl
 
 # random parameters for the marginal distributions
 np.random.seed(1)
@@ -30,12 +31,22 @@ for i in range(0, max_d):
 print('A', A)
 print('B', B)
 
+<<<<<<< Updated upstream
 for d in [2, 3, 4, 5]:
     
     # iterations
     I = 10
     existing_i = 0   # new
     n_points = 1000000
+=======
+E_series = []
+for d in [2, 3, 4, 5, 6, 7, 8]:
+    
+    # iterations
+    I = 10
+    existing_i = 10   # new
+    n_points = 2000000
+>>>>>>> Stashed changes
     print()
     print(f'd = {d}')
     print(f'sample size: {n_points}')
@@ -102,12 +113,23 @@ for d in [2, 3, 4, 5]:
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_{existing_i}')
     
     # plot
+<<<<<<< Updated upstream
     evo1 = np.array(D_evo1) # random, independent
     evo2 = np.array(D_evo2) # random, monotone
     # h1 = np.array(H_evo1)   # random, independent
     # h2 = np.array(H_evo2)   # random, monotone
     vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
     # vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
+=======
+    length = 50
+    evo1 = np.array(D_evo1)[:length] # random, independent
+    evo2 = np.array(D_evo2)[:length] # random, monotone
+    E_series.append([d, evo1, evo2, ref_value])
+    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
+    # h1 = np.array(H_evo1)[:length]   # random, independent
+    # h2 = np.array(H_evo2)[:length]   # random, monotone
+    # vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
+>>>>>>> Stashed changes
     
     # iterate
     while existing_i < I:
@@ -144,4 +166,50 @@ for d in [2, 3, 4, 5]:
         # plot
         evo1 = np.array(D_evo1) # random, independent
         evo2 = np.array(D_evo2) # random, monotone
+<<<<<<< Updated upstream
         vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
+=======
+        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
+    
+        h1 = np.array(H_evo1)   # random, independent
+        h2 = np.array(H_evo2)   # random, monotone
+        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
+
+
+
+
+# multiple convergence plots
+ref_color='black'
+title='Convergence - normal'
+fig, ax = pl.subplots(2, 2, figsize = [12,12])   # plot in two iterations to have a clean legend
+for i, E in enumerate(E_series[:4]):
+    _ax = ax.flatten()[i]
+    d, evo1, evo2, ref_value = E
+    _ax.plot(range(1, len(evo1)+1), evo1)
+    _ax.plot(range(1, len(evo2)+1), evo2)
+    _ax.axhline(ref_value, linestyle=':', color=ref_color)
+    _ax.set_title(f'd = {d}')
+ax[0][1].legend(['full', 'reduced'])
+fig.suptitle('Convergence - normal marginals')
+pl.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> Stashed changes
