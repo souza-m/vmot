@@ -28,25 +28,17 @@ for i in range(0, max_d):
         A[i,j] = 0.0
         B[i,j] = 1.0
         B[i,j] = np.around(np.random.random(), 2)
-print('A', A)
+# print('A', A)
 print('B', B)
 
-<<<<<<< Updated upstream
+E_series = []
 for d in [2, 3, 4, 5]:
     
     # iterations
     I = 10
-    existing_i = 0   # new
+    # existing_i = 0   # new
+    existing_i = 10
     n_points = 1000000
-=======
-E_series = []
-for d in [2, 3, 4, 5, 6, 7, 8]:
-    
-    # iterations
-    I = 10
-    existing_i = 10   # new
-    n_points = 2000000
->>>>>>> Stashed changes
     print()
     print(f'd = {d}')
     print(f'sample size: {n_points}')
@@ -112,26 +104,40 @@ for d in [2, 3, 4, 5, 6, 7, 8]:
         model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_d{d}_{existing_i}')
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_{existing_i}')
     
-    # plot
-<<<<<<< Updated upstream
-    evo1 = np.array(D_evo1) # random, independent
-    evo2 = np.array(D_evo2) # random, monotone
-    # h1 = np.array(H_evo1)   # random, independent
-    # h2 = np.array(H_evo2)   # random, monotone
-    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
-    # vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
-=======
-    length = 50
+    # report mean and std over a collection of samples
+    report = False
+    if report:
+        collection_size = 5
+        D1_series = []
+        D2_series = []
+        P1_series = []
+        P2_series = []
+        for i in range(collection_size):
+            uvset1 = vmot.random_uvset(n_points, d)
+            uvset2 = vmot.random_uvset_mono(n_points, d)
+            ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+            ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+            D1, P1, __ = vmot.mtg_dual_value(model1, ws1, opt_parameters, normalize_pi = False)
+            D2, P2, __ = vmot.mtg_dual_value(model2, ws2, opt_parameters, normalize_pi = False)
+            D1_series.append(D1)
+            D2_series.append(D2)
+            P1_series.append(P1)
+            P2_series.append(P2)
+        print('dual value')
+        print(f'reduced:   mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+        print(f'full:      mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+        print('penalty')
+        print(f'reduced:   mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+        print(f'full:      mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+    
+    # store series for multiple plot
+    length = 100
     evo1 = np.array(D_evo1)[:length] # random, independent
     evo2 = np.array(D_evo2)[:length] # random, monotone
     E_series.append([d, evo1, evo2, ref_value])
-    vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
-    # h1 = np.array(H_evo1)[:length]   # random, independent
-    # h2 = np.array(H_evo2)[:length]   # random, monotone
-    # vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
->>>>>>> Stashed changes
+        # vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
     
-    # iterate
+    # iterate optimization
     while existing_i < I:
         
         # new random sample
@@ -166,50 +172,23 @@ for d in [2, 3, 4, 5, 6, 7, 8]:
         # plot
         evo1 = np.array(D_evo1) # random, independent
         evo2 = np.array(D_evo2) # random, monotone
-<<<<<<< Updated upstream
-        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
-=======
-        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value)
-    
-        h1 = np.array(H_evo1)   # random, independent
-        h2 = np.array(H_evo2)   # random, monotone
-        vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], h_series_list=[h2, h1], ref_value=ref_value)
-
-
+        vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
 
 # multiple convergence plots
 ref_color='black'
 title='Convergence - normal'
-fig, ax = pl.subplots(2, 2, figsize = [12,12])   # plot in two iterations to have a clean legend
+fig, ax = pl.subplots(2, 2, figsize = [8,8])   # plot in two iterations to have a clean legend
 for i, E in enumerate(E_series[:4]):
     _ax = ax.flatten()[i]
     d, evo1, evo2, ref_value = E
-    _ax.plot(range(1, len(evo1)+1), evo1)
     _ax.plot(range(1, len(evo2)+1), evo2)
+    _ax.plot(range(1, len(evo1)+1), evo1)
     _ax.axhline(ref_value, linestyle=':', color=ref_color)
     _ax.set_title(f'd = {d}')
-ax[0][1].legend(['full', 'reduced'])
-fig.suptitle('Convergence - normal marginals')
+    shift = .02 * (_ax.get_ylim()[1] - pl.gca().get_ylim()[0])
+    _ax.annotate('(true value)', (len(evo1)*2/3, ref_value+shift), color=ref_color)   # trial and error to find a good position
+ax[0][1].legend(['reduced', 'full'])
+# fig.suptitle('Convergence - normal marginals')
+pl.tight_layout()
 pl.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
->>>>>>> Stashed changes

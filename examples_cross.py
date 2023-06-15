@@ -30,14 +30,14 @@ import option_implied_inverse_cdf as empirical
 
 # processing parameters
 d = 2
-n_points = 2000000
+n_points = 1000000
 print(f'd: {d}')
 print(f'sample size: {n_points}')
 opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
                    'batch_size'      : 2000,   # no special formula for this
-                   'epochs'          : 120      }
+                   'epochs'          : 100      }
 
 # cost function to be maximized
 A = 0
@@ -181,21 +181,56 @@ ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, 
 sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
 
 # train/store/load
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
-# vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
+model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
+model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
 
 model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('empirical')
 model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical_mono')
 
 
 # plot
-evo1 = np.array(D_evo1)[:50]
-evo2 = np.array(D_evo2)[:50]
-# h1 = np.array(H_evo1)   # random, independent
-# h2 = np.array(H_evo2)   # random, monotone
-vmot.convergence_plot_empirical([evo1, evo2], ['full', 'reduced'], lower_bound=sample_mean_cost, title='Convergence - empirical marginals (d = 2)')
+ref_value = sample_mean_cost
+ref_color = 'black'
+ref_label = 'lower bound'
+labels = ['reduced', 'full']
+title='Convergence - empirical marginals (d = 2)'
+evo1 = np.array(D_evo1)[:100]
+evo2 = np.array(D_evo2)[:100]
+
+pl.figure(figsize = [5,5])   # plot in two iterations to have a clean legend
+for v in [evo2, evo1]:
+    pl.plot(range(1, len(v)+1), v)
+if not ref_value is None:
+    pl.axhline(ref_value, linestyle=':', color=ref_color)
+pl.legend(labels)
+# pl.title(title)
+shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
+pl.annotate('(lower bound)', (len(v)*1/5, ref_value-shift), color=ref_color)   # trial and error to find a good position
+pl.show()
+
+
+
+
+
+vmot.convergence_plot([evo1, evo2], ['full', 'reduced'], ref_value=sample_mean_cost, title='Convergence - empirical marginals (d = 2)')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # pi_star
 ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)

@@ -222,6 +222,7 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
+    beta         = beta_L2
     beta_prime   = beta_L2_prime             # first derivative of L2 penalization function
     gamma        = opt_parameters['gamma']
     phi_list, psi_list, h_list = model
@@ -231,13 +232,14 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     D = (phi + psi).sum(axis=1)   # sum over dimensions
     H = (h * L).sum(axis=1)       # sum over dimensions
     deviation = C - D - H
+    P = beta(deviation, gamma)
     pi_star = w * beta_prime(deviation, gamma)
-    print(deviation.max().detach().numpy())
+    # print(deviation.max().detach().numpy())
     sum_pi_star = pi_star.sum()
     if normalize_pi and sum_pi_star > 0:
         pi_star = pi_star / sum_pi_star
     
-    return D.detach().mean().cpu().numpy(), H.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
+    return D.detach().mean().cpu().numpy(), P.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
 
 
 # utils - construct working sample from various sources
@@ -404,12 +406,13 @@ def convergence_plot(value_series_list, labels, h_series_list=None,
             pl.plot(range(1, len(v)+1), v+h, linestyle=':')
     # pl.xlabel('epoch')
     pl.title(title)
+    pl.annotate('lower bound', (len(v)*3/4, ref_value-500), color='darkgrey')   # trial and error to find a good position
     pl.show()
 
 # utils - convergence plots
 def convergence_plot_empirical(value_series_list, labels, h_series_list=None,
                                lower_bound=None, title='Numerical value - convergence'):
-    pl.figure(figsize = [7,7])   # plot in two iterations to have a clean legend
+    pl.figure(figsize = [5,5])   # plot in two iterations to have a clean legend
     for v in value_series_list:
         pl.plot(range(1, len(v)+1), v)
     if not lower_bound is None:

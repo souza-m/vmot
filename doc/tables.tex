@@ -1,0 +1,64 @@
+%% LyX 2.3.6 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{luainputenc}
+\usepackage{array}
+\usepackage{multirow}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+%% Because html converters don't know tabularnewline
+\providecommand{\tabularnewline}{\\}
+
+\makeatother
+
+\usepackage{babel}
+\begin{document}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline 
+$d$ & True value & Method & Numerical Value & Numerical STD & Penalty\tabularnewline
+\hline 
+\hline 
+\multirow{2}{*}{$2$} & \multirow{2}{*}{$1.45$} & reduced & $1.02$ & $0.0025$ & $0.1635$\tabularnewline
+\cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ &  & full & $1.48$ & $0.0033$ & $3.1595$\tabularnewline
+\hline 
+\multirow{2}{*}{$3$} & \multirow{2}{*}{$8.13$} & reduced & $6.00$ & $0.0085$ & $0.9919$\tabularnewline
+\cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ &  & full & $14.16$ & $0.0059$ & $65.7518$\tabularnewline
+\hline 
+\multirow{2}{*}{$4$} & \multirow{2}{*}{$18.72$} & reduced & $13.20$ & $0.0057$ & $1.8013$\tabularnewline
+\cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ &  & full & $-5.71$ & $0.0203$ & $13914.7920$\tabularnewline
+\hline 
+\multirow{2}{*}{$5$} & \multirow{2}{*}{$27.92$} & reduced & $18.52$ & $0.0147$ & $2.3405$\tabularnewline
+\cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ &  & full & $-10.14$ & $0.0287$ & $25701.4922$\tabularnewline
+\hline 
+\end{tabular}
+
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline 
+Method & $d$ & True value & Numerical Value & Numerical STD & Penalty\tabularnewline
+\hline 
+\hline 
+\multirow{4}{*}{reduced} & $2$ & $1.45$ & $1.02$ & $0.0025$ & $0.1635$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $3$ & $8.13$ & $6.00$ & $0.0085$ & $0.9919$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $4$ & $18.72$ & $13.20$ & $0.0057$ & $1.8013$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $5$ & $27.92$ & $18.52$ & $0.0147$ & $2.3405$\tabularnewline
+\hline 
+\multirow{4}{*}{full} & $2$ & $1.45$ & $1.48$ & $0.0033$ & $3.1595$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $3$ & $8.13$ & $14.16$ & $0.0059$ & $65.7518$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $4$ & $18.72$ & $-5.71$ & $0.0203$ & $13914.7920$\tabularnewline
+\cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
+ & $5$ & $27.92$ & $-10.14$ & $0.0287$ & $25701.4922$\tabularnewline
+\hline 
+\end{tabular}
+\end{document}
