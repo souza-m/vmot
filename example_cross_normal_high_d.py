@@ -105,9 +105,9 @@ for d in [2, 3, 4, 5]:
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_{existing_i}')
     
     # report mean and std over a collection of samples
-    report = False
+    report = True
     if report:
-        collection_size = 5
+        collection_size = 10
         D1_series = []
         D2_series = []
         P1_series = []
@@ -124,11 +124,11 @@ for d in [2, 3, 4, 5]:
             P1_series.append(P1)
             P2_series.append(P2)
         print('dual value')
-        print(f'reduced:   mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
-        print(f'full:      mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+        print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+        print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
         print('penalty')
-        print(f'reduced:   mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
-        print(f'full:      mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+        print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+        print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
     
     # store series for multiple plot
     length = 100

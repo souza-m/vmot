@@ -227,14 +227,13 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     gamma        = opt_parameters['gamma']
     phi_list, psi_list, h_list = model
     
-    working_sample = torch.tensor(working_sample, device=device).float()
-    phi, psi, h, L, C, w = mtg_parse(model, working_sample)
-    D = (phi + psi).sum(axis=1)   # sum over dimensions
+    sample = torch.tensor(working_sample, device=device).float()
+    phi, psi, h, L, C, w = mtg_parse(model, sample)
+    D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
     H = (h * L).sum(axis=1)       # sum over dimensions
     deviation = C - D - H
     P = beta(deviation, gamma)
     pi_star = w * beta_prime(deviation, gamma)
-    # print(deviation.max().detach().numpy())
     sum_pi_star = pi_star.sum()
     if normalize_pi and sum_pi_star > 0:
         pi_star = pi_star / sum_pi_star
