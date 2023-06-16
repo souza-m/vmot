@@ -9,7 +9,7 @@ References
 """
 
 import numpy as np
-# import pandas as pd
+import pandas as pd
 import matplotlib.pyplot as pl
 import datetime as dt, time
 import pickle
@@ -225,7 +225,7 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     beta         = beta_L2
     beta_prime   = beta_L2_prime             # first derivative of L2 penalization function
     gamma        = opt_parameters['gamma']
-    phi_list, psi_list, h_list = model
+    # phi_list, psi_list, h_list = model
     
     sample = torch.tensor(working_sample, device=device).float()
     phi, psi, h, L, C, w = mtg_parse(model, sample)
@@ -425,3 +425,29 @@ def convergence_plot_empirical(value_series_list, labels, h_series_list=None,
             pl.plot(range(1, len(v)+1), v+h, linestyle=':')
     pl.title(title)
     pl.show()
+
+# utils - heat map
+def heatmap(grid, pi, uplim=0):
+    # generate heatmap matrix
+    X = pd.DataFrame(grid)[[0,1]]
+    X.columns = ['X1', 'X2']
+    X['pi'] = pi
+    X = X.groupby(['X1', 'X2']).sum()
+    heat = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
+    heat[heat==0] = np.nan
+    
+    # plot
+    figsize = [8,5]
+    fig, ax = pl.subplots(figsize=figsize)
+    im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
+    
+    # keep consistency between x and y scales
+    if uplim > 0:
+        im.set_clim(0, uplim)
+    
+    ax.set_xlabel('U1')
+    ax.set_ylabel('U2')
+    ax.invert_yaxis()
+    ax.figure.colorbar(im)
+    
+    return heat

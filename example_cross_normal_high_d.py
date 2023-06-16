@@ -32,7 +32,7 @@ for i in range(0, max_d):
 print('B', B)
 
 E_series = []
-for d in [2, 3, 4, 5]:
+for d in [2]:
     
     # iterations
     I = 10
@@ -100,42 +100,9 @@ for d in [2, 3, 4, 5]:
     
     else:
         # load
-        print(f'\nmodel {existing_i} loaded')
+        print(f'\nloading model {existing_i}')
         model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_d{d}_{existing_i}')
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_{existing_i}')
-    
-    # report mean and std over a collection of samples
-    report = True
-    if report:
-        collection_size = 10
-        D1_series = []
-        D2_series = []
-        P1_series = []
-        P2_series = []
-        for i in range(collection_size):
-            uvset1 = vmot.random_uvset(n_points, d)
-            uvset2 = vmot.random_uvset_mono(n_points, d)
-            ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-            ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
-            D1, P1, __ = vmot.mtg_dual_value(model1, ws1, opt_parameters, normalize_pi = False)
-            D2, P2, __ = vmot.mtg_dual_value(model2, ws2, opt_parameters, normalize_pi = False)
-            D1_series.append(D1)
-            D2_series.append(D2)
-            P1_series.append(P1)
-            P2_series.append(P2)
-        print('dual value')
-        print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
-        print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
-        print('penalty')
-        print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
-        print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
-    
-    # store series for multiple plot
-    length = 100
-    evo1 = np.array(D_evo1)[:length] # random, independent
-    evo2 = np.array(D_evo2)[:length] # random, monotone
-    E_series.append([d, evo1, evo2, ref_value])
-        # vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
     
     # iterate optimization
     while existing_i < I:
@@ -174,6 +141,40 @@ for d in [2, 3, 4, 5]:
         evo2 = np.array(D_evo2) # random, monotone
         vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
+    # report mean and std over a collection of samples
+    report = False
+    if report:
+        collection_size = 10
+        D1_series = []
+        D2_series = []
+        P1_series = []
+        P2_series = []
+        for i in range(collection_size):
+            uvset1 = vmot.random_uvset(n_points, d)
+            uvset2 = vmot.random_uvset_mono(n_points, d)
+            ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+            ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+            D1, P1, __ = vmot.mtg_dual_value(model1, ws1, opt_parameters, normalize_pi = False)
+            D2, P2, __ = vmot.mtg_dual_value(model2, ws2, opt_parameters, normalize_pi = False)
+            D1_series.append(D1)
+            D2_series.append(D2)
+            P1_series.append(P1)
+            P2_series.append(P2)
+        print('dual value')
+        print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+        print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+        print('penalty')
+        print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+        print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+    
+    # store series for multiple plot
+    length = 100
+    evo1 = np.array(D_evo1)[:length] # random, independent
+    evo2 = np.array(D_evo2)[:length] # random, monotone
+    E_series.append([d, evo1, evo2, ref_value])
+        # vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
+    
+
 
 # multiple convergence plots
 ref_color='black'
@@ -192,3 +193,36 @@ ax[0][1].legend(['reduced', 'full'])
 # fig.suptitle('Convergence - normal marginals')
 pl.tight_layout()
 pl.show()
+
+
+# heat map
+grid_n  = 40
+uvset1g = vmot.grid_uvset(grid_n, d)
+uvset2g = vmot.grid_uvset_mono(grid_n, d)
+
+# pi star, using grid samples
+ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+ws2g, grid2 = vmot.generate_working_sample_uv_mono(uvset2g, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1g, opt_parameters, normalize_pi = False)
+D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2g, opt_parameters, normalize_pi = False)
+
+pi_star1.sum()
+pi_star2.sum()
+pi_star1 = pi_star1 / pi_star1.sum()
+pi_star2 = pi_star2 / pi_star2.sum()
+
+# vmot.plot_sample_2d(ws1g, label='ws1', w=pi_star1, random_sample_size=100000)
+# vmot.plot_sample_2d(ws1g, label='ws2', w=pi_star2, random_sample_size=100000)
+
+    
+heat = vmot.heatmap(grid1[:,:2], pi_star1)   # X, independent
+heat = vmot.heatmap(grid2[:,:2], pi_star2)   # X, monotone
+heat = vmot.heatmap(grid1[:,:2], pi_star1, uplim=np.nanmax(heat))   # X, independent, sharing color scale with monotone
+
+heat_marginal = np.nansum(heat, axis=0)
+fig, ax = pl.subplots()
+ax.set_ylim(0, max(heat_marginal))
+ax.plot(heat_marginal)
+
+pl.figure()
+pl.plot(pi_star2)

@@ -20,9 +20,9 @@ PyTorch implementation of Eckstein and Kupper 2021 - Computation of Optimal Tran
 
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import matplotlib.pyplot as pl
-from scipy.stats import norm
+# from scipy.stats import norm
 
 import vmot
 import option_implied_inverse_cdf as empirical
@@ -37,7 +37,7 @@ opt_parameters = { 'penalization'    : 'L2',
                    'beta_multiplier' : 1,
                    'gamma'           : 100,
                    'batch_size'      : 2000,   # no special formula for this
-                   'epochs'          : 100      }
+                   'epochs'          : 10      }
 
 # cost function to be maximized
 A = 0
@@ -46,116 +46,62 @@ def cost_f(x, y):
     # cost = A.x1.x2 + B.y1.y2
     return A * x[:,0] * x[:,1] + B * y[:,0] * y[:,1]
 
-# sets of (u,v) points
-grid_n  = 50
-uvset1  = vmot.random_uvset(n_points, d)
-uvset2  = vmot.random_uvset_mono(n_points, d)
-uvset1g = vmot.grid_uvset(grid_n, d)
-# uvset2g = vmot.grid_uvset_mono(int(n**(2*d/(d+1))), d)
-uvset2g = vmot.grid_uvset_mono(grid_n, d)
-print('sample shapes')
-print('independent random  ', uvset1.shape)
-print('monotone random     ', uvset2.shape)
-print('independent grid    ', uvset1g.shape)
-print('monotone grid       ', uvset2g.shape)
+
+# # example 1 - normal marginals
+
+# # choose scales
+# sig1 = 1.0
+# sig2 = 1.0
+# rho1 = np.sqrt(2.0)
+# rho2 = np.sqrt(3.0)
+# x_normal_scale = [sig1, sig2]
+# y_normal_scale = [rho1, rho2]
+
+# # reference value (see proposition)
+# lam1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
+# lam2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
+# ref_value = (A + B) * sig1 * sig2 + B * lam1 * lam2
+# print(f'normal marginals exact solution: {ref_value:8.4f}')
+
+# # inverse cumulatives
+# def normal_inv_cum_xi(q, i):
+#     return norm.ppf(q) * x_normal_scale[i]
+
+# def normal_inv_cum_yi(q, i):
+#     return norm.ppf(q) * y_normal_scale[i]
+
+# def normal_inv_cum_x(q):
+#     z = norm.ppf(q)
+#     return np.array([z * x_normal_scale[i] for i in range(d)]).T
+
+# # working samples
+# ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
+# ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
+
+# # train/store/load
+# # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+# # model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+# # vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'normal')
+# # vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'normal_mono')
+# # model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('normal')
+# # model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('normal_mono')
+
+# # load from iterative high d
+# existing_i = 10
+# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_d2_{existing_i}')
+# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d2_{existing_i}')
+
+# # plot
+# evo1 = np.array(D_evo1) # random, independent
+# evo2 = np.array(D_evo2) # random, monotone
+# vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value, title='Numerical value convergence - Normal marginals (d=2)')
 
 
-# example 1 - normal marginals
+# example - empirical
 
-# choose scales
-sig1 = 1.0
-sig2 = 1.0
-rho1 = np.sqrt(2.0)
-rho2 = np.sqrt(3.0)
-x_normal_scale = [sig1, sig2]
-y_normal_scale = [rho1, rho2]
-
-# reference value (see proposition)
-lam1 = np.sqrt(rho1 ** 2 - sig1 ** 2)
-lam2 = np.sqrt(rho2 ** 2 - sig2 ** 2)
-ref_value = (A + B) * sig1 * sig2 + B * lam1 * lam2
-print(f'normal marginals exact solution: {ref_value:8.4f}')
-
-# inverse cumulatives
-def normal_inv_cum_xi(q, i):
-    return norm.ppf(q) * x_normal_scale[i]
-
-def normal_inv_cum_yi(q, i):
-    return norm.ppf(q) * y_normal_scale[i]
-
-def normal_inv_cum_x(q):
-    z = norm.ppf(q)
-    return np.array([z * x_normal_scale[i] for i in range(d)]).T
-
-# working samples
-ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
-
-# train/store/load
-# model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-# model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-# vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'normal')
-# vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'normal_mono')
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('normal')
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('normal_mono')
-
-# plot
-evo1 = np.array(D_evo1) # random, independent
-evo2 = np.array(D_evo2) # random, monotone
-vmot.convergence_plot([evo2, evo1], ['monotone', 'independent'], ref_value=ref_value, title='Numerical value convergence - Normal marginals (d=2)')
-
-# pi star, using grid samples
-ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, normal_inv_cum_xi, normal_inv_cum_yi, cost_f)
-ws2g, grid2 = vmot.generate_working_sample_uv_mono(uvset2g, normal_inv_cum_x, normal_inv_cum_yi, cost_f)
-D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1g, opt_parameters, normalize_pi = False)
-D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2g, opt_parameters, normalize_pi = False)
-
-pi_star1.sum()
-pi_star2.sum()
-pi_star1 = pi_star1 / pi_star1.sum()
-pi_star2 = pi_star2 / pi_star2.sum()
-
-# vmot.plot_sample_2d(ws1g, label='ws1', w=pi_star1, random_sample_size=100000)
-# vmot.plot_sample_2d(ws1g, label='ws2', w=pi_star2, random_sample_size=100000)
-
-def heatmap(grid, pi, uplim=0):
-    # generate heatmap matrix
-    X = pd.DataFrame(grid)[[0,1]]
-    X.columns = ['X1', 'X2']
-    X['pi'] = pi
-    X = X.groupby(['X1', 'X2']).sum()
-    heat = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
-    heat[heat==0] = np.nan
-    
-    # plot
-    figsize = [10,8]
-    fig, ax = pl.subplots(figsize=figsize)
-    im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
-    
-    # keep consistency between x and y scales
-    if uplim > 0:
-        im.set_clim(0, uplim)
-    
-    ax.set_xlabel('U1')
-    ax.set_ylabel('U2')
-    ax.invert_yaxis()
-    ax.figure.colorbar(im)
-    
-    return heat
-    
-heat = heatmap(grid1[:,:2], pi_star1)   # X, independent
-heat = heatmap(grid2[:,:2], pi_star2)   # X, monotone
-
-heat_marginal = np.nansum(heat, axis=0)
-fig, ax = pl.subplots()
-ax.set_ylim(0, max(heat_marginal))
-ax.plot(heat_marginal)
-
-pl.figure()
-pl.plot(pi_star2)
-
-
-# example 2 - empirical
+I = 10   # iterations
+existing_i = 2
+np.random.seed(1)
 
 AMZN_inv_cdf = empirical.AMZN_inv_cdf
 AAPL_inv_cdf = empirical.AAPL_inv_cdf
@@ -176,18 +122,123 @@ def empirical_inv_cum_x(q):
     return np.array([empirical_inv_cum_xi(q, i) for i in range(d)]).T
 
 # working samples
+uvset1  = vmot.random_uvset(n_points, d)
+uvset2  = vmot.random_uvset_mono(n_points, d)
 ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
 ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
-sample_mean_cost = 0.5 * (ws1[:,-2].mean() + ws2[:,-2].mean())   # lower reference for the optimal cost
+cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+sample_mean_cost = cost_series.mean()   # lower reference for the optimal cost
 
-# train/store/load
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical')
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono')
+if existing_i == 0:
+    # train/store/load
+    print('\niteration 1 (new model)\n')
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+    existing_i = 1
+    print('models generated')
+    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical_1')
+    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono_1')
+else:
+    # load
+    print(f'\nloading model {existing_i}')
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'empirical_{existing_i}')
+    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'empirical_mono_{existing_i}')
 
-model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results('empirical')
-model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results('empirical_mono')
+
+# iterate optimization
+while existing_i < I:
+    
+    # new random sample
+    print(f'\niteration {existing_i+1}\n')
+    uvset1 = vmot.random_uvset(n_points, d)
+    uvset2 = vmot.random_uvset_mono(n_points, d)
+    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+    cost_series = np.hstack([cost_series, ws1[:,-2], ws2[:,-2]])
+    sample_mean_cost = cost_series.mean()   # lower reference for the optimal cost
+    print(f'sample mean cost = {sample_mean_cost:7.4f}')
+
+    _model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
+    _model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
+    
+    D_evo1  = D_evo1  + _D_evo1
+    H_evo1  = H_evo1  + _H_evo1
+    P_evo1  = P_evo1  + _P_evo1
+    ds_evo1 = ds_evo1 + _ds_evo1
+    hs_evo1 = hs_evo1 + _hs_evo1
+    model1 = _model1
+    
+    D_evo2  = D_evo2  + _D_evo2
+    H_evo2  = H_evo2  + _H_evo2
+    P_evo2  = P_evo2  + _P_evo2
+    ds_evo2 = ds_evo2 + _ds_evo2
+    hs_evo2 = hs_evo2 + _hs_evo2
+    model2 = _model2
+    
+    existing_i = existing_i + 1
+    print('models updated')
+    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'empirical_{existing_i}')
+    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'empirical_mono_{existing_i}')
+    
+    # plot
+    evo1 = np.array(D_evo1) # random, independent
+    evo2 = np.array(D_evo2) # random, monotone
+    vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=sample_mean_cost)
+    
+    
+# report mean and std over a collection of samples
+report = False
+if report:
+    collection_size = 10
+    collection_cost_series = None
+    D1_series = []
+    D2_series = []
+    P1_series = []
+    P2_series = []
+    for i in range(collection_size):
+        uvset1 = vmot.random_uvset(n_points, d)
+        uvset2 = vmot.random_uvset_mono(n_points, d)
+        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+        if collection_cost_series is None: 
+            collection_cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+        else:
+            collection_cost_series = np.hstack([cost_series, ws1[:,-2], ws2[:,-2]])
+        D1, P1, __ = vmot.mtg_dual_value(model1, ws1, opt_parameters, normalize_pi = False)
+        D2, P2, __ = vmot.mtg_dual_value(model2, ws2, opt_parameters, normalize_pi = False)
+        D1_series.append(D1)
+        D2_series.append(D2)
+        P1_series.append(P1)
+        P2_series.append(P2)
+    sample_mean_cost = collection_cost_series.mean()   # lower reference for the optimal cost
+    print(f'sample mean cost = {sample_mean_cost:7.4f}')
+    print('dual value')
+    print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+    print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+    print('penalty')
+    print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+    print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+
+
+
+
+# heat empirical
+# sets of (u,v) points
+grid_n  = 40
+uvset1g = vmot.grid_uvset(grid_n, d)
+uvset2g = vmot.grid_uvset_mono(grid_n, d)
+print('sample shapes')
+print('independent grid    ', uvset1g.shape)
+print('monotone grid       ', uvset2g.shape)
+
+ws1g, grid1 = vmot.generate_working_sample_uv(uvset1g, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+ws2g, grid2 = vmot.generate_working_sample_uv_mono(uvset2g, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+D1, H1, pi_star1 = vmot.mtg_dual_value(model1, ws1g, opt_parameters, normalize_pi = False)
+D2, H2, pi_star2 = vmot.mtg_dual_value(model2, ws2g, opt_parameters, normalize_pi = False)
+
+
+
+
 
 
 # plot
@@ -195,11 +246,11 @@ ref_value = sample_mean_cost
 ref_color = 'black'
 ref_label = 'lower bound'
 labels = ['reduced', 'full']
-title='Convergence - empirical marginals (d = 2)'
+# title='Convergence - empirical marginals (d = 2)'
 evo1 = np.array(D_evo1)[:100]
 evo2 = np.array(D_evo2)[:100]
 
-pl.figure(figsize = [5,5])   # plot in two iterations to have a clean legend
+pl.figure(figsize = [5,5])
 for v in [evo2, evo1]:
     pl.plot(range(1, len(v)+1), v)
 if not ref_value is None:
