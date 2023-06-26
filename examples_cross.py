@@ -45,6 +45,8 @@ B = 1
 def cost_f(x, y):
     # cost = A.x1.x2 + B.y1.y2
     return A * x[:,0] * x[:,1] + B * y[:,0] * y[:,1]
+def minus_cost_f(x, y):
+    return -cost_f(x, y)
 
 
 # # example 1 - normal marginals
@@ -99,8 +101,8 @@ def cost_f(x, y):
 
 # example - empirical
 
-I = 10   # iterations
-existing_i = 2
+I = 20   # iterations
+existing_i = 0
 np.random.seed(1)
 
 AMZN_inv_cdf = empirical.AMZN_inv_cdf
@@ -124,8 +126,10 @@ def empirical_inv_cum_x(q):
 # working samples
 uvset1  = vmot.random_uvset(n_points, d)
 uvset2  = vmot.random_uvset_mono(n_points, d)
-ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
-ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+# ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+# ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, minus_cost_f)
+ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
 cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
 sample_mean_cost = cost_series.mean()   # lower reference for the optimal cost
 
@@ -136,13 +140,13 @@ if existing_i == 0:
     model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
     existing_i = 1
     print('models generated')
-    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'empirical_1')
-    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'empirical_mono_1')
+    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], 'minus_empirical_1')
+    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], 'minus_empirical_mono_1')
 else:
     # load
     print(f'\nloading model {existing_i}')
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'empirical_{existing_i}')
-    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'empirical_mono_{existing_i}')
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'minus_empirical_{existing_i}')
+    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'minus_empirical_mono_{existing_i}')
 
 
 # iterate optimization
@@ -152,8 +156,10 @@ while existing_i < I:
     print(f'\niteration {existing_i+1}\n')
     uvset1 = vmot.random_uvset(n_points, d)
     uvset2 = vmot.random_uvset_mono(n_points, d)
-    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
-    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+    # ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+    # ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, minus_cost_f)
+    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
     cost_series = np.hstack([cost_series, ws1[:,-2], ws2[:,-2]])
     sample_mean_cost = cost_series.mean()   # lower reference for the optimal cost
     print(f'sample mean cost = {sample_mean_cost:7.4f}')
@@ -177,13 +183,14 @@ while existing_i < I:
     
     existing_i = existing_i + 1
     print('models updated')
-    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'empirical_{existing_i}')
-    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'empirical_mono_{existing_i}')
+    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'minus_empirical_{existing_i}')
+    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'minus_empirical_mono_{existing_i}')
     
     # plot
     evo1 = np.array(D_evo1) # random, independent
     evo2 = np.array(D_evo2) # random, monotone
-    vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=sample_mean_cost)
+    vmot.convergence_plot([-evo2, -evo1], ['reduced', 'full'], ref_value=-sample_mean_cost)
+    vmot.convergence_plot([-evo2, -evo1], ['reduced', 'full'], ref_value=-sample_mean_cost)
     
     
 # report mean and std over a collection of samples
