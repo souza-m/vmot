@@ -204,6 +204,12 @@ negative_diag_y = np.vstack([empirical_inv_cum_yi(uv_set[::-1], 0), empirical_in
 negative_cost = single_period_cost_f(negative_diag_y)
 mean_negative_cost = negative_cost.mean()
 
+# check cost array
+pl.figure()
+pl.plot(positive_cost)
+pl.plot(negative_cost)
+pl.legend(['positive', 'negative'])
+
 
 # --- plot all bounds ---
 existing_i=10
