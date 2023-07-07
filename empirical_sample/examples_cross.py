@@ -261,11 +261,11 @@ pl.figure(figsize = [5,5])
 for v in [evo2, evo1]:
     pl.plot(range(1, len(v)+1), v)
 if not ref_value is None:
-    pl.axhline(ref_value, linestyle=':', color=ref_color)
+    pl.axhline(-sample_mean_cost, linestyle=':', color='black')
 pl.legend(labels)
 # pl.title(title)
 shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
-pl.annotate('(lower bound)', (len(v)*1/5, ref_value-shift), color=ref_color)   # trial and error to find a good position
+pl.annotate('(lower bound)', (len(v)*1/5, ref_value-shift), color='black')   # trial and error to find a good position
 pl.show()
 
 
@@ -364,3 +364,47 @@ vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1, model2, D_e
 #     fig.colorbar(im)
     
 #     return heat_x, heat_y
+
+
+
+
+# plot both bounds
+existing_i=10
+a_, D_evo1_plus, _, __, ___, ____ = vmot.load_results(f'empirical_{existing_i}')
+b_, D_evo2_plus, _, __, ___, ____ = vmot.load_results(f'empirical_mono_{existing_i}')
+a_, D_evo1_minus, _, __, ___, ____ = vmot.load_results(f'minus_empirical_{existing_i}')
+b_, D_evo2_minus, _, __, ___, ____ = vmot.load_results(f'minus_empirical_mono_{existing_i}')
+
+evo1 = np.array(D_evo1_plus) # random, independent
+evo2 = np.array(D_evo2_plus) # random, monotone
+
+pl.figure(figsize = [5,5])
+for v in [evo2, evo1]:
+    pl.plot(range(1, len(v)+1), v)
+
+pl.gca().set_prop_cycle(None)   # reset color cycler
+evo1 = -np.array(D_evo1_minus) # random, independent
+evo2 = -np.array(D_evo2_minus) # random, monotone
+for v in [evo2, evo1]:
+    pl.plot(range(1, len(v)+1), v)
+pl.axhline(-sample_mean_cost, linestyle=':', color=ref_color)
+pl.legend(['reduced', 'full'], loc='lower right')
+
+# pl.title(title)
+shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
+pl.annotate('sample mean', (len(v)*1/4, -sample_mean_cost-shift), color=ref_color)   # trial and error to find a good position
+pl.annotate(r'$p^+$', (len(v)*3/4, D_evo1_plus[-1]+shift), color=ref_color)   # trial and error to find a good position
+pl.annotate(r'$p^-$', (len(v)*3/4, -D_evo1_minus[-1]-2*shift), color=ref_color)   # trial and error to find a good position
+pl.show()
+
+
+
+if not ref_value is None:
+    pl.axhline(ref_value, linestyle=':', color=ref_color)
+
+pl.axhline(, linestyle=':', color=ref_color)
+pl.legend(labels)
+shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
+pl.annotate('(sample mean)', (len(v)*1/5, ref_value-shift), color=ref_color)   # trial and error to find a good position
+pl.show()
+
