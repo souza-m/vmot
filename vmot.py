@@ -11,6 +11,7 @@ References
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
+import matplotlib.colors as mcolors
 import datetime as dt, time
 import pickle
 import itertools
@@ -426,7 +427,13 @@ def convergence_plot_empirical(value_series_list, labels, h_series_list=None,
     pl.title(title)
     pl.show()
 
+# import matplotlib.cm as cm
 # utils - heat map
+# cmap in collor pattern of the first cathegorical color '#348ABD' or #A60628
+colors = ['white', '#A60628']
+positions = [0, 1]
+cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', list(zip(positions, colors)))
+
 def heatmap(grid, pi, uplim=0):
     # generate heatmap matrix
     X = pd.DataFrame(grid)[[0,1]]
@@ -439,11 +446,15 @@ def heatmap(grid, pi, uplim=0):
     # plot
     figsize = [8,5]
     fig, ax = pl.subplots(figsize=figsize)
-    im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
+    # im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
+    im = ax.imshow(heat, cmap=cmap, extent=[0,1,1,0])
     
     # keep consistency between x and y scales
-    if uplim > 0:
-        im.set_clim(0, uplim)
+    # if uplim > 0:
+    #     im.set_clim(0, uplim)
+    if uplim == 0:
+        uplim = np.nanmax(heat)
+    im.set_clim(0, uplim)
     
     ax.set_xlabel('U1')
     ax.set_ylabel('U2')

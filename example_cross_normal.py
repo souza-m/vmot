@@ -11,6 +11,7 @@ import numpy as np
 from scipy.stats import norm
 import vmot
 import matplotlib.pyplot as pl
+from cycler import cycler
 
 # random parameters for the marginal distributions
 np.random.seed(1)
@@ -31,8 +32,10 @@ for i in range(0, max_d):
 # print('A', A)
 print('B', B)
 
+# parse / load
 E_series = []
-for d in [2]:
+# for d in [2, 3, 4, 5]:   
+for d in [2]:   # for heat map only
     
     # iterations
     I = 10
@@ -175,6 +178,8 @@ for d in [2]:
         # vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value, title=f'Convergence - empirical marginals (d = {d})')
     
 
+# chosen color cycler (see empirical example)
+cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'])
 
 # multiple convergence plots
 ref_color='black'
@@ -182,21 +187,24 @@ title='Convergence - normal'
 fig, ax = pl.subplots(2, 2, figsize = [8,8])   # plot in two iterations to have a clean legend
 for i, E in enumerate(E_series[:4]):
     _ax = ax.flatten()[i]
+    _ax.set_prop_cycle(cc)
     d, evo1, evo2, ref_value = E
-    _ax.plot(range(1, len(evo2)+1), evo2)
-    _ax.plot(range(1, len(evo1)+1), evo1)
+    _ax.plot(range(1, len(evo2)+1), evo1)
+    _ax.plot(range(1, len(evo1)+1), evo2)
     _ax.axhline(ref_value, linestyle=':', color=ref_color)
     _ax.set_title(f'd = {d}')
     shift = .02 * (_ax.get_ylim()[1] - pl.gca().get_ylim()[0])
-    _ax.annotate('(true value)', (len(evo1)*2/3, ref_value+shift), color=ref_color)   # trial and error to find a good position
-ax[0][1].legend(['reduced', 'full'])
+    _ax.annotate('true value', (len(evo1)*2/3, ref_value+shift), color=ref_color)   # trial and error to find a good position
+ax[0][1].legend(['full', 'reduced'])
 # fig.suptitle('Convergence - normal marginals')
 pl.tight_layout()
 pl.show()
 
 
 # heat map
-grid_n  = 40
+# step 1: run the parse / load block above with d=2
+# step 2:
+grid_n  = 30
 uvset1g = vmot.grid_uvset(grid_n, d)
 uvset2g = vmot.grid_uvset_mono(grid_n, d)
 
@@ -219,6 +227,7 @@ heat = vmot.heatmap(grid1[:,:2], pi_star1)   # X, independent
 heat = vmot.heatmap(grid2[:,:2], pi_star2)   # X, monotone
 heat = vmot.heatmap(grid1[:,:2], pi_star1, uplim=np.nanmax(heat))   # X, independent, sharing color scale with monotone
 
+# check diagonal (test)
 heat_marginal = np.nansum(heat, axis=0)
 fig, ax = pl.subplots()
 ax.set_ylim(0, max(heat_marginal))
