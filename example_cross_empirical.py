@@ -148,7 +148,7 @@ def empirical_inv_cum_x(q):
 #         # vmot.convergence_plot([-evo2, -evo1], ['reduced', 'full'], ref_value=-sample_mean_cost)
 #         # vmot.convergence_plot([-evo2, -evo1], ['reduced', 'full'], ref_value=-sample_mean_cost)
 
-for example in [2]:
+for example in [1, 2]:
     if example == 1:
         cost = cost_f
         label = 'empirical_vg'
@@ -354,6 +354,14 @@ pl.annotate(r'$p^+$', (len(v)*3/4, D_evo1_plus[-1]+shift))   # trial and error t
 pl.annotate(r'$p^-$', (len(v)*3/4, -D_evo1_minus[-1]-2*shift))   # trial and error to find a good position
 pl.tight_layout()
 pl.show()
+
+
+# closing prices Dec 16th
+p1 = 134.51  # AAPL  https://finance.yahoo.com/quote/AAPL/history?period1=1669852800&period2=1672444800&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true
+p2 =  87.86  # AMZN  https://finance.yahoo.com/quote/AMZN/history?period1=1669852800&period2=1672444800&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true
+
+
+
 
 
 
