@@ -15,6 +15,7 @@ import matplotlib.colors as mcolors
 import datetime as dt, time
 import pickle
 import itertools
+from matplotlib.colors import LogNorm
 
 import torch
 from torch import nn
@@ -431,6 +432,8 @@ def convergence_plot_empirical(value_series_list, labels, h_series_list=None,
 # utils - heat map
 # cmap in collor pattern of the first cathegorical color '#348ABD' or #A60628
 colors = ['white', '#A60628']
+# colors = ['white', 'red']
+# colors = ['white', '#348ABD']
 positions = [0, 1]
 cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', list(zip(positions, colors)))
 
@@ -442,16 +445,14 @@ def heatmap(grid, pi, uplim=0):
     X = X.groupby(['X1', 'X2']).sum()
     heat = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
     heat[heat==0] = np.nan
-    
+
     # plot
     figsize = [8,5]
     fig, ax = pl.subplots(figsize=figsize)
-    # im = ax.imshow(heat, cmap = "Reds", extent=[0,1,1,0])
+    # im = ax.imshow(heat, cmap='Reds', extent=[0,1,1,0])
     im = ax.imshow(heat, cmap=cmap, extent=[0,1,1,0])
     
     # keep consistency between x and y scales
-    # if uplim > 0:
-    #     im.set_clim(0, uplim)
     if uplim == 0:
         uplim = np.nanmax(heat)
     im.set_clim(0, uplim)

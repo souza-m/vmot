@@ -76,78 +76,79 @@ def empirical_inv_cum_x(q):
 # process
 # example = 1
 # for gamma in [2000, 5000, 10000, 1000, 500]:
-for gamma in [100, 1000]:
- for example in [1, 2]:
-    if example == 1:
-        cost = cost_f
-        label = f'plus_empirical_ret_gamma{gamma:d}i'
-    if example == 2:
-        cost = minus_cost_f
-        label = f'minus_empirical_ret_gamma{gamma:d}i'
-    print(label)
-    I = 30           # number of desired iterations
-    existing_i = 0
-    opt_parameters['gamma'] = gamma * (existing_i+1)
-    print(opt_parameters['gamma'])
-    np.random.seed(1)
-    # print(f'gamma = {gamma:d}')
+# variable gamma
+# for gamma in [100, 1000]: 
+#  for example in [1, 2]:
+#     if example == 1:
+#         cost = cost_f
+#         label = f'plus_empirical_ret_gamma{gamma:d}i'
+#     if example == 2:
+#         cost = minus_cost_f
+#         label = f'minus_empirical_ret_gamma{gamma:d}i'
+#     print(label)
+#     I = 30           # number of desired iterations
+#     existing_i = 0
+#     opt_parameters['gamma'] = gamma * (existing_i+1)
+#     print(opt_parameters['gamma'])
+#     np.random.seed(1)
+#     # print(f'gamma = {gamma:d}')
     
-    if existing_i == 0:
-        # train & dump
-        print('\niteration 1 (new model)\n')
-        uvset1  = vmot.random_uvset(n_points, d)
-        uvset2  = vmot.random_uvset_mono(n_points, d)
-        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost)
-        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost)
-        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
-        model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
-        existing_i = 1
-        print('models generated')
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + '_1')
-        vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + '_mono_1')
-    else:
-        # load
-        print(f'\nloading model {existing_i}')
-        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(label + f'_{existing_i}')
-        model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(label + f'_mono_{existing_i}')
+#     if existing_i == 0:
+#         # train & dump
+#         print('\niteration 1 (new model)\n')
+#         uvset1  = vmot.random_uvset(n_points, d)
+#         uvset2  = vmot.random_uvset_mono(n_points, d)
+#         ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost)
+#         ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost)
+#         model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, opt_parameters, monotone = False, verbose = 10)
+#         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
+#         existing_i = 1
+#         print('models generated')
+#         vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + '_1')
+#         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + '_mono_1')
+#     else:
+#         # load
+#         print(f'\nloading model {existing_i}')
+#         model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(label + f'_{existing_i}')
+#         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(label + f'_mono_{existing_i}')
     
-    # iterate optimization
-    while existing_i < I:
-        opt_parameters['gamma'] = gamma * (existing_i+1)
-        print(opt_parameters['gamma'])
+#     # iterate optimization
+#     while existing_i < I:
+#         opt_parameters['gamma'] = gamma * (existing_i+1)
+#         print(opt_parameters['gamma'])
 
-        # new random sample
-        print(f'\niteration {existing_i+1}\n')
-        uvset1 = vmot.random_uvset(n_points, d)
-        uvset2 = vmot.random_uvset_mono(n_points, d)
-        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost)
-        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost)
+#         # new random sample
+#         print(f'\niteration {existing_i+1}\n')
+#         uvset1 = vmot.random_uvset(n_points, d)
+#         uvset2 = vmot.random_uvset_mono(n_points, d)
+#         ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost)
+#         ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost)
         
-        # train
-        _model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
-        _model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
+#         # train
+#         _model1, _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, opt_parameters, model=model1, monotone = False, verbose = 10)
+#         _model2, _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, opt_parameters, model=model2, monotone = True, verbose = 10)
         
-        # concatenate
-        D_evo1  = D_evo1  + _D_evo1
-        H_evo1  = H_evo1  + _H_evo1
-        P_evo1  = P_evo1  + _P_evo1
-        ds_evo1 = ds_evo1 + _ds_evo1
-        hs_evo1 = hs_evo1 + _hs_evo1
-        model1 = _model1
-        D_evo2  = D_evo2  + _D_evo2
-        H_evo2  = H_evo2  + _H_evo2
-        P_evo2  = P_evo2  + _P_evo2
-        ds_evo2 = ds_evo2 + _ds_evo2
-        hs_evo2 = hs_evo2 + _hs_evo2
-        model2 = _model2
-        existing_i = existing_i + 1
-        print('models updated')
+#         # concatenate
+#         D_evo1  = D_evo1  + _D_evo1
+#         H_evo1  = H_evo1  + _H_evo1
+#         P_evo1  = P_evo1  + _P_evo1
+#         ds_evo1 = ds_evo1 + _ds_evo1
+#         hs_evo1 = hs_evo1 + _hs_evo1
+#         model1 = _model1
+#         D_evo2  = D_evo2  + _D_evo2
+#         H_evo2  = H_evo2  + _H_evo2
+#         P_evo2  = P_evo2  + _P_evo2
+#         ds_evo2 = ds_evo2 + _ds_evo2
+#         hs_evo2 = hs_evo2 + _hs_evo2
+#         model2 = _model2
+#         existing_i = existing_i + 1
+#         print('models updated')
         
-        # dump
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + f'_{existing_i}')
-        vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + f'_mono_{existing_i}')
+#         # dump
+#         vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + f'_{existing_i}')
+#         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + f'_mono_{existing_i}')
         
-for gamma in [10000, 100000, 10, 1]:
+for gamma in [1000000, 10000000]:
  for example in [1, 2]:
     if example == 1:
         cost = cost_f
@@ -251,8 +252,8 @@ pl.legend(['positive', 'negative'])
 # uvset1  = vmot.random_uvset(n_points, d)
 # uvset2  = vmot.random_uvset_mono(n_points, d)
 
-label, label_mono = 'plus_empirical_ret_gamma100000_20', 'plus_empirical_ret_gamma100000_mono_20'
-minus_label, minus_label_mono = 'minus_empirical_ret_gamma100000_20', 'minus_empirical_ret_gamma100000_mono_20'
+label, label_mono = 'plus_empirical_ret_gamma10000_20', 'plus_empirical_ret_gamma10000_mono_20'
+minus_label, minus_label_mono = 'minus_empirical_ret_gamma10000_20', 'minus_empirical_ret_gamma10000_mono_20'
 
 model1_plus,  D_evo1_plus, _, __, ___, ____ = vmot.load_results(label)
 model2_plus,  D_evo2_plus, _, __, ___, ____ = vmot.load_results(label_mono)

@@ -21,6 +21,7 @@ rho = np.around(np.random.random(max_d), 2) + 2
 print('sig', sig)
 print('rho', rho)
 
+# alternative, portfolio view: B_ij = w_i * w_j (check and adjust main text accordingly)
 # random parameters for the cost functions
 A = np.zeros((max_d, max_d))
 B = np.around(np.random.random((max_d, max_d)), 2)
