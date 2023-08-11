@@ -44,22 +44,21 @@ opt_parameters = { 'penalization'    : 'L2',   # fixed
                    'epochs'          : 10     }
 
 # --- process batches and save models (takes long time) ---
+E_series = []
 ref_values = []
 # d = 2
 for d in [2, 3, 4, 5]:
     
     # batch iterations control
-    I = 10           # maximum
+    I = 10            # maximum
     existing_i = 0   # last iteration
-    if d < 5:
-        existing_i = 10
-    if d == 5:
-        existing_i = 7
     
     # random marginal parameters
     np.random.seed(0)    # reproducible results
-    sig = np.around(np.random.random(d), 2) + 1
-    rho = np.around(np.random.random(d), 2) + 2
+    # sig = np.around(np.random.random(d), 2) + 1
+    # rho = np.around(np.random.random(d), 2) + 2
+    sig = np.random.random(d) + 1
+    rho = np.random.random(d) + 2
     print('sig', sig)
     print('rho', rho)
     
@@ -154,22 +153,14 @@ for d in [2, 3, 4, 5]:
         print('models updated')
         vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'portfolio_normal_full_d{d}_{existing_i}')
         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'portfolio_normal_mono_d{d}_{existing_i}')
+
         
-
-# --- load existing models and report, plot etc ---
-
-E_series = []
-for d, ref_value in zip([2, 3, 4, 5], ref_values):
-    
-    # load
-    existing_i = 10
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'portfolio_normal_full_d{d}_{existing_i}')
-    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'portfolio_normal_mono_d{d}_{existing_i}')
-    
     # individual plot
-    evo1 = np.array(D_evo1) # random, independent
-    evo2 = np.array(D_evo2) # random, monotone
-    vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
+    plot = False
+    if plot:
+        evo1 = np.array(D_evo1) # random, independent
+        evo2 = np.array(D_evo2) # random, monotone
+        vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
     # store for multiple plot
     multi_plot_length = 100
@@ -203,6 +194,7 @@ for d, ref_value in zip([2, 3, 4, 5], ref_values):
         print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
         print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
 
+
 # chosen color cycler (see empirical example)
 cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'])
 
@@ -220,7 +212,7 @@ for i, E in enumerate(E_series[:4]):
     _ax.set_title(f'd = {d}')
     shift = .02 * (_ax.get_ylim()[1] - pl.gca().get_ylim()[0])
     _ax.annotate('true value', (len(evo1)*2/3, ref_value+shift), color=ref_color)   # trial and error to find a good position
-ax[0][1].legend(['full', 'mono'])
+ax[0][1].legend(['full', 'reduced'])
 # fig.suptitle('Convergence - normal marginals')
 pl.tight_layout()
 pl.show()
