@@ -49,17 +49,12 @@ opt_parameters = { 'penalization'    : 'L2',   # fixed
 E_series = []
 ref_values = []
 # d = 2
-for d in [2, 3, 4, 5]:
+# for d in [2, 3, 4, 5]:
+for d in [2]:
     
     # batch iterations control
     I = 20            # maximum
-    existing_i = 0   # last iteration
-    if d == 2:
-        existing_i = 10
-    if d == 3:
-        existing_i = 10
-    if d == 4:
-        existing_i = 3
+    existing_i = 20   # last iteration
     # random marginal parameters
     np.random.seed(0)    # reproducible results
     # sig = np.around(np.random.random(d), 2) + 1
@@ -176,13 +171,14 @@ for d in [2, 3, 4, 5]:
     E_series.append([d, evo1, evo2, ref_value])
 
     # report mean and std over a collection of samples
-    report = False
+    report = True
     if report:
         collection_size = 10
         D1_series = []
         D2_series = []
         P1_series = []
         P2_series = []
+        np.random.seed(0)
         for i in range(collection_size):
             uvset1 = vmot.random_uvset(n_points, d)
             uvset2 = vmot.random_uvset_mono(n_points, d)
