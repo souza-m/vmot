@@ -5,6 +5,7 @@
 \usepackage[latin9]{luainputenc}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{amssymb}
 
 \makeatletter
 
@@ -16,6 +17,50 @@
 
 \usepackage{babel}
 \begin{document}
+Portfolio variance, normal:
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+Method & $d$ & Exact solution & Numerical value & STD\tabularnewline
+\hline 
+\hline 
+\multirow{4}{*}{full} & $2$ & $1.4680$ & $1.3980$ & $0.0018$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $3$ & $0.8463$ & $0.6683$ & $0.0008$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $4$ & $2.1691$ & $1.8535$ & $0.0016$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $5$ & $1.7699$ & $1.1546$ & $0.0015$\tabularnewline
+\hline 
+\multirow{4}{*}{reduced} & $2$ & $1.4680$ & $1.4984$ & $0.0014$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $3$ & $0.8463$ & $0.7883$ & $0.0007$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $4$ & $2.1691$ & $1.9632$ & $0.0018$\tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & $5$ & $1.7699$ & $1.4998$ & $0.0010$\tabularnewline
+\hline 
+\end{tabular}
+
+Portfolio variance, empirical:
+
+\begin{tabular}{|c|c|c|}
+\hline 
+Method & Upper bound & Lower bound\tabularnewline
+\hline 
+\hline 
+Full & $0.0281$ & $0.0124$\tabularnewline
+\hline 
+Reduced & $0.0294$ & $0.0219$\tabularnewline
+\hline 
+MOT & $0.0308$ & $0.0114$\tabularnewline
+\hline 
+Sample mean & \multicolumn{2}{c|}{$0.0207$}\tabularnewline
+\hline 
+\end{tabular}
+
+OLD:
+
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline 
 Method & $d$ & True value & Numerical Value & Numerical STD & Penalty\tabularnewline
@@ -59,6 +104,20 @@ $d$ & True value & Method & Numerical Value & Numerical STD & Penalty\tabularnew
 \multirow{2}{*}{$5$} & \multirow{2}{*}{$27.92$} & reduced &  &  & \tabularnewline
 \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
  &  & full &  &  & \tabularnewline
+\hline 
+\end{tabular}
+\[
+\mathbb{E}\left[\left(Y-\bar{Y}\right)\left(X-\bar{X}\right)\right]=
+\]
+
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+Sample mean (lower bound) & Method & Numerical Value & Numerical STD & Penalty\tabularnewline
+\hline 
+\hline 
+\multirow{2}{*}{$14348.78$} & reduced & $15032.05$ & $1.1599$ & \tabularnewline
+\cline{2-5} \cline{3-5} \cline{4-5} \cline{5-5} 
+ & full & $15013.92$ &  & \tabularnewline
 \hline 
 \end{tabular}
 \end{document}

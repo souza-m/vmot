@@ -1,4 +1,4 @@
-portfolio_variance_normal.py - report from the process block
+Reports - normal
 
 d = 2, exact solution:   1.4680
 
@@ -53,3 +53,16 @@ reduced:  mean =   1.4998;   std =   0.0010
 penalty
 full:     mean =   0.1442;   std =   0.0124
 reduced:  mean =   0.0697;   std =   0.0072
+
+
+
+
+Reports - empirical
+
+dual value (plus)
+full:     mean =   0.0281;   std =   0.0001
+reduced:  mean =   0.0294;   std =   0.0001
+dual value (minus)
+full:     mean =  -0.0124;   std =   0.0000
+reduced:  mean =  -0.0219;   std =   0.0001
+

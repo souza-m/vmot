@@ -8,9 +8,11 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 # Example 1: solve cross-product cost with normal marginals, d >= 2
 
 import numpy as np
+import pandas as pd
 from scipy.stats import norm
 import vmot
 import matplotlib.pyplot as pl
+import matplotlib.colors as mcolors
 from cycler import cycler
 
 # random vector of portfolio weights
@@ -50,9 +52,14 @@ ref_values = []
 for d in [2, 3, 4, 5]:
     
     # batch iterations control
-    I = 10            # maximum
+    I = 20            # maximum
     existing_i = 0   # last iteration
-    
+    if d == 2:
+        existing_i = 10
+    if d == 3:
+        existing_i = 10
+    if d == 4:
+        existing_i = 3
     # random marginal parameters
     np.random.seed(0)    # reproducible results
     # sig = np.around(np.random.random(d), 2) + 1
@@ -190,9 +197,9 @@ for d in [2, 3, 4, 5]:
         print('dual value')
         print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
         print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
-        print('penalty')
-        print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
-        print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+        # print('penalty')
+        # print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+        # print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
 
 
 # chosen color cycler (see empirical example)
@@ -222,7 +229,7 @@ pl.show()
 # heat map
 # step 1: load cost function and inverse cumulative functions (run the main "process" block above with d=2)
 # step 2:
-grid_n  = 30
+grid_n  = 32
 uvset1g = vmot.grid_uvset(grid_n, d)
 uvset2g = vmot.grid_uvset_mono(grid_n, d)
 
@@ -240,10 +247,45 @@ pi_star2 = pi_star2 / pi_star2.sum()
 # vmot.plot_sample_2d(ws1g, label='ws1', w=pi_star1, random_sample_size=100000)
 # vmot.plot_sample_2d(ws1g, label='ws2', w=pi_star2, random_sample_size=100000)
 
+# import matplotlib.cm as cm
+# utils - heat map
+# cmap in collor pattern of the first cathegorical color '#348ABD' or #A60628
+colors = ['white', '#A60628']
+# colors = ['white', 'red']
+# colors = ['white', '#348ABD']
+positions = [0, 1]
+cmap = mcolors.LinearSegmentedColormap.from_list('custom_cmap', list(zip(positions, colors)))
+def heatmap(grid, pi, uplim=0):
+    # generate heatmap matrix
+    X = pd.DataFrame(grid)[[0,1]]
+    X.columns = ['X1', 'X2']
+    X['pi'] = pi
+    X = X.groupby(['X1', 'X2']).sum()
+    heat = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
+    heat[heat==0] = np.nan
+
+    # plot
+    # figsize = [8,5]
+    figsize = [5,3]
+    fig, ax = pl.subplots(figsize=figsize)
+    # im = ax.imshow(heat, cmap='Reds', extent=[0,1,1,0])
+    im = ax.imshow(heat, cmap=cmap, extent=[0,1,1,0])
     
+    # keep consistency between x and y scales
+    if uplim == 0:
+        uplim = np.nanmax(heat)
+    im.set_clim(0, uplim)
+    
+    ax.set_xlabel('U1')
+    ax.set_ylabel('U2')
+    ax.invert_yaxis()
+    ax.figure.colorbar(im)
+    fig.tight_layout()
+    
+    return heat    
 # heat = vmot.heatmap(grid1[:,:2], pi_star1)   # X, independent
-heat = vmot.heatmap(grid2[:,:2], pi_star2)   # X, monotone
-heat = vmot.heatmap(grid1[:,:2], pi_star1, uplim=np.nanmax(heat))   # X, independent, sharing color scale with monotone
+heat = heatmap(grid2[:,:2], pi_star2)   # X, monotone
+heat = heatmap(grid1[:,:2], pi_star1, uplim=np.nanmax(heat))   # X, independent, sharing color scale with monotone
 
 
 # check diagonal (test mode)

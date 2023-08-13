@@ -25,14 +25,16 @@ opt_parameters = { 'penalization'    : 'L2',
                    'epochs'          : 10      }
 
 # cost function to be maximized
-A = np.zeros((d, d))
 B = np.array([[.25, .25], [.25, .25]])
-def cost_f(x, y):
+def cost_f_(y):
     cost = 0.0
-    for i in range(0, d):
-        for j in range(i+1, d):
-            cost = cost + A[i,j] * x[:,i] * x[:,j] + B[i,j] * y[:,i] * y[:,j]
+    for i in range(d):
+        for j in range(d):
+            cost = cost + B[i,j] * y[:,i] * y[:,j]
     return cost
+
+def cost_f(x, y):
+    return cost_f_(y)
 
 # negative, used to minimize the cost
 def minus_cost_f(x, y):
@@ -60,7 +62,7 @@ def empirical_inv_cum_yi(q, i):
 def empirical_inv_cum_x(q):
     return np.array([empirical_inv_cum_xi(q, i) for i in range(d)]).T
 
-for gamma in [1000, 10000, 100000, 1000000]:
+for gamma in [100000, 10000, 1000000]:
  for example in [1, 2]:
     if example == 1:
         cost = cost_f
@@ -71,6 +73,16 @@ for gamma in [1000, 10000, 100000, 1000000]:
     print(label)
     I = 20           # number of desired iterations
     existing_i = 0
+    # if gamma <= 10000:
+    #     existing_i = 20
+    if gamma == 100000:
+        existing_i = 20
+    if gamma == 10000 and example == 1:
+        existing_i = 10
+    if gamma == 10000 and example == 2:
+        existing_i = 9
+    # if gamma == 100000 and example == 2:
+    #     existing_i = 15
     opt_parameters['gamma'] = gamma
     print(gamma)
     np.random.seed(0)
@@ -133,12 +145,7 @@ for gamma in [1000, 10000, 100000, 1000000]:
         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + f'_mono_{existing_i}')
 
 
-# --- low-information bounds ---
-# for the sake of comparison, calculate p+ and p- when only the t=2 distribution is known
-
-def single_period_cost_f(y):
-    # cost = A.x1.x2 + B.y1.y2
-    return y[:,0] * y[:,1]
+# MOT bounds
 
 # monospaced diagonal
 diag_n  = int(1e7)
@@ -147,10 +154,10 @@ uv_set = (2 * diag_grid + 1) / (2 * diag_n)
 
 # mean costs
 positive_diag_y = np.vstack([empirical_inv_cum_yi(uv_set, 0), empirical_inv_cum_yi(uv_set, 1)]).T
-positive_cost = single_period_cost_f(positive_diag_y)
+positive_cost = cost_f_(positive_diag_y)
 mean_positive_cost = positive_cost.mean()
 negative_diag_y = np.vstack([empirical_inv_cum_yi(uv_set[::-1], 0), empirical_inv_cum_yi(uv_set, 1)]).T
-negative_cost = single_period_cost_f(negative_diag_y)
+negative_cost = cost_f_(negative_diag_y)
 mean_negative_cost = negative_cost.mean()
 print(f'positive diag {mean_positive_cost:10.4f}\nnegative diag {mean_negative_cost:10.4f}   ')
 # check cost array
@@ -159,43 +166,96 @@ pl.plot(positive_cost)
 pl.plot(negative_cost)
 pl.legend(['positive', 'negative'])
 
-
 # load
 # uvset1  = vmot.random_uvset(n_points, d)
 # uvset2  = vmot.random_uvset_mono(n_points, d)
 
-label, label_mono = 'plus_empirical_ret_gamma10000_20', 'plus_empirical_ret_gamma10000_mono_20'
-minus_label, minus_label_mono = 'minus_empirical_ret_gamma10000_20', 'minus_empirical_ret_gamma10000_mono_20'
+plus_label,  plus_label_mono  = 'portfolio_empirical_gamma100000_20', 'portfolio_empirical_gamma100000_mono_20'
+minus_label, minus_label_mono = '_portfolio_empirical_gamma100000_20', '_portfolio_empirical_gamma100000_mono_20'
 
-model1_plus,  D_evo1_plus, _, __, ___, ____ = vmot.load_results(label)
-model2_plus,  D_evo2_plus, _, __, ___, ____ = vmot.load_results(label_mono)
+model1_plus,  D_evo1_plus, _, __, ___, ____ = vmot.load_results(plus_label)
+model2_plus,  D_evo2_plus, _, __, ___, ____ = vmot.load_results(plus_label_mono)
 model1_minus, D_evo1_minus, _, __, ___, ____ = vmot.load_results(minus_label)
 model2_minus, D_evo2_minus, _, __, ___, ____ = vmot.load_results(minus_label_mono)
 
 
 # report mean and std over a collection of samples
 
-# store cost and calculate (unconditional) sample mean, if used
-sample_mean_cost = 0.0   # lower reference for the optimal cost
 report = True
-if report:
-    report_n_points = 1000000
-    uvset1 = vmot.random_uvset(report_n_points, d)
-    uvset2 = vmot.random_uvset_mono(report_n_points, d)
-    ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
-    ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
-    D1, P1, __ = vmot.mtg_dual_value(model1_plus, ws1, opt_parameters, normalize_pi = False)
-    D2, P2, __ = vmot.mtg_dual_value(model2_plus, ws2, opt_parameters, normalize_pi = False)
-    cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
-    sample_mean_cost = cost_series.mean()   # central reference for the upper and lower bounds
-    print(f'sample mean cost = {sample_mean_cost:7.4f}')
-    print('dual value')
-    print(f'full:     mean = {np.mean(D1):8.4f};   std = {np.std(D1):8.4f}')
-    print(f'reduced:  mean = {np.mean(D2):8.4f};   std = {np.std(D2):8.4f}')
-    print('penalty')
-    print(f'full:     mean = {np.mean(P1):8.4f};   std = {np.std(P1):8.4f}')
-    print(f'reduced:  mean = {np.mean(P2):8.4f};   std = {np.std(P2):8.4f}')
+# sample_mean_cost = None   # lower reference for the optimal cost
 
+if report:
+    n_points_report = int(1e6)
+    collection_size = 10
+    cost_series = None
+    D1_series = []
+    D2_series = []
+    P1_series = []
+    P2_series = []
+    np.random.seed(0)
+    for i in range(collection_size):
+        uvset1 = vmot.random_uvset(n_points_report, d)
+        uvset2 = vmot.random_uvset_mono(n_points_report, d)
+        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+        # ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, minus_cost_f)
+        # ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
+        if cost_series is None: 
+            cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+        else:
+            cost_series = np.hstack([cost_series, ws1[:,-2], ws2[:,-2]])
+        D1, P1, __ = vmot.mtg_dual_value(model1_plus, ws1, opt_parameters, normalize_pi = False)
+        D2, P2, __ = vmot.mtg_dual_value(model2_plus, ws2, opt_parameters, normalize_pi = False)
+        # D1, P1, __ = vmot.mtg_dual_value(model1_minus, ws1, opt_parameters, normalize_pi = False)
+        # D2, P2, __ = vmot.mtg_dual_value(model2_minus, ws2, opt_parameters, normalize_pi = False)
+        D1_series.append(D1)
+        D2_series.append(D2)
+        P1_series.append(P1)
+        P2_series.append(P2)
+        cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+    print('dual value (plus)')
+    print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+    print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+    # print('penalty')
+    # print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+    # print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
+    
+    # only when running "plus"
+    sample_mean_cost = cost_series.mean()   # central reference for the upper and lower bounds
+
+    n_points_report = int(1e6)
+    collection_size = 10
+    cost_series = None
+    D1_series = []
+    D2_series = []
+    P1_series = []
+    P2_series = []
+    for i in range(collection_size):
+        uvset1 = vmot.random_uvset(n_points_report, d)
+        uvset2 = vmot.random_uvset_mono(n_points_report, d)
+        # ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, cost_f)
+        # ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+        ws1, xyset1 = vmot.generate_working_sample_uv(uvset1, empirical_inv_cum_xi, empirical_inv_cum_yi, minus_cost_f)
+        ws2, xyset2 = vmot.generate_working_sample_uv_mono(uvset2, empirical_inv_cum_x, empirical_inv_cum_yi, minus_cost_f)
+        if cost_series is None: 
+            cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+        else:
+            cost_series = np.hstack([cost_series, ws1[:,-2], ws2[:,-2]])
+        # D1, P1, __ = vmot.mtg_dual_value(model1_plus, ws1, opt_parameters, normalize_pi = False)
+        # D2, P2, __ = vmot.mtg_dual_value(model2_plus, ws2, opt_parameters, normalize_pi = False)
+        D1, P1, __ = vmot.mtg_dual_value(model1_minus, ws1, opt_parameters, normalize_pi = False)
+        D2, P2, __ = vmot.mtg_dual_value(model2_minus, ws2, opt_parameters, normalize_pi = False)
+        D1_series.append(D1)
+        D2_series.append(D2)
+        P1_series.append(P1)
+        P2_series.append(P2)
+        cost_series = np.hstack([ws1[:,-2], ws2[:,-2]])
+    print('dual value (minus)')
+    print(f'full:     mean = {np.mean(D1_series):8.4f};   std = {np.std(D1_series):8.4f}')
+    print(f'reduced:  mean = {np.mean(D2_series):8.4f};   std = {np.std(D2_series):8.4f}')
+    # print('penalty')
+    # print(f'full:     mean = {np.mean(P1_series):8.4f};   std = {np.std(P1_series):8.4f}')
+    # print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
 
 # convergence graph (evolution of the dual value)
 
@@ -217,14 +277,16 @@ for v in [evo_b1, evo_b2]:
 pl.legend(['full', 'reduced'], loc='lower right')
 
 pl.axhline(mean_positive_cost, linestyle='-', color='grey')
-pl.axhline(sample_mean_cost, linestyle=':', color='black')
 pl.axhline(mean_negative_cost, linestyle='-', color='grey')
+if not sample_mean_cost is None:
+    pl.axhline(sample_mean_cost, linestyle=':', color='black')
 
 # pl.title(title)
-shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
+# shift = .035 * (pl.gca().get_ylim()[1] - pl.gca().get_ylim()[0])
 # pl.annotate('sample mean', (len(v)*1/4, sample_mean_cost-shift), color='black')   # trial and error to find a good position
-pl.annotate(r'$c^+$', (len(v)*3/4, D_evo1_plus[-1]+shift))   # trial and error to find a good position
-pl.annotate(r'$c^-$', (len(v)*3/4, -D_evo1_minus[-1]-2*shift))   # trial and error to find a good position
+# pl.annotate(r'$c^+$', (len(v)*3/4, D_evo1_plus[-1]+shift))   # trial and error to find a good position
+# pl.annotate(r'$c^-$', (len(v)*3/4, -D_evo1_minus[-1]-2*shift))   # trial and error to find a good position
+pl.ylim(-.02, .045)
 pl.tight_layout()
 pl.show()
 
