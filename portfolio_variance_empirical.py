@@ -65,14 +65,14 @@ def empirical_inv_cum_x(q):
 def empirical_inv_cum_x_inv(q):   # only for d=2
     return np.array([empirical_inv_cum_xi(q, 0), empirical_inv_cum_xi(1.0-q, 1)]).T
 
-for gamma in [100000, 1000000]:
- for example in [1, 2]:
+gamma  = 100000
+for example in [1, 2]:
     if example == 1:
         cost = cost_f
-        label = f'portfolio_empirical_gamma{gamma:d}'
+        label = f'portfolio_empirical_gamma{gamma:d}_positive'
     if example == 2:
         cost = minus_cost_f
-        label = f'neg_portfolio_empirical_gamma{gamma:d}'
+        label = f'portfolio_empirical_gamma{gamma:d}_negative'
     print(label)
     I = 30           # number of desired iterations
     existing_i = 20
@@ -99,12 +99,12 @@ for gamma in [100000, 1000000]:
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, opt_parameters, monotone = True, verbose = 10)
         existing_i = 1
         print('models generated')
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + '_1')
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + '_full_1')
         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + '_mono_1')
     else:
         # load
         print(f'\nloading model {existing_i}')
-        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(label + f'_{existing_i}')
+        model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(label + f'_full_{existing_i}')
         model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(label + f'_mono_{existing_i}')
     
     # iterate optimization
@@ -144,7 +144,7 @@ for gamma in [100000, 1000000]:
         print('models updated')
         
         # dump
-        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + f'_{existing_i}')
+        vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], label + f'_full_{existing_i}')
         vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], label + f'_mono_{existing_i}')
 
 
@@ -169,31 +169,19 @@ pl.plot(positive_cost)
 pl.plot(negative_cost)
 pl.legend(['positive', 'negative'])
 
-# load
-# uvset1  = vmot.random_uvset(n_points, d)
-# uvset2  = vmot.random_uvset_mono(n_points, d)
 
+# report of stored models
 
+labels = ['results_portfolio_empirical_gamma100000_positive_full_30',
+          'results_portfolio_empirical_gamma100000_positive_mono_30',
+          'results_portfolio_empirical_gamma100000_negative_full_30',
+          'results_portfolio_empirical_gamma100000_negative_mono_30']
 
-
-
-positive_full_label = 'portfolio_empirical_gamma100000_30'
-positive_mono_label = 'portfolio_empirical_gamma100000_mono_30'
-negative_full_label = 'neg_portfolio_empirical_gamma100000_30'
-negative_mono_label = 'neg_portfolio_empirical_gamma100000_mono_30'
-
-positive_full_model,  positive_full_dual_series, _, __, ___, ____ = vmot.load_results(positive_full_label)
-positive_mono_model,  positive_mono_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
-negative_full_model,  negative_full_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
-negative_mono_model,  negative_mono_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
-
-
-labels = ['portfolio_empirical_gamma100000_30',
-          'portfolio_empirical_gamma100000_mono_30',
-          'neg_portfolio_empirical_gamma100000_30',
-          'neg_portfolio_empirical_gamma100000_mono_30']
-
+dual_series_list = []
+sample_mean_cost = None
 for label in labels:
+    
+    # series of dual values
     print()
     print(label)
     model, dual_series, _, __, ___, ____ = vmot.load_results(label)
@@ -202,9 +190,44 @@ for label in labels:
     print(f'global mean {np.mean(sample_mean):8.4f}')
     print(f'global std  {np.std(sample_mean):8.4f}')
     
+    # sample mean cost (independent coupling)
+    if label == labels[0]:
+        n_points_report  = int(1e7)
+        uvset = vmot.random_uvset_mono(n_points_report, d)
+        ws, _ = vmot.generate_working_sample_uv_mono(uvset, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
+        sample_mean_cost = np.mean(ws[200:,-2])
     
+    # store to build convergence graph
+    dual_series_list.append(dual_series)
+
+
+# convergence graph
+
+cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2']) # chosen color cycler (copied from 'bmh' style)
+
+pl.figure(figsize = [5,5])
+pl.gca().set_prop_cycle(cc)
+for v in [dual_series_list[0][:300], dual_series_list[1][:300]]:
+    pl.plot(range(1, len(v)+1), v)
+pl.gca().set_prop_cycle(cc)
+for v in [dual_series_list[2][:300], dual_series_list[3][:300]]:
+    pl.plot(range(1, len(v)+1), -v)   # note: minus sign
+pl.legend(['full', 'reduced'], loc='lower right')
+
+pl.axhline(mean_positive_cost, linestyle='-', color='grey')
+pl.axhline(mean_negative_cost, linestyle='-', color='grey')
+if not sample_mean_cost is None:
+    pl.axhline(sample_mean_cost, linestyle=':', color='black')
+
     
-    
+
+
+
+
+
+
+
+"""
     
 # report mean and std over a collection of samples
 
@@ -334,3 +357,33 @@ pl.tight_layout()
 pl.show()
 
 
+
+
+
+
+
+
+
+
+
+
+# load
+# uvset1  = vmot.random_uvset(n_points, d)
+# uvset2  = vmot.random_uvset_mono(n_points, d)
+
+
+
+
+
+positive_full_label = 'portfolio_empirical_gamma100000_30'
+positive_mono_label = 'portfolio_empirical_gamma100000_mono_30'
+negative_full_label = 'neg_portfolio_empirical_gamma100000_30'
+negative_mono_label = 'neg_portfolio_empirical_gamma100000_mono_30'
+
+positive_full_model,  positive_full_dual_series, _, __, ___, ____ = vmot.load_results(positive_full_label)
+positive_mono_model,  positive_mono_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
+negative_full_model,  negative_full_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
+negative_mono_model,  negative_mono_dual_series, _, __, ___, ____ = vmot.load_results(plus_label)
+
+
+"""

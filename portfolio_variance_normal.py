@@ -169,10 +169,21 @@ for d in [2, 3, 4, 5]:
     evo1 = np.array(D_evo1)[:multi_plot_length] # random, independent
     evo2 = np.array(D_evo2)[:multi_plot_length] # random, monotone
     E_series.append([d, evo1, evo2, ref_value])
+    
+    
+    # report mean and std over a collection of samples created during training
+    train_report = True
+    if train_report:
+        for i, dual_series in enumerate([D_evo1, D_evo2]):
+            sample_family = [dual_series[i:i+10] for i in range(200, 290)]
+            sample_mean = [np.mean(sample) for sample in sample_family]
+            print(f'\ndual series size {len(dual_series):d}')
+            print(f'global mean {np.mean(sample_mean):8.4f}')
+            print(f'global std  {np.std(sample_mean):8.4f}')
 
-    # report mean and std over a collection of samples
-    report = True
-    if report:
+    # report mean and std over a collection of static samples (no training) ---> to be deleted from the final version, use train report instead
+    static_report = False
+    if static_report:
         collection_size = 10
         D1_series = []
         D2_series = []
