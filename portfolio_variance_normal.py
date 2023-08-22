@@ -49,11 +49,11 @@ opt_parameters = { 'penalization'    : 'L2',   # fixed
 E_series = []
 ref_values = []
 # d = 2
-# for d in [2, 3, 4, 5]:
-for d in [2]:
+for d in [2, 3, 4, 5]:
+# for d in [2]:
     
     # batch iterations control
-    I = 20            # maximum
+    I = 30            # maximum
     existing_i = 20   # last iteration
     # random marginal parameters
     np.random.seed(0)    # reproducible results
