@@ -32,9 +32,9 @@ v = np.array([[-1.0, 0.0],
               [ 0.0, np.tan(np.pi/3)]])
 w = random_weights(3, 10000)
 p = np.dot(w, v)
-pl.figure()
-pl.scatter(v[:,0], v[:,1], color='red', s=20)
-pl.scatter(p[:,0], p[:,1], color='black', s=1)
+# pl.figure()
+# pl.scatter(v[:,0], v[:,1], color='red', s=20)
+# pl.scatter(p[:,0], p[:,1], color='black', s=1)
 
 # processing parameters
 n_points = 1000000
@@ -54,7 +54,7 @@ for d in [2, 3, 4, 5]:
     
     # batch iterations control
     I = 30            # maximum
-    existing_i = 20   # last iteration
+    existing_i = 30   # last iteration
     # random marginal parameters
     np.random.seed(0)    # reproducible results
     # sig = np.around(np.random.random(d), 2) + 1
@@ -165,23 +165,27 @@ for d in [2, 3, 4, 5]:
         vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
     # store for multiple plot
-    multi_plot_length = 100
-    evo1 = np.array(D_evo1)[:multi_plot_length] # random, independent
-    evo2 = np.array(D_evo2)[:multi_plot_length] # random, monotone
+    evo1 = np.array(D_evo1) # random, independent
+    evo2 = np.array(D_evo2) # random, monotone
     E_series.append([d, evo1, evo2, ref_value])
     
     
     # report mean and std over a collection of samples created during training
     train_report = True
     if train_report:
-        for i, dual_series in enumerate([D_evo1, D_evo2]):
-            sample_family = [dual_series[i:i+10] for i in range(200, 290)]
-            sample_mean = [np.mean(sample) for sample in sample_family]
-            print(f'\ndual series size {len(dual_series):d}')
-            print(f'global mean {np.mean(sample_mean):8.4f}')
-            print(f'global std  {np.std(sample_mean):8.4f}')
+        for o, dual_series in enumerate([D_evo1, D_evo2]):
+            print()
+            print('full' if o == 0 else 'mono')
+            # sample_family = [dual_series[i:i+10] for i in range(200, 290)]
+            # sample_mean = [np.mean(sample) for sample in sample_family]
+            # print(f'dual series size {len(dual_series):d}')
+            # print(f'global mean {np.mean(sample_mean):8.4f}')
+            # print(f'global std  {np.std(sample_mean):8.4f}')
+            print(f'tail mean {np.mean(dual_series[200:]):8.4f}')
+            print(f'tail std  {np.std(dual_series[200:]):8.4f}')
 
-    # report mean and std over a collection of static samples (no training) ---> to be deleted from the final version, use train report instead
+    # report mean and std over a collection of static samples (no training)
+    #    ---> to be deleted from the final version, use train report instead
     static_report = False
     if static_report:
         collection_size = 10
@@ -209,10 +213,10 @@ for d in [2, 3, 4, 5]:
         # print(f'reduced:  mean = {np.mean(P2_series):8.4f};   std = {np.std(P2_series):8.4f}')
 
 
-# chosen color cycler (see empirical example)
-cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'])
-
 # multiple convergence plots
+cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'])   # chosen color cycler (see empirical example)
+multi_plot_length = 300
+
 ref_color='black'
 title='Convergence - normal'
 fig, ax = pl.subplots(2, 2, figsize = [8,8], sharex=True)   # plot in two iterations to have a clean legend
@@ -220,8 +224,9 @@ for i, E in enumerate(E_series[:4]):
     _ax = ax.flatten()[i]
     _ax.set_prop_cycle(cc)
     d, evo1, evo2, ref_value = E
-    _ax.plot(range(1, len(evo2)+1), evo1)
-    _ax.plot(range(1, len(evo1)+1), evo2)
+    x =  range(1, len(evo1[:multi_plot_length])+1)
+    _ax.plot(x, evo1[:multi_plot_length])
+    _ax.plot(x, evo2[:multi_plot_length])
     _ax.axhline(ref_value, linestyle=':', color=ref_color)
     _ax.set_title(f'd = {d}')
     shift = .02 * (_ax.get_ylim()[1] - pl.gca().get_ylim()[0])

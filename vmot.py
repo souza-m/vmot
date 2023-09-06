@@ -52,7 +52,7 @@ def beta_L2_prime(x, gamma):
 
 # base class for each potential function phi, psi or h
 class PotentialF(nn.Module):
-    def __init__(self, input_dimension, n_hidden_layers = 2, hidden_size = 32):
+    def __init__(self, input_dimension, n_hidden_layers = 2, hidden_size = 64):
         super(PotentialF, self).__init__()
         layers = [nn.Linear(input_dimension, hidden_size), nn.ReLU()]
         for i in range(n_hidden_layers):

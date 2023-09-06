@@ -1,0 +1,64 @@
+sig [1.5488135  1.71518937]
+rho [2.60276338 2.54488318]
+
+d = 2, exact solution:   1.4729
+
+loading model 30
+model loaded from ./model_dump/results_portfolio_normal_full_d2_30.pickle
+model loaded from ./model_dump/results_portfolio_normal_mono_d2_30.pickle
+
+full
+tail mean   1.4135
+tail std    0.0075
+
+mono
+tail mean   1.4958
+tail std    0.0115
+sig [1.5488135  1.71518937 1.60276338]
+rho [2.54488318 2.4236548  2.64589411]
+
+d = 3, exact solution:   0.8486
+
+loading model 30
+model loaded from ./model_dump/results_portfolio_normal_full_d3_30.pickle
+model loaded from ./model_dump/results_portfolio_normal_mono_d3_30.pickle
+
+full
+tail mean   0.6536
+tail std    0.0025
+
+mono
+tail mean   0.7784
+tail std    0.0028
+sig [1.5488135  1.71518937 1.60276338 1.54488318]
+rho [2.4236548  2.64589411 2.43758721 2.891773  ]
+
+d = 4, exact solution:   2.1673
+
+loading model 30
+model loaded from ./model_dump/results_portfolio_normal_full_d4_30.pickle
+model loaded from ./model_dump/results_portfolio_normal_mono_d4_30.pickle
+
+full
+tail mean   1.7105
+tail std    0.0111
+
+mono
+tail mean   1.9891
+tail std    0.0109
+sig [1.5488135  1.71518937 1.60276338 1.54488318 1.4236548 ]
+rho [2.64589411 2.43758721 2.891773   2.96366276 2.38344152]
+
+d = 5, exact solution:   1.7716
+
+loading model 30
+model loaded from ./model_dump/results_portfolio_normal_full_d5_30.pickle
+model loaded from ./model_dump/results_portfolio_normal_mono_d5_30.pickle
+
+full
+tail mean   1.1472
+tail std    0.0057
+
+mono
+tail mean   1.4709
+tail std    0.0054

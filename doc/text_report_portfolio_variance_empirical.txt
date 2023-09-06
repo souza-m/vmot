@@ -1,0 +1,21 @@
+portfolio_empirical_gamma100000_positive_full_30
+model loaded from ./model_dump/results_portfolio_empirical_gamma100000_positive_full_30.pickle
+tail mean   0.0288
+tail std    0.0009
+
+sample mean    0.0207
+
+portfolio_empirical_gamma100000_positive_mono_30
+model loaded from ./model_dump/results_portfolio_empirical_gamma100000_positive_mono_30.pickle
+tail mean   0.0301
+tail std    0.0008
+
+portfolio_empirical_gamma100000_negative_full_30
+model loaded from ./model_dump/results_portfolio_empirical_gamma100000_negative_full_30.pickle
+tail mean  -0.0131
+tail std    0.0003
+
+portfolio_empirical_gamma100000_negative_mono_30
+model loaded from ./model_dump/results_portfolio_empirical_gamma100000_negative_mono_30.pickle
+tail mean  -0.0125
+tail std    0.0004

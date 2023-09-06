@@ -75,11 +75,7 @@ for example in [1, 2]:
         label = f'portfolio_empirical_gamma{gamma:d}_negative'
     print(label)
     I = 30           # number of desired iterations
-    existing_i = 20
-    if gamma == 100000 and example == 1:
-        existing_i = 20
-    if gamma == 100000 and example == 2:
-        existing_i = 14
+    existing_i = 30
     opt_parameters['gamma'] = gamma
     print(gamma)
     np.random.seed(0)
@@ -172,10 +168,10 @@ pl.legend(['positive', 'negative'])
 
 # report of stored models
 
-labels = ['results_portfolio_empirical_gamma100000_positive_full_30',
-          'results_portfolio_empirical_gamma100000_positive_mono_30',
-          'results_portfolio_empirical_gamma100000_negative_full_30',
-          'results_portfolio_empirical_gamma100000_negative_mono_30']
+labels = ['portfolio_empirical_gamma100000_positive_full_30',
+          'portfolio_empirical_gamma100000_positive_mono_30',
+          'portfolio_empirical_gamma100000_negative_full_30',
+          'portfolio_empirical_gamma100000_negative_mono_30']
 
 dual_series_list = []
 sample_mean_cost = None
@@ -185,10 +181,12 @@ for label in labels:
     print()
     print(label)
     model, dual_series, _, __, ___, ____ = vmot.load_results(label)
-    sample_family = [dual_series[i:i+10] for i in range(200, 290)]
-    sample_mean = [np.mean(sample) for sample in sample_family]
-    print(f'global mean {np.mean(sample_mean):8.4f}')
-    print(f'global std  {np.std(sample_mean):8.4f}')
+    # sample_family = [dual_series[i:i+10] for i in range(200, 290)]
+    # sample_mean = [np.mean(sample) for sample in sample_family]
+    # print(f'global mean {np.mean(sample_mean):8.4f}')
+    # print(f'sample mean std  {np.std(sample_mean):8.4f}')
+    print(f'tail mean {np.mean(dual_series[200:]):8.4f}')
+    print(f'tail std  {np.std(dual_series[200:]):8.4f}')
     
     # sample mean cost (independent coupling)
     if label == labels[0]:
@@ -196,9 +194,10 @@ for label in labels:
         uvset = vmot.random_uvset_mono(n_points_report, d)
         ws, _ = vmot.generate_working_sample_uv_mono(uvset, empirical_inv_cum_x, empirical_inv_cum_yi, cost_f)
         sample_mean_cost = np.mean(ws[200:,-2])
+        print(f'\nsample mean  {np.mean(sample_mean_cost):8.4f}')
     
     # store to build convergence graph
-    dual_series_list.append(dual_series)
+    dual_series_list.append(np.array(dual_series))
 
 
 # convergence graph
@@ -219,6 +218,9 @@ pl.axhline(mean_negative_cost, linestyle='-', color='grey')
 if not sample_mean_cost is None:
     pl.axhline(sample_mean_cost, linestyle=':', color='black')
 
+pl.ylim(-.005, .045)
+pl.tight_layout()
+pl.show()
     
 
 
