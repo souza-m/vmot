@@ -202,7 +202,7 @@ for label in labels:
 
 # convergence graph
 
-cc = cycler('color', ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2']) # chosen color cycler (copied from 'bmh' style)
+cc = cycler('color', ['#348ABD', '#A60628', 'grey', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2']) # chosen color cycler (copied from 'bmh' style)
 
 pl.figure(figsize = [5,5])
 pl.gca().set_prop_cycle(cc)
@@ -211,13 +211,11 @@ for v in [dual_series_list[0][:300], dual_series_list[1][:300]]:
 pl.gca().set_prop_cycle(cc)
 for v in [dual_series_list[2][:300], dual_series_list[3][:300]]:
     pl.plot(range(1, len(v)+1), -v)   # note: minus sign
-pl.legend(['full', 'reduced'], loc='lower right')
-
 pl.axhline(mean_positive_cost, linestyle='-', color='grey')
 pl.axhline(mean_negative_cost, linestyle='-', color='grey')
 if not sample_mean_cost is None:
     pl.axhline(sample_mean_cost, linestyle=':', color='black')
-
+pl.legend(['full', 'reduced', 'OT bounds'], loc='lower right').legendHandles[2].set_color('grey')
 pl.ylim(-.005, .045)
 pl.tight_layout()
 pl.show()

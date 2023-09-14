@@ -49,8 +49,8 @@ opt_parameters = { 'penalization'    : 'L2',   # fixed
 E_series = []
 ref_values = []
 # d = 2
-for d in [2, 3, 4, 5]:
-# for d in [2]:
+# for d in [2, 3, 4, 5]:
+for d in [2]:
     
     # batch iterations control
     I = 30            # maximum
@@ -300,6 +300,7 @@ heat = heatmap(grid2[:,:2], pi_star2)   # X, monotone
 heat = heatmap(grid1[:,:2], pi_star1, uplim=np.nanmax(heat))   # X, independent, sharing color scale with monotone
 
 
+
 # check diagonal (test mode)
 heat_marginal = np.nansum(heat, axis=0)
 fig, ax = pl.subplots()
@@ -308,3 +309,42 @@ ax.plot(heat_marginal)
 
 pl.figure()
 pl.plot(pi_star2)
+
+
+# tentative to avoid editting
+# generate heatmap matrix
+X = pd.DataFrame(grid1)[[0,1]]
+X.columns = ['X1', 'X2']
+X['pi'] = pi_star1
+X = X.groupby(['X1', 'X2']).sum()
+heat1 = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
+heat1[heat1==0] = np.nan
+
+X = pd.DataFrame(grid2)[[0,1]]
+X.columns = ['X1', 'X2']
+X['pi'] = pi_star2
+X = X.groupby(['X1', 'X2']).sum()
+heat2 = X.pivot_table(values='pi', index='X1', columns='X2', aggfunc='sum').values
+heat2[heat2==0] = np.nan
+
+# plot
+# figsize = [8,5]
+figsize = [6.85,3]
+fig, (ax1, ax2) = pl.subplots(1, 2, figsize=figsize, sharey=True)
+# im = ax.imshow(heat, cmap='Reds', extent=[0,1,1,0])
+im1 = ax1.imshow(heat1, cmap=cmap, extent=[0,1,1,0])
+im2 = ax2.imshow(heat2, cmap=cmap, extent=[0,1,1,0])
+
+# keep consistency between x and y scales
+uplim = np.nanmax(heat2)
+im1.set_clim(0, uplim)
+
+ax1.set_xlabel('U1')
+ax1.set_ylabel('U2')
+ax1.invert_yaxis()
+ax2.set_xlabel('U1')
+# ax2.invert_yaxis()
+ax2.figure.colorbar(im2)
+
+fig.tight_layout()
+fig.show()
