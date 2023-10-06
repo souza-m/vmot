@@ -1,6 +1,6 @@
 # Vectorial Martingale Optimal Transport
 
-This is the numerical implementation of Hiew, Lim, Pass and Souza (2023) "Geometry of vectorial martingale optimal transport and robust option pricing" - https://arxiv.org/abs/2309.04947. It computes the dual optimization of VMOT based on the framework of Eckstein, Kupper (2019) and developed upon Python/Pytorch. It allows the analysis of performance improvements from monotone coupling based on the theoretical results from the reference research project.
+This is the numerical implementation of Hiew, Lim, Pass and Souza (2023) "Geometry of vectorial martingale optimal transport and robust option pricing". We compute the dual optimization of VMOT problems using the framework developed by Eckstein and Kupper (2021) with dimensionality improvements allowed by our main result. We employ the Torch project over Python (Pytorch) and its Adam Gradient Descent optimizer implementation.
 
 References
 - Hiew, Lim, Pass and Souza (2023) "Geometry of vectorial martingale optimal transport and robust option pricing" https://arxiv.org/abs/2309.04947.
@@ -10,7 +10,3 @@ References
 Reference GitHub Projects (using Python/TensorFlow):
 - https://github.com/stephaneckstein/transport-and-related/tree/master/MartingaleOT
 - https://github.com/stephaneckstein/OT_Comparison
-
-
-
-
