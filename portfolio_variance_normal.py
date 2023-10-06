@@ -49,8 +49,8 @@ opt_parameters = { 'penalization'    : 'L2',   # fixed
 E_series = []
 ref_values = []
 # d = 2
-# for d in [2, 3, 4, 5]:
-for d in [2]:
+for d in [2, 3, 4, 5]:    # uncomment this line to plot heatmap (d == 2 only)
+# for d in [2]:             # uncomment this line to train or to load data for d= 2, ..., 5
     
     # batch iterations control
     I = 30            # maximum
