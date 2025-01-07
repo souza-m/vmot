@@ -84,32 +84,46 @@ class PotentialF(nn.Module):
 # Each potential function phi(1)_t or phi(2)_t takes a single dimensional input U(1)_t or U(2)_t.
 # Each potential function h_t takes a multidimensional input U_1, ..., U_t
 # Each potential functions yield a number calculated by the neural network
+#
+# In this example, we set T = 3
 
-# In this example we set T = 3
-# extract from working sample
-def mtg_parse(model, sample):
+
+# extract data from working sample and apply model to find dual values
+def mtg_parse(sample, model, d, T, monotone):
     
-    phi_list, psi_list, h_list = model
-    size, num_cols = sample.shape
-    nx, ny = len(phi_list), len(psi_list)    # input lengths (depend on dimensionality)
-    d = num_cols - nx - ny - 2
+    phi_list, h_list = model
+    size, n_cols = sample.shape
+    
+    u_size = T * d - monotone * (d - 1)
+    dif_size = (T - 1) * d
+    # check sample and model shapes
+    assert len(phi_list) == u_size
+    assert len(h_list) == dif_size
+    assert n_cols == u_size + dif_size + 1 + 1
     
     # extract from the working sample
-    u = sample[:, : nx]
-    v = sample[:, nx : nx + ny]
-    L = sample[:, nx + ny : nx + ny + d]
-    C = sample[:, nx + ny + d]
-    w = sample[:, nx + ny + d + 1]
+    u_list = [sample[:,i] for i in range(u_size)]
+    dif_list = [sample[:,i+u_size] for i in range(dif_size)]
+    c = sample[:, -2]
+    w = sample[:, -1]
     
-    # calculate using model
-    phi = torch.hstack([phi(u[:, i].view(size, 1)) for i, phi in enumerate(phi_list)])
-    psi = torch.hstack([psi(v[:, j].view(size, 1)) for j, psi in enumerate(psi_list)])
-    h   = torch.hstack([h(u) for h in h_list])
+    # dual value
+    D = sum([phi(u) for phi, u in zip(phi_list, u_list)])
     
-    return phi, psi, h, L, C, w
+    # martingale condition component
+    # input to h must contain all previous u's
+    H = []
+    for t in range(1, T):
+        Ut = sample[:, :(t * d - monotone * (d - 1))]   # cumulative u
+        for i in range(d):
+            h, dif = h_list.pop(0), dif_list.pop(0)
+            H.append(h(Ut) * dif)
+    H = sum(H)
+    
+    return D, H, c, w
     
 # train loop
-def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer = None, verbose = 0):
+def mtg_train_loop(working_loader, model, d, T, monotone, beta, beta_multiplier, gamma, optimizer = None, verbose = 0):
     
     #   Primal:          max C
     #   Dual:            min D  st  D + H >= C
@@ -129,23 +143,22 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
     for batch, sample in enumerate(working_loader):
         
         # time series of dual value, mtg component and penalization
-        phi, psi, h, L, C, w = mtg_parse(model, sample)
-        D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
-        H = (h * L).sum(axis=1)                 # sum over dimensions
-        deviation = C - D - H
-        P = beta(deviation, gamma)
-        _D = np.append(_D, D.detach().cpu().numpy())
-        _H = np.append(_H, H.detach().cpu().numpy())
-        _P = np.append(_P, P.detach().cpu().numpy())
+        D, H, c, w = mtg_parse(sample, model, d, T, monotone)
+        deviation = c - D - H
+        penalty = beta(deviation, gamma)
         
         # loss and backpropagation
-        # loss = (-D + b_multiplier * P).mean()
-        loss = (1 / full_size) * D.sum() + beta_multiplier * (w * P).sum()
+        loss = (1 / full_size) * D.sum() + beta_multiplier * (w * penalty).sum()
         if not optimizer is None:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
+        # record evolution
+        _D = np.append(_D, D.detach().cpu().numpy())
+        _H = np.append(_H, H.detach().cpu().numpy())
+        _P = np.append(_P, penalty.detach().cpu().numpy())
+        
         # report
         parsed = len(_D)
         if verbose > 0 and (parsed == full_size or (batch+1) % verbose == 0):
@@ -153,23 +166,16 @@ def mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimize
                       f'   {D.mean().item():12.4f}' +
                       f'   {H.mean().item():12.4f}' +
                       f'   {deviation.mean().item():12.4f}' +
-                      f'   {P.mean().item():12.4f}' +
+                      f'   {penalty.mean().item():12.4f}' +
                       (not optimizer is None) * f'   {loss.item():18.4f}' +
                       f'    [{parsed:>7d}/{full_size:>7d}]')
         
     return _D.mean(), _H.mean(), _P.mean(), _D.std(), _H.std()
 
 # main training function
-def mtg_train(working_sample, opt_parameters, model = None, monotone = False, verbose = False):
-    # global device
-    
+def mtg_train(working_sample, model, d, T, monotone, opt_parameters, verbose = 0):
+
     # check inputs
-    n, num_cols = working_sample.shape
-    if monotone:
-        d = int((num_cols - 3) / 2)
-    else:
-        d = int((num_cols - 2) / 3)
-        
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
@@ -184,21 +190,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
     working_sample = torch.tensor(working_sample, device=device).float()
     working_loader = DataLoader(working_sample, batch_size = batch_size, shuffle = shuffle)
     
-    # model creation (or recycling)
     lr =1e-4
-    hidden_size = 64
-    n_hidden_layers = 2
-    if model is None:
-        if monotone:
-            phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size)])
-            psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-            h_list   = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        else:
-            phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-            psi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-            h_list   = nn.ModuleList([PotentialF(d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d)])
-        model = nn.ModuleList([phi_list, psi_list, h_list])
-    model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     # iterative calls to train_loop
@@ -215,7 +207,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
         verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * 100
         if verb:
             print()
-        D, H, P, ds, hs = mtg_train_loop(model, working_loader, beta, beta_multiplier, gamma, optimizer, verb)
+        D, H, P, ds, hs = mtg_train_loop(working_loader, model, d, T, monotone, beta, beta_multiplier, gamma, optimizer, verb)
         D_series.append(D)
         H_series.append(H)
         P_series.append(P)
@@ -236,7 +228,7 @@ def mtg_train(working_sample, opt_parameters, model = None, monotone = False, ve
         
     return model, D_series, H_series, P_series, ds_series, hs_series
     
-def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
+def mtg_dual_value(working_sample, model, d, T, opt_parameters, normalize_pi = False):
     # global device
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
@@ -244,12 +236,11 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     beta         = beta_L2
     beta_prime   = beta_L2_prime             # first derivative of L2 penalization function
     gamma        = opt_parameters['gamma']
-    # phi_list, psi_list, h_list = model
     
     sample = torch.tensor(working_sample, device=device).float()
-    phi, psi, h, L, C, w = mtg_parse(model, sample)
+    phi, psi, h, L, C, w = mtg_parse(model, d, T, sample)
     D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
-    H = (h * L).sum(axis=1)       # sum over dimensions
+    H = (h * L).sum(axis=1)                 # sum over dimensions
     deviation = C - D - H
     P = beta(deviation, gamma)
     pi_star = w * beta_prime(deviation, gamma)
@@ -260,122 +251,31 @@ def mtg_dual_value(model, working_sample, opt_parameters, normalize_pi = False):
     return D.detach().mean().cpu().numpy(), P.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
 
 
-# utils - construct working sample from various sources
+def generate_model(d, T, monotone):
+    hidden_size = 64
+    n_hidden_layers = 2
+    if monotone:
+        phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(1 + d * (T-1))])
+    else:
+        phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d * T)])
+    h_list   = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d * (T-1))])
+    model = nn.ModuleList([phi_list, h_list])
+    return model
 
-# from a sample of (x,y)
-def generate_working_sample(xy_set, cost_f, weight = None, uniform_weight = True):
-    size, num_cols = xy_set.shape
-    d = int(num_cols / 2)
-    x = xy_set[:, :d]
-    y = xy_set[:, d:]
-    l = y - x          # each column i has (yi - xi)
-    c = cost_f(x, y)   # vector of costs
-    if weight is None:
-        if uniform_weight:
-            weight = np.ones(size) / size
-        else:
-            print('a weight must be specified')
-            return None
-    working_sample = np.hstack([xy_set, l, c.reshape(size, 1), weight.reshape(size, 1)])
-    assert working_sample.shape[1] == 3 * d + 2
-    return working_sample
 
 # from a sample of (u,v) in the domain [0,1]^d x [0,1]^d
 # u maps to x and v maps to y through the inverse cumulatives
-def generate_working_sample_uv(uv_set, inv_cum_xi, inv_cum_yi, cost_f,
-                               weight = None, uniform_weight = True):
-    size, num_cols = uv_set.shape
-    d = int(num_cols / 2)
-    u = uv_set[:, :d]
-    v = uv_set[:, d:]
-    x = np.array([inv_cum_xi(u[:,i], i) for i in range(d)]).T
-    y = np.array([inv_cum_yi(v[:,i], i) for i in range(d)]).T
-    l = y - x          # each column i has (yi - xi)
-    c = cost_f(x, y)   # vector of costs
+def generate_working_sample(u, v, x, y, c, weight = None):
+    size = len(u)
+    dif = y - x          # each column i has (yi - xi)
     if weight is None:
-        if uniform_weight:
-            weight = np.ones(size) / size
-        else:
-            print('a weight must be specified')
-            return None
-    working_sample = np.hstack([uv_set, l, c.reshape(size, 1), weight.reshape(size, 1)])
-    xy_set = np.hstack([x, y])
-    return working_sample, xy_set
-
-# from a sample of (u,v) in the domain [0,1] x [0,1]^d
-# X is now monotone
-# 1-dimension u maps to d-dimension x; d-dimension v maps to d-dimension y
-def generate_working_sample_uv_mono(uv_set, inv_cum_x, inv_cum_yi, cost_f,
-                                   weight = None, uniform_weight = True):
-    size, num_cols = uv_set.shape
-    d = int(num_cols - 1)
-    u = uv_set[:, 0]       # n x 1
-    v = uv_set[:, 1:d+1]   # n x d
-    x = inv_cum_x(u)       # n x d
-    y = np.array([inv_cum_yi(v[:,i], i) for i in range(d)]).T   # n x d
-    l = y - x          # each column i has (yi - xi)
-    c = cost_f(x, y)   # vector of costs
-    if weight is None:
-        if uniform_weight:
-            weight = np.ones(size) / size
-        else:
-            print('a weight must be specified')
-            return None
-    working_sample = np.hstack([uv_set, l, c.reshape(size, 1), weight.reshape(size, 1)])
-    xy_set = np.hstack([x, y])
-    return working_sample, xy_set
+        weight = np.ones(size) / size
+    working_sample = np.hstack([u, v, dif, c.reshape(size, 1), weight.reshape(size, 1)])
+    return working_sample
 
 
-# utils - monotonically couple a pair of discrete probabilities
-def couple(X1, X2, w1, w2):
-    # X1 and X2 should be sorted before calling
-    # will return X, w
-    #   [ X_ , w_ ] <-- single row calculated in this step
-    #   [ _X , _w ] <-- stack calculated recursively
-    assert len(X1) == len(w1) and len(X2) == len(w2), 'weight length error'
-    assert np.isclose(sum(w1), sum(w2))
-    if len(X1) == 1 and len(X2) == 1:
-        assert np.isclose(w1[0], w2[0]), 'weight matching error'
-        return np.array([X1[0], X2[0]]), w1[0]
-    if np.isclose(w1[0], w2[0]):
-        X_ = np.array([X1[0], X2[0]]).T
-        w_  = w1[0]
-        _X, _w = couple(X1[1:], X2[1:], w1[1:], w2[1:])
-    elif w1[0] < w2[0]:
-        X_ = np.array([X1[0], X2[0]])
-        w_  = w1[0]
-        _w2 = w2.copy()
-        _w2[0] = w2[0] - w1[0]
-        _X, _w = couple(X1[1:], X2, w1[1:], _w2)
-    elif w1[0] > w2[0]:
-        X_ = np.array([X1[0], X2[0]])
-        w_  = w2[0]
-        _w1 = w1.copy()
-        _w1[0] = w1[0] - w2[0]
-        _X, _w = couple(X1, X2[1:], _w1, w2[1:])
-    X = np.vstack([X_, _X])
-    w = np.vstack([w_, _w])
-    return X, w
-    
-# utils - random (u,v) numbers from hypercube
-def random_uvset(n_points, d):
-    uniform_sample = np.random.random((n_points, 2*d))
-    return uniform_sample
 
-def random_uvset_mono(n_points, d):
-    uniform_sample = np.random.random((n_points, d+1))
-    return uniform_sample
-
-# utils - grid (u,v) numbers from hypercube
-def grid_uvset(n, d):
-    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(2 * d)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-    return uv_set
-
-def grid_uvset_mono(n, d):
-    n_grid = np.array(list(itertools.product(*[list(range(n)) for i in range(d+1)])))
-    uv_set = (2 * n_grid + 1) / (2 * n)   # points in the d-hypercube
-    return uv_set
+# -----------------------------------------------
 
 # utils - file dump
 _dir = './model_dump/'
