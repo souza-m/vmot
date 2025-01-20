@@ -75,15 +75,6 @@ def random_sample(n_points, monotone):
     return u, v, x, y
     
 
-
-# optimization parameters
-opt_parameters = { 'penalization'    : 'L2',    # penalization shape
-                   'beta_multiplier' : 1,       # penalization multiplier
-                   'gamma'           : 1000,    # penalization parameter
-                   'epochs'          : 10,      # iteration parameter
-                   'batch_size'      : 2000  }  # iteration parameter  
-
-
 # cost function
 def cost_f(x, y):
     return x[:,2] * y[:,2]
@@ -102,6 +93,13 @@ ref_value = 0.0
 
 # --- process batches and save models (takes long time) ---
 
+# optimization parameters
+opt_parameters = { 'penalization'    : 'L2',    # penalization shape
+                   'beta_multiplier' : 1,       # penalization multiplier
+                   'gamma'           : 1000,    # penalization parameter
+                   'epochs'          : 10,      # iteration parameter
+                   'batch_size'      : 2000  }  # iteration parameter  
+
 # batch control
 I = 30            # total desired iterations
 existing_i = 0    # last iteration saved
@@ -114,12 +112,12 @@ if existing_i == 0:
     # regular coupling
     u, v, x, y = random_sample(n_points, monotone = False)
     c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample(u, v, x, y, c)
+    ws1 = vmot.generate_working_sample(u, v, x, y, c)                # u1, v1, u2, v2, u3, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
     
     # monotone coupling
     u, v, x, y = random_sample(n_points, monotone = True)
     c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample(u, v, x, y, c)
+    ws2 = vmot.generate_working_sample(u, v, x, y, c)                # u1(==v1), u2, v2, u3, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
     print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
     
     # models

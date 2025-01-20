@@ -1,8 +1,0 @@
-d = 2
-multiperiod
-#periods flexible
-c depending only on the last period
-original domain i\o quantile
-grid i\o random points
-
-

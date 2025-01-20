@@ -69,6 +69,7 @@ class PotentialF(nn.Module):
 # working sample row format:
 # |  U_1  |  ...  |  U_T |  dif_01  |  ...  |  dif_(T-1)T  | C | w |
 # 
+# each U_t has size d
 #    (U_1, ..., U_T) has size 2T-1 or 2T (see below) and is the input to the potential functions (neural networks)
 #       in the reduced dimension version:
 #          U_1 is a number in the 1-d quantile domain [0,1]
@@ -99,7 +100,7 @@ def mtg_parse(sample, model, d, T, monotone):
     # check sample and model shapes
     assert len(phi_list) == u_size
     assert len(h_list) == dif_size
-    assert n_cols == u_size + dif_size + 1 + 1
+    assert n_cols == u_size + dif_size + 1 + 1, f'n_cols {n_cols}, u_size {u_size}, dif_size {dif_size}'
     
     # extract from the working sample
     u_list = [sample[:,i] for i in range(u_size)]
