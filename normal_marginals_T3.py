@@ -89,6 +89,28 @@ ref_value = 0.0
 #         ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
 # print(f'exact solution: {ref_value:8.4f}')
 
+alpha0 = 1.
+alpha1 = .5
+alpha2 = .5
+alpha3 = .5
+
+y0 = y.diff() / y.diff().std()
+y1 = (y0.ewm(alpha=alpha1).mean() - alpha1 * y0) / (alpha1 * (1. - alpha1))
+y2 = (y1.ewm(alpha=alpha2).mean() - alpha2 * y1) / (alpha2 * (1. - alpha2))
+y3 = (y2.ewm(alpha=alpha3).mean() - alpha3 * y2) / (alpha3 * (1. - alpha3))
+
+np.std(y0)
+np.std(y1)
+np.std(y2)
+
+
+D = pd.DataFrame({'y0': y0, 'y1': y1, 'y2': y2, 'y3': y3})
+D.std()
+D.corr()
+D.cov()
+xx = y.values
+
+
 
 
 # --- process batches and save models (takes long time) ---
