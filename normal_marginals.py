@@ -35,7 +35,7 @@ import matplotlib.colors as mcolors
 # full problem has 6 dimensions
 # reduced problem has 5 dimensions
 d = 2
-n_periods = 3
+nperiods = 3
 
 # fixed variance parameters
 # each sequence of variances has to be increasing to guarantee convex order
@@ -67,7 +67,7 @@ def random_sample(n_points, monotone):
     u = np.random.random((n_points, 3))
     x = np.array([normal_inv_cum_xi(u[:,i], i) for i in range(3)]).T
     if monotone:
-        v = np.random.random((n_points, 2))
+        v = np.random.random((n_points, 2))   # v0 is replaced by u0
         y = np.array([normal_inv_cum_yi(u[:,0], 0), normal_inv_cum_yi(v[:,0], 1), normal_inv_cum_yi(v[:,1], 2)]).T
     else:
         v = np.random.random((n_points, 3))
@@ -89,26 +89,6 @@ ref_value = 0.0
 #         ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
 # print(f'exact solution: {ref_value:8.4f}')
 
-alpha0 = 1.
-alpha1 = .5
-alpha2 = .5
-alpha3 = .5
-
-y0 = y.diff() / y.diff().std()
-y1 = (y0.ewm(alpha=alpha1).mean() - alpha1 * y0) / (alpha1 * (1. - alpha1))
-y2 = (y1.ewm(alpha=alpha2).mean() - alpha2 * y1) / (alpha2 * (1. - alpha2))
-y3 = (y2.ewm(alpha=alpha3).mean() - alpha3 * y2) / (alpha3 * (1. - alpha3))
-
-np.std(y0)
-np.std(y1)
-np.std(y2)
-
-
-D = pd.DataFrame({'y0': y0, 'y1': y1, 'y2': y2, 'y3': y3})
-D.std()
-D.corr()
-D.cov()
-xx = y.values
 
 
 
@@ -134,34 +114,48 @@ if existing_i == 0:
     # regular coupling
     u, v, x, y = random_sample(n_points, monotone = False)
     c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample(u, v, x, y, c)                # u1, v1, u2, v2, u3, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    ws1 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v1, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
     
     # monotone coupling
     u, v, x, y = random_sample(n_points, monotone = True)
     c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample(u, v, x, y, c)                # u1(==v1), u2, v2, u3, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    ws2 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
     print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
     
     # models
-    model1 = vmot.generate_model(d, n_periods, monotone = False) 
-    model2 = vmot.generate_model(d, n_periods, monotone = True) 
+    model1 = vmot.generate_model(d, nperiods, monotone = False) 
+    model2 = vmot.generate_model(d, nperiods, monotone = True) 
     print('models generated')
-
+    
+    # *** test mode ***
+    len(model1[0])
+    len(model1[1])
+    len(model2[0])
+    len(model2[1])
+    working_sample = ws1
+    model = model1
+    d = 2
+    T = 3
+    monotone = False
+    opt_parameters = opt_parameters
+    verbose = 1
+    # ***
+    
     # train
-    D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, model1, d, n_periods, monotone = False, opt_parameters=opt_parameters, verbose = 10)
-    D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, model2, d, n_periods, monotone = True,  opt_parameters=opt_parameters, verbose = 10)
+    D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, model1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 2)
+    D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, model2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 2)
 
     # store models and evolution
     existing_i = 1
-    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'portfolio_normal_full_d{d}_{existing_i}')
-    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'portfolio_normal_mono_d{d}_{existing_i}')
+    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'normal_full_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'normal_mono_d{d}_T{nperiods}_{existing_i}')
     
 else:
     
     # load existing model
     print(f'\nloading model {existing_i}')
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'portfolio_normal_full_d{d}_{existing_i}')
-    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'portfolio_normal_mono_d{d}_{existing_i}')
+    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_full_d{d}_T{nperiods}_{existing_i}')
+    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_T{nperiods}_{existing_i}')
     
 # iterative parsing
 while existing_i < I:
@@ -177,8 +171,8 @@ while existing_i < I:
     ws2 = vmot.generate_working_sample_uv(u, v, x, y, c)
     print('samples generated')
     
-    _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, model1, d, n_periods, monotone = False, opt_parameters=opt_parameters, verbose = 10)
-    _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, model2, d, n_periods, monotone = True,  opt_parameters=opt_parameters, verbose = 10)
+    _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, model1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 10)
+    _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, model2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 10)
     print('models updated')
     # CHECK if models are being updated 
     

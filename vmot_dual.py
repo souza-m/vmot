@@ -63,31 +63,35 @@ class PotentialF(nn.Module):
         return self.hi(x)
 
 
+# not used for this working sample format
+# def _participating_cols(t, d, T, monotone):
+#     if monotone:
+#         ans = [0]
+#         for j in range(d):          # ex. for d=2, j=0 means u and j=1 means v
+#             for k in range(1, t+1):
+#                 ans.append(1 + j * (T-1) + (k-1))
+#     else:
+#         ans = []
+#         for j in range(d):          # ex. for d=2, j=0 means u and j=1 means v
+#             for k in range(t+1):
+#                 ans.append(j * T + k)
+                
+#     return ans
+
+# _participating_cols(t=0, d=2, T=3, monotone=True)
+# _participating_cols(t=1, d=2, T=3, monotone=True)
+# _participating_cols(t=2, d=2, T=3, monotone=True)
+
+# _participating_cols(t=0, d=2, T=3, monotone=False)
+# _participating_cols(t=1, d=2, T=3, monotone=False)
+# _participating_cols(t=2, d=2, T=3, monotone=False)
+
 # Fix d = 2
 # There are T periods
-# 
+# In this example, we set d = 2, T = 3
 # working sample row format:
-# |  U_1  |  ...  |  U_T |  dif_01  |  ...  |  dif_(T-1)T  | C | w |
-# 
-# each U_t has size d
-#    (U_1, ..., U_T) has size 2T-1 or 2T (see below) and is the input to the potential functions (neural networks)
-#       in the reduced dimension version:
-#          U_1 is a number in the 1-d quantile domain [0,1]
-#          U_2, ..., U_K are 2-dimensional vectors either in the quantile domain [0,1]^2 or in the problem domain R^2
-#       in the full dimension version:
-#          U_1, ..., U_K are 2-dimensional vectors either in the quantile domain [0,1]^2 or in the problem domain R^2
-#    (dif_01, ..., dif_(T-1)T) has size 2T
-#       dif_t(t+1) = X_t+1 - X_t in the problem domain R^2
-#    C is the calculated cost of the sample
-#    w is the weight
-# 
-# model contains the potential functions (NN's)
-# Each potential function phi(1)_t or phi(2)_t takes a single dimensional input U(1)_t or U(2)_t.
-# Each potential function h_t takes a multidimensional input U_1, ..., U_t
-# Each potential functions yield a number calculated by the neural network
-#
-# In this example, we set T = 3
-
+# monotone:        u0,     u1, v1, u2, v2, dif_x12, dif_y12, dif_x23, dif_y23, c, w
+# full dimension:  u0, v0, u1, v1, u2, v2, dif_x12, dif_y12, dif_x23, dif_y23, c, w
 
 # extract data from working sample and apply model to find dual values
 def mtg_parse(sample, model, d, T, monotone):
@@ -109,16 +113,22 @@ def mtg_parse(sample, model, d, T, monotone):
     w = sample[:, -1]
     
     # dual value
-    D = sum([phi(u) for phi, u in zip(phi_list, u_list)])
+    D = sum([phi(u[:,None]) for phi, u in zip(phi_list, u_list)])
     
     # martingale condition component
-    # input to h must contain all previous u's
+    # input to h must contain all previous U's
     H = []
+    count = 0
     for t in range(1, T):
-        Ut = sample[:, :(t * d - monotone * (d - 1))]   # cumulative u
+        if monotone:
+            Ut = sample[:, :1 + (t-1) * d]
+        else:
+            Ut = sample[:, :t * d]
         for i in range(d):
-            h, dif = h_list.pop(0), dif_list.pop(0)
+            h, dif = h_list[count], dif_list[count]
             H.append(h(Ut) * dif)
+            count += 1
+    assert count == len(h_list)
     H = sum(H)
     
     return D, H, c, w
@@ -227,7 +237,7 @@ def mtg_train(working_sample, model, d, T, monotone, opt_parameters, verbose = 0
         print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
         print()
         
-    return model, D_series, H_series, P_series, ds_series, hs_series
+    return D_series, H_series, P_series, ds_series, hs_series
     
 def mtg_dual_value(working_sample, model, d, T, opt_parameters, normalize_pi = False):
     # global device
@@ -239,39 +249,44 @@ def mtg_dual_value(working_sample, model, d, T, opt_parameters, normalize_pi = F
     gamma        = opt_parameters['gamma']
     
     sample = torch.tensor(working_sample, device=device).float()
-    phi, psi, h, L, C, w = mtg_parse(model, d, T, sample)
-    D = phi.sum(axis=1) + psi.sum(axis=1)   # sum over dimensions
-    H = (h * L).sum(axis=1)                 # sum over dimensions
-    deviation = C - D - H
-    P = beta(deviation, gamma)
+    D, H, c, w = mtg_parse(model, d, T, sample)
+    deviation = c - D - H
+    penalty = beta(deviation, gamma)
     pi_star = w * beta_prime(deviation, gamma)
     sum_pi_star = pi_star.sum()
     if normalize_pi and sum_pi_star > 0:
         pi_star = pi_star / sum_pi_star
     
-    return D.detach().mean().cpu().numpy(), P.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
-
+    return D.detach().mean().cpu().numpy(), penalty.detach().mean().cpu().numpy(), pi_star.detach().cpu().numpy()
 
 def generate_model(d, T, monotone):
     hidden_size = 64
     n_hidden_layers = 2
     if monotone:
         phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(1 + d * (T-1))])
+        h_list   = nn.ModuleList([PotentialF(1 + (j-1) * d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for j in range(1, T) for k in range(d)])
     else:
         phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d * T)])
-    h_list   = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for i in range(d * (T-1))])
+        h_list   = nn.ModuleList([PotentialF(j * d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size) for j in range(1, T) for k in range(d)])
     model = nn.ModuleList([phi_list, h_list])
     return model
 
-
+# [1 + (j-1) * d for j in range(1, T) for k in range(d)]
+# [j * d for j in range(1, T) for k in range(d)]
 # from a sample of (u,v) in the domain [0,1]^d x [0,1]^d
 # u maps to x and v maps to y through the inverse cumulatives
+# In this example, we set d = 2, T = 3
+# full dimension:    u0, v0, u1, v1, u2, v2, dif_x12, dif_y12, dif_x23, dif_y23, c, w
+# reduced dimension: u0,     u1, v1, u2, v2, dif_x12, dif_y12, dif_x23, dif_y23, c, w
 def generate_working_sample(u, v, x, y, c, weight = None):
     size = len(u)
-    dif = y - x          # each column i has (yi - xi)
     if weight is None:
         weight = np.ones(size) / size
-    working_sample = np.hstack([u, v, dif, c.reshape(size, 1), weight.reshape(size, 1)])
+    nperiods = x.shape[1]
+    x_dif = [x[:,i+1] - x[:,i] for i in range(nperiods - 1)]
+    y_dif = [y[:,i+1] - y[:,i] for i in range(nperiods - 1)]
+    dif = np.vstack(x_dif + y_dif).T
+    working_sample = np.hstack([u, v, dif, c[:,None], weight.reshape(size, 1)])
     return working_sample
 
 
