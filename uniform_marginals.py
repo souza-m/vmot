@@ -14,20 +14,8 @@ import matplotlib.colors as mcolors
 # from cycler import cycler
 
 
-# example with cross-product cost and normal marginals, d = 2, T = 3
+# example with cross-product cost and uniform marginals, d = 2, T = 3
 
-# consider prices of two assets X, Y at future times 1, 2, 3
-# prices are random variables X1, X2, X3, Y1, Y2, Y3
-# the distributions of each r.v. is known
-# Xi ~ mu_i; Yi ~ nu_i, centered and in convex order as
-# X1 <= X2 <= X3 and Y1 <= Y2 <= Y3
-# in this example, we consider normal distributions
-# our goal is to calculate the upper and lower bounds of the price of a contract
-# that pays c(X,Y) = X3 * Y3
-#
-# (I)  max E[ c(X,Y) ]
-# (II) min E[ c(X,Y) ]
-#
 # over all possible joint distributions of (X,Y)
 
 
@@ -40,22 +28,33 @@ nperiods = 3
 # fixed variance parameters
 # each sequence of variances has to be increasing to guarantee convex order
 
-np.random.seed(1)
-mu = [np.trunc(10 * np.random.random()) / 10 + i + 1 for i in range(3)]
-nu = [np.trunc(10 * np.random.random()) / 10 + i + 1 for i in range(3)]
-print(f'X1 ~ N(0, {mu[0]}),  X2 ~ N(0, {mu[1]}),  X3 ~ N(0, {mu[2]})')
-print(f'Y1 ~ N(0, {nu[0]}),  Y2 ~ N(0, {nu[1]}),  Y3 ~ N(0, {nu[2]})')
+# cumulative of U[-1, 1]
+def F_inv0(x):
+    return 2 * x - 1.
 
+# cumulative of U[-1, 1] # U[-1, 1]
+def F_inv_a(x):
+    return 4 * np.sqrt(x)
+    
+def F_inv_b(x):
+    return 4 * x
+    
+def F_inv_c(x):
+    return -4 * np.sqrt(1. - x)
+    
+def F_inv1(x):
+    return F_inv_a(np.minimum(x, 1/4)) +\
+           F_inv_b(np.maximum(np.minimum(x, 3/4), 1/4)) +\
+           F_inv_c(np.maximum(x,  3/4)) - 2.
 
-# inverse cumulatives
-def normal_inv_cum_xi(q, i):
-    return norm.ppf(q) * mu[i]
+# x = np.linspace(0., 1., 201)
+# pl.figure()
+# pl.plot(x, F0(x))
+# pl.plot(x, F1(x))
+# pl.axhline(0., linestyle=':', color='black')
 
-def normal_inv_cum_yi(q, i):
-    return norm.ppf(q) * nu[i]
-
-def normal_inv_cum_x(q):
-    return norm.ppf(q) * np.array([mu[0], nu[0]])
+F_inv_x = [F_inv0, F_inv0, F_inv1]
+F_inv_y = [F_inv0, F_inv1, F_inv1]
 
 
 # generate synthetic sample
@@ -65,13 +64,13 @@ def normal_inv_cum_x(q):
 # (x,y) = (x1, x2, x3, y1, y2, y3) is in R^6
 def random_sample(n_points, monotone):
     u = np.random.random((n_points, 3))
-    x = np.array([normal_inv_cum_xi(u[:,i], i) for i in range(3)]).T
+    x = np.array([F_inv_x[i](u[:,i]) for i in range(3)]).T
     if monotone:
         v = np.random.random((n_points, 2))   # v0 is replaced by u0
-        y = np.array([normal_inv_cum_yi(u[:,0], 0), normal_inv_cum_yi(v[:,0], 1), normal_inv_cum_yi(v[:,1], 2)]).T
+        y = np.array([F_inv_y[0](u[:,0]), F_inv_y[1](v[:,0]), F_inv_y[2](v[:,1])]).T
     else:
         v = np.random.random((n_points, 3))
-        y = np.array([normal_inv_cum_xi(v[:,i], i) for i in range(3)]).T
+        y = np.array([F_inv_y[i](v[:,i]) for i in range(3)]).T
     return u, v, x, y
     
 
@@ -83,7 +82,7 @@ def cost_f(x, y):
 # reference value (see formula in proposition (?))
 # TO BE COMPLETED
 # lam = np.sqrt(rho ** 2 - sig ** 2)
-ref_value = 0.0
+ref_value = 3.   # strict upper bound
 # for i in range(0, d):
 #     for j in range(i+1, d):
 #         ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
@@ -99,13 +98,13 @@ ref_value = 0.0
 opt_parameters = { 'penalization'    : 'L2',    # penalization shape
                    'beta_multiplier' : 1,       # penalization multiplier
                    'gamma'           : 1000,    # penalization parameter
-                   'epochs'          : 10,      # iteration parameter
+                   'epochs'          : 1,      # iteration parameter
                    'batch_size'      : 2000  }  # iteration parameter  
 
 # batch control
-I = 50            # total desired iterations
+I = 100           # total desired iterations
 existing_i = 0    # last iteration saved
-n_points = 100000 # sample points at each iteration
+n_points = 200000 # sample points at each iteration
 
 if existing_i == 0:
     # new random sample
@@ -123,19 +122,19 @@ if existing_i == 0:
     print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
     
     # models
-    model1 = vmot.generate_model(d, nperiods, monotone = False) 
-    model2 = vmot.generate_model(d, nperiods, monotone = True) 
+    model1, opt1 = vmot.generate_model(d, nperiods, monotone = False) 
+    model2, opt2 = vmot.generate_model(d, nperiods, monotone = True) 
     print('models generated')
     
     
     # train
-    D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.mtg_train(ws1, model1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 5)
-    D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.mtg_train(ws2, model2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 5)
+    D1_series = vmot.mtg_train(ws1, model1, opt1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 1)
+    D2_series = vmot.mtg_train(ws2, model2, opt2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
 
     # store models and evolution
     existing_i = 1
-    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'normal_full_d{d}_T{nperiods}_{existing_i}')
-    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'normal_mono_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
     
 # iterative parsing
 while existing_i < I:
@@ -156,41 +155,32 @@ while existing_i < I:
     
     # load existing model
     print(f'\nloading model {existing_i}')
-    model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1 = vmot.load_results(f'normal_full_d{d}_T{nperiods}_{existing_i}')
-    model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2 = vmot.load_results(f'normal_mono_d{d}_T{nperiods}_{existing_i}')
+    model1, opt1, D1_series = vmot.load_results(f'uniform_full_d{d}_T{nperiods}_{existing_i}')
+    model2, opt2, D2_series = vmot.load_results(f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
     
     # train
-    _D_evo1, _H_evo1, _P_evo1, _ds_evo1, _hs_evo1 = vmot.mtg_train(ws1, model1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 5)
-    _D_evo2, _H_evo2, _P_evo2, _ds_evo2, _hs_evo2 = vmot.mtg_train(ws2, model2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 5)
+    _D1_series = vmot.mtg_train(ws1, model1, opt1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 1)
+    _D2_series = vmot.mtg_train(ws2, model2, opt2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
     existing_i += 1
     print('models updated')
     
     # sequential storage of the variables' evolution
-    D_evo1  = D_evo1  + _D_evo1
-    H_evo1  = H_evo1  + _H_evo1
-    P_evo1  = P_evo1  + _P_evo1
-    ds_evo1 = ds_evo1 + _ds_evo1
-    hs_evo1 = hs_evo1 + _hs_evo1
+    D1_series = D1_series + _D1_series
+    D2_series = D2_series + _D2_series
     
-    D_evo2  = D_evo2  + _D_evo2
-    H_evo2  = H_evo2  + _H_evo2
-    P_evo2  = P_evo2  + _P_evo2
-    ds_evo2 = ds_evo2 + _ds_evo2
-    hs_evo2 = hs_evo2 + _hs_evo2
-    
-    vmot.dump_results([model1, D_evo1, H_evo1, P_evo1, ds_evo1, hs_evo1], f'normal_full_d{d}_T{nperiods}_{existing_i}')
-    vmot.dump_results([model2, D_evo2, H_evo2, P_evo2, ds_evo2, hs_evo2], f'normal_mono_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
 
-        
+
 # individual plot
-evo1 = np.array(D_evo1) # random, independent
-evo2 = np.array(D_evo2) # random, monotone
+evo1 = np.array(D1_series) # random, independent
+evo2 = np.array(D2_series) # random, monotone
 vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
 
 # heatmap
 
-D1, H1, pi_star1 = vmot.mtg_dual_value(ws1[:10000,:], model1, d, nperiods, monotone = False, opt_parameters = opt_parameters, normalize_pi = False)
+D1, H1, pi_star1 = vmot.mtg_dual_value(ws1, model1, d, nperiods, monotone = False, opt_parameters = opt_parameters, normalize_pi = False)
 D2, H2, pi_star2 = vmot.mtg_dual_value(ws2, model2, d, nperiods, monotone = True,  opt_parameters = opt_parameters, normalize_pi = False)
 pi_star1.shape
 pi_star1.sum(axis=0)
@@ -207,7 +197,7 @@ pi_star1[:,6050:6055]
 
 
 
-*** test mode ***
+# *** test mode ***
 working_sample = ws1[:100,:]
 model = model1
 d = 2

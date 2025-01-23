@@ -8,3 +8,4 @@
 *.lyx~
 *.db
 /_not_used
+*.pickle
