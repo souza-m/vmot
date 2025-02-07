@@ -7,7 +7,6 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 
 import numpy as np
 import pandas as pd
-# from scipy.stats import norm
 import vmot_dual as vmot
 import matplotlib.pyplot as pl
 import matplotlib.colors as mcolors
@@ -89,7 +88,7 @@ def random_sample(n_points, monotone):
 
 # cost function
 def cost_f(x, y):
-    return np.exp(x[:,2] + y[:,2])
+    return np.exp(x[:,2] * y[:,2])
 
 
 # reference value (see formula in proposition (?))

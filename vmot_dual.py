@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import datetime as dt, time
 import pickle
-import itertools
+# import itertools
 
 import torch
 from torch import nn
