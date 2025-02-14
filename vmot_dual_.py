@@ -74,19 +74,23 @@ class PotentialF(nn.Module):
 # main training function
 def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbose = 0):
 
-    beta            = beta_L2
+    # check inputs
+    if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
+        print('penalization not implemented: ' + opt_parameters['penalization'])
+        return
+    beta            = beta_L2                             # L2 penalization is the only one available
+    beta_multiplier = opt_parameters['beta_multiplier']
     gamma           = opt_parameters['gamma']
     batch_size      = opt_parameters['batch_size']
     epochs          = opt_parameters['epochs']
     
     # loader
-    shuffle        = True     # must be True to avoid some bias when sample is ordered
+    shuffle        = True     # must be True to avoid some bias towards the last section of the quantile grid
     working_sample = torch.tensor(working_sample, device=device).float()
     working_loader = DataLoader(working_sample, batch_size = batch_size, shuffle = shuffle)
     
     # iterative calls to train_loop
     D_series = []
-    H_series = []
     if verbose > 0:
         t0 = time.time() # timer
     for i in range(epochs):
@@ -95,9 +99,8 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
         verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * 100
         if verb:
             print()
-        D, H, P, ds, hs = mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb)
+        D, H, P, ds, hs = mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, beta_multiplier, gamma, verb)
         D_series.append(D)
-        H_series.append(H)
         if verb:
             print('\nmeans')
             print(f'   D   = {D:12.4f}')
@@ -111,10 +114,10 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
         print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
         print()
         
-    return D_series, H_series
+    return D_series
     
 # train loop
-def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verbose = 0):
+def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, beta_multiplier, gamma, verbose = 0):
     
     #   Primal:          max C
     #   Dual:            min D  st  D + H >= C
@@ -134,12 +137,12 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb
     for batch, sample in enumerate(working_loader):
         
         # time series of dual value, mtg component and penalization
-        D, H, c = mtg_parse(sample, model, d, T, monotone)
+        D, H, c, w = mtg_parse(sample, model, d, T, monotone)
         deviation = c - D - H
         penalty = beta(deviation, gamma)
         
         # loss and backpropagation
-        loss = (D.sum() + penalty.sum()) / full_size
+        loss = (1 / full_size) * D.sum() + beta_multiplier * (w * penalty).sum()
         if not opt is None:
             opt.zero_grad()
             loss.backward()
@@ -166,25 +169,28 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb
 
 # extract data from working sample and apply model to find dual values
 # working sample format when d = 2, T = 2:
-#    full dimension:    u0, u1, v0, v1, dif_x1y1, dif_x2y2, c
-#    reduced dimension: u0,     v0, v1, dif_x1y1, dif_x2y2, c
+#    full dimension:    u0, u1, v0, v1, dif_x1y1, dif_x2y2, c, w
+#    reduced dimension: u0,     v0, v1, dif_x1y1, dif_x2y2, c, w
 # working sample format when d = 2, T = 3:
-#    full dimension:    u0, u1, v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c
-#    reduced dimension: u0,     v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c
+#    full dimension:    u0, u1, v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c, w
+#    reduced dimension: u0,     v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c, w
 def mtg_parse(sample, model, d, T, monotone):
     
     phi_list, h_list = model
     size, n_cols = sample.shape
+    
     q_size = T * d - monotone * (d - 1)   # quantile inputs
     dif_size = (T - 1) * d
+    # check sample and model shapes
     assert len(phi_list) == q_size
     assert len(h_list) == dif_size
-    assert n_cols == q_size + dif_size + 1
+    assert n_cols == q_size + dif_size + 1 + 1, f'n_cols {n_cols}, q_size {q_size}, dif_size {dif_size}'
     
     # extract from the working sample
     q_list = [sample[:,i] for i in range(q_size)]
-    dif_list = [sample[:,q_size+i] for i in range(dif_size)]
-    c = sample[:, -1]
+    dif_list = [sample[:,i+q_size] for i in range(dif_size)]
+    c = sample[:, -2]
+    w = sample[:, -1]
     
     # dual value
     D = sum([phi(q[:,None]) for phi, q in zip(phi_list, q_list)])
@@ -205,17 +211,18 @@ def mtg_parse(sample, model, d, T, monotone):
     assert count == len(h_list)
     H = sum(H)
     
-    return D, H, c
+    return D, H, c, w
     
 
 # calculate the dual value from existing model
 # this value should be close to the primal value for well trained models
 def mtg_dual_value(working_sample, model, d, T, monotone):
     sample = torch.tensor(working_sample, device=device).float()
-    D, H, c = mtg_parse(sample, model, d, T, monotone)
+    D, H, c, w = mtg_parse(sample, model, d, T, monotone)
     return D.detach().mean().cpu().numpy(),\
            H.detach().mean().cpu().numpy(),\
-           c.detach().mean().cpu().numpy()
+           c.detach().mean().cpu().numpy(),\
+           w.detach().mean().cpu().numpy()
 
 
 # calculate the upper and lower margins to the true value based on eq. (2.5) of Th. 2.2, Eckstein and Kupper 2021
@@ -224,39 +231,44 @@ def mtg_numeric_pi_hat(working_sample, model, d, T, monotone, opt_parameters):
     if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
         print('penalization not implemented: ' + opt_parameters['penalization'])
         return
+    beta         = beta_L2                             # L2 penalization is the only one available
     beta_prime   = beta_L2_prime             # first derivative of L2 penalization function
     beta_conj    = beta_L2_conj
     gamma        = opt_parameters['gamma']
     
     sample = torch.tensor(working_sample, device=device).float()
-    size = len(sample)
     lower_margin = 0.
     
-    D, H, c = mtg_parse(sample, model, d, T, monotone)
+    D, H, c, w = mtg_parse(sample, model, d, T, monotone)
     deviation = c - D - H
-    ratio = beta_prime(deviation, gamma)
-    upper_margin = ((beta_conj(ratio) / size).sum() / gamma).detach().cpu().numpy()
-    pi_hat = ratio / size
+    penalty = beta(deviation, gamma)
+    pi_hat = beta_prime(deviation, gamma)
+    upper_margin = ((beta_conj(pi_hat) * w).sum() / (gamma * w.sum())).detach().cpu().numpy()
+    pi_hat *= w
     return pi_hat.detach().cpu().numpy(), lower_margin, upper_margin
 
 
 # working sample (d = 2)
-# full dimension:    u0, u1, v0, v1, dif_x1y1, dif_x2y2, c
-# reduced dimension: u0,     v0, v1, dif_x1y1, dif_x2y2, c
-def generate_working_sample_T2(u, v, x, y, c):
+# full dimension:    u0, u1, v0, v1, dif_x1y1, dif_x2y2, c, w
+# reduced dimension: u0,     v0, v1, dif_x1y1, dif_x2y2, c, w
+def generate_working_sample_T2(u, v, x, y, c, weight = None):
     size = len(u)
+    if weight is None:
+        weight = np.ones(size) / size
     dif_xy = y - x
-    return np.hstack([u, v, dif_xy, c.reshape([size,1])])
+    return np.hstack([u, v, dif_xy, c.reshape([size,1]), weight.reshape([size,1])])
     
 
 # working sample (d = 2)
-# full dimension:    u0, u1, v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c
-# reduced dimension: u0,     v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c
-def generate_working_sample_T3(u, v, w, x, y, z, c):
+# full dimension:    u0, u1, v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c, w
+# reduced dimension: u0,     v0, v1, w0, w1, dif_x1y1, dif_x2y2, dif_y1z1, dif_y2z2, c, w
+def generate_working_sample_T3(u, v, w, x, y, z, c, weight = None):
     size = len(u)
+    if weight is None:
+        weight = np.ones(size) / size
     dif_xy = y - x
     dif_yz = z - y
-    return np.hstack([u, v, w, dif_xy, dif_yz, c.reshape([size,1])])
+    return np.hstack([u, v, w, dif_xy, dif_yz, c.reshape([size,1]), weight.reshape([size,1])])
     
 
 # model generation

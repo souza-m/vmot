@@ -7,6 +7,7 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 
 import numpy as np
 import pandas as pd
+# from scipy.stats import norm
 import vmot_dual as vmot
 import matplotlib.pyplot as pl
 import matplotlib.colors as mcolors
@@ -18,90 +19,52 @@ import matplotlib.colors as mcolors
 # over all possible joint distributions of (X,Y)
 
 
-# two marginals, three periods
-# full problem has 6 dimensions
-# reduced problem has 5 dimensions
+# two marginals 1, 2
+# three periods X, Y, Z
 d = 2
-nperiods = 3
+T = 3
 
-# fixed variance parameters
-# each sequence of variances has to be increasing to guarantee convex order
-
-# --- uniform and convoluted marginals ---
-#
-# # cumulative of U[-1, 1]
-# def F_inv0(x):
-#     return 2 * x - 1.
-
-# # cumulative of U[-1, 1] # U[-1, 1]
-# def F_inv_a(x):
-#     return 4 * np.sqrt(x)
-    
-# def F_inv_b(x):
-#     return 4 * x
-    
-# def F_inv_c(x):
-#     return -4 * np.sqrt(1. - x)
-    
-# def F_inv1(x):
-#     return F_inv_a(np.minimum(x, 1/4)) +\
-#            F_inv_b(np.maximum(np.minimum(x, 3/4), 1/4)) +\
-#            F_inv_c(np.maximum(x,  3/4)) - 2.
-
-
-# --- uniform marginals ---
 
 # inverse cumulative of U[0.5 , 1.0]
-def F_inv0(u):
+def F_inv_a(u):
     return 0.5 * (u + 1.) 
 
 # inverse cumulative of U[0.0 , 1.5]
-def F_inv1(u):
+def F_inv_b(u):
     return 1.5 * u
 
-# x = np.linspace(0., 1., 201)
-# pl.figure()
-# pl.plot(x, F0(x))
-# pl.plot(x, F1(x))
-# pl.axhline(0., linestyle=':', color='black')
-
-F_inv_x = [F_inv0, F_inv0, F_inv1]
-F_inv_y = [F_inv0, F_inv1, F_inv1]
-
+# inverse cumulative of marginals
+F_inv = { 'X1':F_inv_a,
+          'X2':F_inv_a,
+          'Y1':F_inv_a,
+          'Y2':F_inv_b,
+          'Z1':F_inv_b,
+          'Z2':F_inv_b  }
 
 # generate synthetic sample
-# sample includes quantile points (u,v) and corresponding (x,y) points
-# if mono_coupled, u = (u1, u2, u3) and v = (v2, v3), since v1 = u1, therefore (u,v) is in [0,1]^5
-# otherwise, u = (u1, u2, u3) and v = (v1, v2, v3), and (u,v)  is in [0,1]^6
-# (x,y) = (x1, x2, x3, y1, y2, y3) is in R^6
+# u maps to x, v maps to y, w maps to z through the inverse cumulatives
 def random_sample(n_points, monotone):
-    u = np.random.random((n_points, 3))
-    x = np.array([F_inv_x[i](u[:,i]) for i in range(3)]).T
+    u = np.random.random((n_points, 1 if monotone else 2))
+    v = np.random.random((n_points, 2))
+    w = np.random.random((n_points, 2))
+    
     if monotone:
-        v = np.random.random((n_points, 2))   # v0 is replaced by u0
-        y = np.array([F_inv_y[0](u[:,0]), F_inv_y[1](v[:,0]), F_inv_y[2](v[:,1])]).T
+        x = np.array([F_inv['X1'](u[:,0]), F_inv['X2'](u[:,0])]).T
     else:
-        v = np.random.random((n_points, 3))
-        y = np.array([F_inv_y[i](v[:,i]) for i in range(3)]).T
-    return u, v, x, y
+        x = np.array([F_inv['X1'](u[:,0]), F_inv['X2'](u[:,1])]).T
+    y = np.array([F_inv['Y1'](v[:,0]), F_inv['Y2'](v[:,1])]).T
+    z = np.array([F_inv['Z1'](w[:,0]), F_inv['Z2'](w[:,1])]).T
+                  
+    return u, v, w, x, y, z
     
 
 # cost function
-def cost_f(x, y):
-    return np.exp(x[:,2] * y[:,2])
+def cost_f(x, y, z):
+    return np.exp(x[:,0] + x[:,1]) + np.exp(y[:,0] + y[:,1]) + np.exp(z[:,0] + z[:,1])
 
 
-# reference value (see formula in proposition (?))
-# TO BE COMPLETED
-# lam = np.sqrt(rho ** 2 - sig ** 2)
-ref_value = 3.   # strict upper bound
-# for i in range(0, d):
-#     for j in range(i+1, d):
-#         ref_value = ref_value + (A[i,j] + B[i,j]) * sig[i] * sig[j] + B[i,j] * lam[i] * lam[j]
-# print(f'exact solution: {ref_value:8.4f}')
-
-
-
+# reference value
+ref_value = 14.43487   # strict upper bound
 
 
 # --- process batches and save models (takes long time) ---
@@ -110,43 +73,42 @@ ref_value = 3.   # strict upper bound
 opt_parameters = { 'penalization'    : 'L2',    # penalization shape
                    'beta_multiplier' : 1,       # penalization multiplier
                    'gamma'           : 1000,    # penalization parameter
-                   'epochs'          : 1,      # iteration parameter
-                   'batch_size'      : 2000  }  # iteration parameter  
+                   'epochs'          : 1,       # iteration parameter
+                   'batch_size'      : 1000  }  # iteration parameter  
 
 # batch control
 I = 100           # total desired iterations
 existing_i = 0    # last iteration saved
-n_points = 200000 # sample points at each iteration
+n_points = 1000000 # sample points at each iteration
 
 if existing_i == 0:
     # new random sample
     print('\niteration 1 (new model)\n')
     
     # regular coupling
-    u, v, x, y = random_sample(n_points, monotone = False)
-    c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v1, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    u, v, w, x, y, z = random_sample(n_points, monotone = False)
+    c = cost_f(x, y, z)
+    ws1 = vmot.generate_working_sample_T3(u, v, w, x, y, z, c)
     
     # monotone coupling
-    u, v, x, y = random_sample(n_points, monotone = True)
-    c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    u, v, w, x, y, z = random_sample(n_points, monotone = True)
+    c = cost_f(x, y, z)
+    ws2 = vmot.generate_working_sample_T3(u, v, w, x, y, z, c)
     print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
     
     # models
-    model1, opt1 = vmot.generate_model(d, nperiods, monotone = False) 
-    model2, opt2 = vmot.generate_model(d, nperiods, monotone = True) 
+    model1, opt1 = vmot.generate_model(d, T, monotone = False) 
+    model2, opt2 = vmot.generate_model(d, T, monotone = True) 
     print('models generated')
     
-    
     # train
-    D1_series = vmot.mtg_train(ws1, model1, opt1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 1)
-    D2_series = vmot.mtg_train(ws2, model2, opt2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
+    D1_series = vmot.mtg_train(ws1, model1, opt1, d, T, monotone = False, opt_parameters=opt_parameters, verbose = 1)
+    D2_series = vmot.mtg_train(ws2, model2, opt2, d, T, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
 
     # store models and evolution
     existing_i = 1
-    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{nperiods}_{existing_i}')
-    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
+    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
     
 # iterative parsing
 while existing_i < I:
@@ -155,24 +117,24 @@ while existing_i < I:
     print(f'\niteration {existing_i+1}\n')
     
     # regular coupling
-    u, v, x, y = random_sample(n_points, monotone = False)
-    c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v1, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    u, v, w, x, y, z = random_sample(n_points, monotone = False)
+    c = cost_f(x, y, z)
+    ws1 = vmot.generate_working_sample_T3(u, v, w, x, y, z, c)
     
     # monotone coupling
-    u, v, x, y = random_sample(n_points, monotone = True)
-    c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample(u, v, x, y, c)                # u1, u2, u3, v2, v3, dif_x12, dif_x23, dif_y12, dif_y23, c, w
+    u, v, w, x, y, z = random_sample(n_points, monotone = True)
+    c = cost_f(x, y, z)
+    ws2 = vmot.generate_working_sample_T3(u, v, w, x, y, z, c)
     print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
     
     # load existing model
     print(f'\nloading model {existing_i}')
-    model1, opt1, D1_series = vmot.load_results(f'uniform_full_d{d}_T{nperiods}_{existing_i}')
-    model2, opt2, D2_series = vmot.load_results(f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
+    model1, opt1, D1_series = vmot.load_results(f'uniform_full_d{d}_T{T}_{existing_i}')
+    model2, opt2, D2_series = vmot.load_results(f'uniform_mono_d{d}_T{T}_{existing_i}')
     
     # train
-    _D1_series = vmot.mtg_train(ws1, model1, opt1, d, nperiods, monotone = False, opt_parameters=opt_parameters, verbose = 1)
-    _D2_series = vmot.mtg_train(ws2, model2, opt2, d, nperiods, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
+    _D1_series = vmot.mtg_train(ws1, model1, opt1, d, T, monotone = False, opt_parameters=opt_parameters, verbose = 1)
+    _D2_series = vmot.mtg_train(ws2, model2, opt2, d, T, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
     existing_i += 1
     print('models updated')
     
@@ -180,8 +142,8 @@ while existing_i < I:
     D1_series = D1_series + _D1_series
     D2_series = D2_series + _D2_series
     
-    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{nperiods}_{existing_i}')
-    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{nperiods}_{existing_i}')
+    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
+    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
 
 
 # individual plot
