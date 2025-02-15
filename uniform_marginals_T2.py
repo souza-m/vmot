@@ -12,6 +12,7 @@ import vmot_dual as vmot
 import matplotlib.pyplot as pl
 # import matplotlib.colors as mcolors
 # from cycler import cycler
+import datetime as dt, time
 
 
 # example with cross-product cost and uniform marginals, d = 2, T = 3
@@ -76,76 +77,69 @@ opt_parameters = { 'gamma'           : 1000,    # penalization parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 
 # batch control
-I = 100            # total desired iterations
-existing_i = 0     # last iteration saved
-n_points = 100000   # sample points at each iteration
+I = 100              # total desired iterations
+n_points = 1000000   # sample points at each iteration
+timers = []
+for monotone in [True]:
+    existing_i = 0       # last iteration saved
+    mono_label = 'mono' if monotone else 'full'
+    print(mono_label)
+    t0 = time.time() # timer
+    timers.append(t0)
+    if existing_i == 0:
+        # new random sample
+        print('\niteration 1 (new model)\n')
+        
+        # regular coupling
+        u, v, x, y = random_sample(n_points, monotone = monotone)
+        c = cost_f(x, y)
+        ws = vmot.generate_working_sample_T2(u, v, x, y, c)
+        print('sample generated, shape ', ws.shape)
+        
+        # models
+        model, opt = vmot.generate_model(d, T, monotone = monotone)
+        print('model generated')
+        
+        # train
+        D_series, H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        
+        # store models and evolution
+        existing_i = 1
+        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        
+    # iterative parsing
+    while existing_i < I:
+        
+        # new random sample
+        print(f'\niteration {existing_i+1}\n')
+        
+        # regular coupling
+        u, v, x, y = random_sample(n_points, monotone = monotone)
+        c = cost_f(x, y)
+        ws = vmot.generate_working_sample_T2(u, v, x, y, c)
+        print('sample generated, shape ', ws.shape)
+        
+        # load existing model
+        print(f'\nloading model {existing_i}')
+        model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        
+        # train
+        _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        existing_i += 1
+        print('models updated')
+        
+        # sequential storage of the variables' evolution
+        D_series = D_series + _D_series
+        H_series = H_series + _H_series
+        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
 
-if existing_i == 0:
-    # new random sample
-    print('\niteration 1 (new model)\n')
-    
-    # regular coupling
-    u, v, x, y = random_sample(n_points, monotone = False)
-    c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample_T2(u, v, x, y, c)
-    
-    # monotone coupling
-    u, v, x, y = random_sample(n_points, monotone = True)
-    c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample_T2(u, v, x, y, c)
-    print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
-    
-    # models
-    model1, opt1 = vmot.generate_model(d, T, monotone = False) 
-    model2, opt2 = vmot.generate_model(d, T, monotone = True) 
-    print('models generated')
-    
-    # train
-    D1_series = vmot.mtg_train(ws1, model1, opt1, d, T, monotone = False, opt_parameters=opt_parameters, verbose = 1)
-    D2_series = vmot.mtg_train(ws2, model2, opt2, d, T, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
-
-    # store models and evolution
-    existing_i = 1
-    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
-    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
-    
-# load existing model
-print(f'\nloading model {existing_i}')
-model1, opt1, D1_series = vmot.load_results(f'uniform_full_d{d}_T{T}_{existing_i}')
-model2, opt2, D2_series = vmot.load_results(f'uniform_mono_d{d}_T{T}_{existing_i}')
-
-# iterative parsing
-while existing_i < I:
-    
-    # new random sample
-    print(f'\niteration {existing_i+1}\n')
-    
-    # regular coupling
-    u, v, x, y = random_sample(n_points, monotone = False)
-    c = cost_f(x, y)
-    ws1 = vmot.generate_working_sample_T2(u, v, x, y, c)
-    
-    # monotone coupling
-    u, v, x, y = random_sample(n_points, monotone = True)
-    c = cost_f(x, y)
-    ws2 = vmot.generate_working_sample_T2(u, v, x, y, c)
-    print('samples generated, shapes ', ws1.shape, 'and', ws2.shape)
-    
-    # train
-    _D1_series = vmot.mtg_train(ws1, model1, opt1, d, T, monotone = False, opt_parameters=opt_parameters, verbose = 1)
-    _D2_series = vmot.mtg_train(ws2, model2, opt2, d, T, monotone = True,  opt_parameters=opt_parameters, verbose = 1)
-    existing_i += 1
-    print('models updated')
-    
-    # sequential storage of the variables' evolution
-    D1_series = D1_series + _D1_series
-    D2_series = D2_series + _D2_series
-    
-    vmot.dump_results([model1, opt1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
-    vmot.dump_results([model2, opt2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
-
+    t1 = time.time() # timer
+    timers.append(t1)
+    print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
 
 # individual plot
+_, __, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_full')
+_, __, D2_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
 evo1 = np.array(D1_series) # random, independent
 evo2 = np.array(D2_series) # random, monotone
 vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
@@ -154,8 +148,8 @@ vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 # heatmap
 # vmot.dump_results([model1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
 # vmot.dump_results([model2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
-model1, D1_series = vmot.load_results(f'uniform_full_d{d}_T{T}_{existing_i}')
-model2, D2_series = vmot.load_results(f'uniform_mono_d{d}_T{T}_{existing_i}')
+model1, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
+model2, D2_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_full')
 
 
 # D1, H1, pi_star1 = vmot.mtg_dual_value(ws1, model1, d, T, monotone = False, opt_parameters = opt_parameters, normalize_pi = False)
@@ -194,13 +188,18 @@ def plot_heatmap(heat, x, y):
 
 # margins based on beta_conjugate
 monotone = False
+existing_i = 100
+mono_label = 'mono' if monotone else 'full'
+path = f'uniform_d{d}_T{T}_{existing_i}_' + mono_label
+model, opt, D_series = vmot.load_results(path)
+
 u, v, x, y = random_sample(n_points, monotone = monotone)
 c = cost_f(x, y)
+print(c.mean())
 ws = vmot.generate_working_sample_T2(u, v, x, y, c)
-model = model1
-D, H, c, w = vmot.mtg_dual_value(ws, model, d, T, monotone)
+D, H, c = vmot.mtg_dual_value(ws, model, d, T, monotone)
 pi_hat, lbound, ubound = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = False, opt_parameters = opt_parameters)
-
+pi_hat.sum()
 heatmap = pd.DataFrame({ 'x1'  : x[:,0],
                           'x2'  : x[:,1],
                           'y1'  : y[:,0],

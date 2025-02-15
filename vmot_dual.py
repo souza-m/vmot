@@ -139,7 +139,7 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb
         penalty = beta(deviation, gamma)
         
         # loss and backpropagation
-        loss = (D.sum() + penalty.sum()) / full_size
+        loss = (D.sum() + H.sum() + penalty.sum()) / full_size
         if not opt is None:
             opt.zero_grad()
             loss.backward()
@@ -177,7 +177,7 @@ def mtg_parse(sample, model, d, T, monotone):
     size, n_cols = sample.shape
     q_size = T * d - monotone * (d - 1)   # quantile inputs
     dif_size = (T - 1) * d
-    assert len(phi_list) == q_size
+    assert len(phi_list) == q_size, f'{len(phi_list)} {q_size}'
     assert len(h_list) == dif_size
     assert n_cols == q_size + dif_size + 1
     
@@ -213,17 +213,13 @@ def mtg_parse(sample, model, d, T, monotone):
 def mtg_dual_value(working_sample, model, d, T, monotone):
     sample = torch.tensor(working_sample, device=device).float()
     D, H, c = mtg_parse(sample, model, d, T, monotone)
-    return D.detach().mean().cpu().numpy(),\
-           H.detach().mean().cpu().numpy(),\
-           c.detach().mean().cpu().numpy()
+    return D.detach().mean().cpu().item(),\
+           H.detach().mean().cpu().item(),\
+           c.detach().mean().cpu().item()
 
 
 # calculate the upper and lower margins to the true value based on eq. (2.5) of Th. 2.2, Eckstein and Kupper 2021
 def mtg_numeric_pi_hat(working_sample, model, d, T, monotone, opt_parameters):
-    # global device
-    if 'penalization' in opt_parameters.keys() and opt_parameters['penalization'] != 'L2':
-        print('penalization not implemented: ' + opt_parameters['penalization'])
-        return
     beta_prime   = beta_L2_prime             # first derivative of L2 penalization function
     beta_conj    = beta_L2_conj
     gamma        = opt_parameters['gamma']
