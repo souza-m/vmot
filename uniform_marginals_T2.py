@@ -62,13 +62,6 @@ def cost_f(x, y):
     return np.exp(y[:,0] + y[:,1])
 
 
-# reference value
-ref_value = 2.5562   # true VMOT solution, see Example 4.2 of REF
-
-# u, v, x, y = random_sample(n_points=10000000, monotone = True)
-# c = cost_f(x, y)
-# sample_mean = c.mean()
-
 # --- process batches and save models (takes long time) ---
 
 # optimization parameters
@@ -80,7 +73,7 @@ opt_parameters = { 'gamma'           : 1000,    # penalization parameter
 I = 100              # total desired iterations
 n_points = 1000000   # sample points at each iteration
 timers = []
-for monotone in [True]:
+for monotone in [True, False]:
     existing_i = 0       # last iteration saved
     mono_label = 'mono' if monotone else 'full'
     print(mono_label)
@@ -145,7 +138,15 @@ evo2 = np.array(D2_series) # random, monotone
 vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
 
+# reference value
+ref_value = 5.1124   # true VMOT solution, see Example 4.2 of reference paper
+
+# u, v, x, y = random_sample(n_points=10000000, monotone = True)
+# c = cost_f(x, y)
+# sample_mean = c.mean()
+
 # heatmap
+
 # vmot.dump_results([model1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
 # vmot.dump_results([model2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
 model1, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
