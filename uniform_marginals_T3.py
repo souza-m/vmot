@@ -29,20 +29,20 @@ T = 3
 def F_inv_X1(u):
     return 0.6 + 0.3 * u
 
-# inverse cumulative of U[0.7 , 0.8]
-def F_inv_X2(u):
-    return 0.7 + 0.1 * u
-
 # inverse cumulative of U[0.5 , 1.0]
 def F_inv_Y1(u):
     return 0.5 + 0.5 * u
 
 # inverse cumulative of U[0.5 , 1.0]
-def F_inv_Y2(u):
+def F_inv_Z1(u):
     return 0.5 + 0.5 * u
 
+# inverse cumulative of U[0.7 , 0.8]
+def F_inv_X2(u):
+    return 0.7 + 0.1 * u
+
 # inverse cumulative of U[0.5 , 1.0]
-def F_inv_Z1(u):
+def F_inv_Y2(u):
     return 0.5 + 0.5 * u
 
 # inverse cumulative of U[0.0 , 1.5]
@@ -62,7 +62,7 @@ def random_sample(n_points, monotone):
     else:
         x = np.array([F_inv_X1(u[:,0]), F_inv_X2(u[:,1])]).T
     y = np.array([F_inv_Y1(v[:,0]), F_inv_Y2(v[:,1])]).T
-    z = np.array([F_inv_Z1(v[:,0]), F_inv_Z2(v[:,1])]).T
+    z = np.array([F_inv_Z1(w[:,0]), F_inv_Z2(w[:,1])]).T
                   
     return u, v, w, x, y, z
     
@@ -84,6 +84,7 @@ I = 100              # total desired iterations
 n_points = 1000000   # sample points at each iteration
 timers = []
 for monotone in [True, False]:
+    
     existing_i = 0       # last iteration saved
     mono_label = 'mono' if monotone else 'full'
     print(mono_label)
