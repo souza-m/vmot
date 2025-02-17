@@ -65,16 +65,16 @@ def cost_f(x, y):
 # --- process batches and save models (takes long time) ---
 
 # optimization parameters
-opt_parameters = { 'gamma'           : 1000,    # penalization parameter
+opt_parameters = { 'gamma'           : 100,    # penalization parameter
                    'epochs'          : 1,       # iteration parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 
 # batch control
-I = 100              # total desired iterations
+I = 110              # total desired iterations
 n_points = 1000000   # sample points at each iteration
 timers = []
 for monotone in [True, False]:
-    existing_i = 0       # last iteration saved
+    existing_i = 100       # last iteration saved
     mono_label = 'mono' if monotone else 'full'
     print(mono_label)
     t0 = time.time() # timer
@@ -114,7 +114,11 @@ for monotone in [True, False]:
         
         # load existing model
         print(f'\nloading model {existing_i}')
-        model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        if existing_i == 100:
+            model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+            H_series = []
+        else:
+            model, opt, D_series, H_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
         
         # train
         _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
@@ -124,22 +128,27 @@ for monotone in [True, False]:
         # sequential storage of the variables' evolution
         D_series = D_series + _D_series
         H_series = H_series + _H_series
-        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        vmot.dump_results([model, opt, D_series, H_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
 
     t1 = time.time() # timer
     timers.append(t1)
     print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
+    
+print('duration 1 = ' + str(dt.timedelta(seconds=round(timers[1] - timers[0]))))
+print('duration 2 = ' + str(dt.timedelta(seconds=round(timers[3] - timers[2]))))
+
+
 
 # individual plot
-_, __, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_full')
-_, __, D2_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
-evo1 = np.array(D1_series) # random, independent
-evo2 = np.array(D2_series) # random, monotone
+ref_value = 5.1124   # true VMOT solution, see Example 4.2 of reference paper
+_, __, D1_series, H1_series = vmot.load_results(f'uniform_d{d}_T{T}_110_full')
+_, __, D2_series, H2_series = vmot.load_results(f'uniform_d{d}_T{T}_110_mono')
+evo1 = np.array(D1_series)[100:] + np.array(H1_series) # random, independent
+evo2 = np.array(D2_series)[100:] + np.array(H2_series) # random, monotone
 vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
 
 
 # reference value
-ref_value = 5.1124   # true VMOT solution, see Example 4.2 of reference paper
 
 # u, v, x, y = random_sample(n_points=10000000, monotone = True)
 # c = cost_f(x, y)

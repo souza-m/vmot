@@ -326,7 +326,7 @@ def convergence_plot(value_series_list, labels, h_series_list=None,
     ref_label='reference'
     pl.figure(figsize = [7,7])   # plot in two iterations to have a clean legend
     for v in value_series_list:
-        pl.plot(range(1, len(v)+1), v)
+        pl.plot(range(100, len(v)+100), v)
     if not ref_value is None:
         pl.axhline(ref_value, linestyle=':', color=ref_color)
     pl.legend(labels + [ref_label])
