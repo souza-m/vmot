@@ -63,155 +63,69 @@ def cost_f(x, y):
 
 
 # --- process batches and save models (takes long time) ---
-
-# optimization parameters
-opt_parameters = { 'gamma'           : 1000,    # penalization parameter
+opt_parameters = { 'gamma'           : 100,     # penalization parameter
                    'epochs'          : 1,       # iteration parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 
-# batch control
-I = 100              # total desired iterations
-n_points = 1000000   # sample points at each iteration
-timers = []
-for monotone in [True, False]:
-    existing_i = 0       # last iteration saved
-    mono_label = 'mono' if monotone else 'full'
-    print(mono_label)
-    t0 = time.time() # timer
-    timers.append(t0)
-    if existing_i == 0:
-        # new random sample
-        print('\niteration 1 (new model)\n')
-        
-        # regular coupling
-        u, v, x, y = random_sample(n_points, monotone = monotone)
-        c = cost_f(x, y)
-        ws = vmot.generate_working_sample_T2(u, v, x, y, c)
-        print('sample generated, shape ', ws.shape)
-        
-        # models
-        model, opt = vmot.generate_model(d, T, monotone = monotone)
-        print('model generated')
-        
-        # train
-        D_series, H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
-        
-        # store models and evolution
-        existing_i = 1
-        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-        
-    # iterative parsing
-    while existing_i < I:
-        
-        # new random sample
-        print(f'\niteration {existing_i+1}\n')
-        
-        # regular coupling
-        u, v, x, y = random_sample(n_points, monotone = monotone)
-        c = cost_f(x, y)
-        ws = vmot.generate_working_sample_T2(u, v, x, y, c)
-        print('sample generated, shape ', ws.shape)
-        
-        # load existing model
-        print(f'\nloading model {existing_i}')
-        model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-        
-        # train
-        _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
-        existing_i += 1
-        print('models updated')
-        
-        # sequential storage of the variables' evolution
-        D_series = D_series + _D_series
-        H_series = H_series + _H_series
-        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-
-    t1 = time.time() # timer
-    timers.append(t1)
-    print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
-
-# individual plot
-_, __, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_full')
-_, __, D2_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
-evo1 = np.array(D1_series) # random, independent
-evo2 = np.array(D2_series) # random, monotone
-vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=ref_value)
-
-
-# reference value
-ref_value = 5.1124   # true VMOT solution, see Example 4.2 of reference paper
-
-# u, v, x, y = random_sample(n_points=10000000, monotone = True)
-# c = cost_f(x, y)
-# sample_mean = c.mean()
-
-# heatmap
-
-# vmot.dump_results([model1, D1_series], f'uniform_full_d{d}_T{T}_{existing_i}')
-# vmot.dump_results([model2, D2_series], f'uniform_mono_d{d}_T{T}_{existing_i}')
-model1, D1_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_mono')
-model2, D2_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_full')
-
-
-# D1, H1, pi_star1 = vmot.mtg_dual_value(ws1, model1, d, T, monotone = False, opt_parameters = opt_parameters, normalize_pi = False)
-# D2, H2, pi_star2 = vmot.mtg_dual_value(ws2, model2, d, T, monotone = True,  opt_parameters = opt_parameters, normalize_pi = False)
-# pi_star1.shape
-# pi_star1.sum(axis=0)
-
-# pl.figure()
-# pl.plot(pi_star1.sum(axis=0))
-# pl.plot(pi_star1.sum(axis=1))
-# pi_star1[:,6050:6055]
-
-
-def plot_heatmap(heat, x, y):
-    s = 8
-    c = 'black'
-    a = .1
-    fig, ax = pl.subplots(2, 2, sharex=True, sharey=True, )
-    ax[0,0].set_xlim([0, 3.])
-    ax[0,0].set_ylim([0, 3.])
-    ax[0,0].set_title('X1 x X2')
-    ax[0,0].scatter(heat['x1'], heat['x2'], s=s, color=c, alpha=a)
-    ax[0,1].set_xlim([0, 3.])
-    ax[0,1].set_ylim([0, 3.])
-    ax[0,1].set_title('X1 x Y1')
-    ax[0,1].scatter(heat['x1'], heat['y1'], s=s, color=c, alpha=a)
-    ax[1,0].set_xlim([0, 3.])
-    ax[1,0].set_ylim([0, 3.])
-    ax[1,0].set_title('X2 x Y2')
-    ax[1,0].scatter(heat['x2'], heat['y2'], s=s, color=c, alpha=a)
-    ax[1,1].set_xlim([0, 3.])
-    ax[1,1].set_ylim([0, 3.])
-    ax[1,1].set_title('Y1 x Y2')
-    ax[1,1].scatter(heat['y1'], heat['y2'], s=s, color=c, alpha=a)
-    fig.show()
-
-# margins based on beta_conjugate
-monotone = False
-existing_i = 100
-mono_label = 'mono' if monotone else 'full'
-path = f'uniform_d{d}_T{T}_{existing_i}_' + mono_label
-model, opt, D_series = vmot.load_results(path)
-
-u, v, x, y = random_sample(n_points, monotone = monotone)
-c = cost_f(x, y)
-print(c.mean())
-ws = vmot.generate_working_sample_T2(u, v, x, y, c)
-D, H, c = vmot.mtg_dual_value(ws, model, d, T, monotone)
-pi_hat, lbound, ubound = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = False, opt_parameters = opt_parameters)
-pi_hat.sum()
-heatmap = pd.DataFrame({ 'x1'  : x[:,0],
-                          'x2'  : x[:,1],
-                          'y1'  : y[:,0],
-                          'y2'  : y[:,1],
-                          'p'   : pi_hat  })
-
-scale = 20. * max(pi_hat)
-heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
-print(len(heat))
-plot_heatmap(heat, x, y)
-
-heat = heatmap.iloc[:len(heat)]
-plot_heatmap(heat, x, y)
-
+if __name__ == "__main__":
+    # optimization parameters
+    # batch control
+    I = 100              # total desired iterations
+    n_points = 1000000   # sample points at each iteration
+    timers = []
+    for monotone in [True, False]:
+        existing_i = 0       # last iteration saved
+        mono_label = 'mono' if monotone else 'full'
+        print(mono_label)
+        t0 = time.time() # timer
+        timers.append(t0)
+        if existing_i == 0:
+            # new random sample
+            print('\niteration 1 (new model)\n')
+            
+            # regular coupling
+            u, v, x, y = random_sample(n_points, monotone = monotone)
+            c = cost_f(x, y)
+            ws = vmot.generate_working_sample_T2(u, v, x, y, c)
+            print('sample generated, shape ', ws.shape)
+            
+            # models
+            model, opt = vmot.generate_model(d, T, monotone = monotone)
+            print('model generated')
+            
+            # train
+            D_series, H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+            
+            # store models and evolution
+            existing_i = 1
+            vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+            
+        # iterative parsing
+        while existing_i < I:
+            
+            # new random sample
+            print(f'\niteration {existing_i+1}\n')
+            
+            # regular coupling
+            u, v, x, y = random_sample(n_points, monotone = monotone)
+            c = cost_f(x, y)
+            ws = vmot.generate_working_sample_T2(u, v, x, y, c)
+            print('sample generated, shape ', ws.shape)
+            
+            # load existing model
+            print(f'\nloading model {existing_i}')
+            model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+            
+            # train
+            _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+            existing_i += 1
+            print('models updated')
+            
+            # sequential storage of the variables' evolution
+            D_series = D_series + _D_series
+            H_series = H_series + _H_series
+            vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+    
+        t1 = time.time() # timer
+        timers.append(t1)
+        print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))

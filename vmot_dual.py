@@ -41,14 +41,33 @@ print('Using device:', device)
 '''
 
 # penalty function and its derivative
+# def beta_Lp(x, p, gamma):
+#     return (1 / gamma) * (1 / p) * torch.pow(torch.relu(gamma * x), p)
+ 
+# def beta_L2(x, gamma):
+#     return beta_Lp(x, 2, gamma)
+ 
+# def beta_L2_prime(x, gamma):
+#     return (1 / gamma) * torch.relu(x)
+
+# def beta_Lp_conj(y, p):
+#     q = p / (p - 1)
+#     return y ** q / q 
+    
+# def beta_L2_conj(y):
+#     return beta_Lp_conj(y, 2)
+    
+# beta_L2(torch.tensor(np.linspace(-5, 10, 21)), gamma=100)
+
+# penalty function and its derivative
 def beta_Lp(x, p, gamma):
-    return (1 / gamma) * (1 / p) * torch.pow(torch.relu(gamma * x), p)
+    return (gamma / p) * torch.pow(torch.relu(x), p)
  
 def beta_L2(x, gamma):
     return beta_Lp(x, 2, gamma)
  
 def beta_L2_prime(x, gamma):
-    return (1 / gamma) * torch.relu(x)
+    return gamma * torch.relu(x)
 
 def beta_Lp_conj(y, p):
     q = p / (p - 1)
@@ -225,15 +244,13 @@ def mtg_numeric_pi_hat(working_sample, model, d, T, monotone, opt_parameters):
     gamma        = opt_parameters['gamma']
     
     sample = torch.tensor(working_sample, device=device).float()
-    size = len(sample)
-    lower_margin = 0.
-    
     D, H, c = mtg_parse(sample, model, d, T, monotone)
-    deviation = c - D - H
+    deviation = c - (D + H)
     ratio = beta_prime(deviation, gamma)
-    upper_margin = ((beta_conj(ratio) / size).sum() / gamma).detach().cpu().numpy()
+    size = len(sample)
+    upper_margin = (1/gamma) * ((beta_conj(ratio)).sum() / size).detach().cpu().numpy()
     pi_hat = ratio / size
-    return pi_hat.detach().cpu().numpy(), lower_margin, upper_margin
+    return pi_hat.detach().cpu().numpy(), 0., upper_margin
 
 
 # working sample (d = 2)
@@ -326,10 +343,12 @@ def convergence_plot(value_series_list, labels, h_series_list=None,
     ref_label='reference'
     pl.figure(figsize = [7,7])   # plot in two iterations to have a clean legend
     for v in value_series_list:
-        pl.plot(range(1, len(v)+1), v)
+        pl.plot(range(101, len(v)+101), v)
     if not ref_value is None:
         pl.axhline(ref_value, linestyle=':', color=ref_color)
     pl.legend(labels + [ref_label])
+    for v in value_series_list:
+        pl.scatter(range(101, len(v)+101), v)
     if not h_series_list is None:
         pl.gca().set_prop_cycle(None)   # reset color cycler
         for v, h in zip(value_series_list, h_series_list):
