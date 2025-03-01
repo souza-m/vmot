@@ -131,13 +131,13 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
         print()
         
     return D_series, H_series
-    
+
 # train loop
-def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verbose = 0):
+def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, pi_weight = 0, verbose = 0):
     
     #   Primal:          max C
-    #   Dual:            min D  st  D + H >= C
-    #   Penalized dual:  min D + b(C - D - H)
+    #   Dual:            min D + H  st  D + H >= C
+    #   Penalized dual:  min D + H + b(C - D - H)
     full_size = len(working_loader.dataset)
     
     # report
@@ -157,8 +157,20 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb
         deviation = c - D - H
         penalty = beta(deviation, gamma)
         
-        # loss and backpropagation
-        loss = (D.sum() + H.sum() + penalty.sum()) / full_size
+        if pi_weight > 0:
+            beta_prime = beta_L2_prime             # first derivative of L2 penalization function
+            ratio = beta_prime(deviation, gamma)
+            pi_hat = ratio / sum(ratio)
+            pi_hat = pi_weight * pi_hat + (1. - pi_weight) * pi_hat.mean()
+        
+            # weighted loss
+            loss = pi_hat * (D.sum() + H.sum() + penalty.sum())
+            
+        else:
+            # loss
+            loss = (D.sum() + H.sum() + penalty.sum()) / len(sample)
+                
+        # backpropagation
         if not opt is None:
             opt.zero_grad()
             loss.backward()
@@ -222,10 +234,11 @@ def mtg_parse(sample, model, d, T, monotone):
             H.append(h(Ut).reshape(size) * dif)
             count += 1
     assert count == len(h_list)
+    assert Ut.shape[1] == q_size - d
     H = sum(H)
     
     return D, H, c
-    
+ 
 
 # calculate the dual value from existing model
 # this value should be close to the primal value for well trained models
@@ -294,7 +307,7 @@ _dir = './model_dump/'
 _file_prefix = 'results_'
 _file_suffix = '.pickle'
 
-def dump_results(results, label='test'):
+def dump_results(results, folder='', label='test'):
     # move to cpu before dumping
     cpu_device = torch.device('cpu')
     for i in range(len(results)):
@@ -303,13 +316,13 @@ def dump_results(results, label='test'):
             results[i] = results[i].to(cpu_device)
     
     # dump
-    _path = _dir + _file_prefix + label + _file_suffix
+    _path = _dir + folder + _file_prefix + label + _file_suffix
     with open(_path, 'wb') as file:
         pickle.dump(results, file)
     print('model saved to ' + _path)
 
-def load_results(label=''):
-    _path = _dir + _file_prefix + label + _file_suffix
+def load_results(folder='', label=''):
+    _path = _dir + folder + _file_prefix + label + _file_suffix
     with open(_path, 'rb') as file:
         results = pickle.load(file)
     print('model loaded from ' + _path)

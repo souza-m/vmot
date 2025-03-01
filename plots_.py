@@ -13,81 +13,8 @@ import uniform_marginals_T2 as exT2, uniform_marginals_T3 as exT3
 from matplotlib.patches import Rectangle
 
 
-folder='gamma_1000/'
-existing_i = 120
-opt_parameters = { 'gamma'           : 50,      # penalization parameter
-                   'epochs'          : 1,       # iteration parameter
-                   'batch_size'      : 1000  }  # iteration parameter  
+# density map
 
-# ---------- choose ----------
-
-# first example
-d, T = 2, 2
-OT_value = (np.e ** 0.5) * (np.e ** 2 - 1.) / 2   # analytical true value Ex. 4.2
-VMOT_value = 5.1124   # analytical true value Ex. 4.2
-title_T2 = 'Numerical value (T = 2)'
-
-# ---------- choose ----------
-
-# second example
-d, T = 2, 3
-# upper_bound = ref_value
-# lower_bound = 2 * (np.e - np.sqrt(np.e)) * (2/3) * (np.e ** 1.5 - 1)   # true value for the independent coupling
-title_T3 = 'Numerical value (T = 3)'
-
-# ---------- ------ ----------
-
-
-# historical series
-model1, D1_series, H1_series, P1_series = vmot.load_results(folder=folder, label=f'uniform_d{d}_T{T}_{existing_i}_full_cpu')
-model2, D2_series, H2_series, P2_series = vmot.load_results(folder=folder, label=f'uniform_d{d}_T{T}_{existing_i}_mono_cpu')
-evo1 = np.array(D1_series) + np.array(H1_series) # random, independent
-evo2 = np.array(D2_series) + np.array(H2_series) # random, monotone
-print(f'mean    full = {evo1.mean():8.5f}, mono = {evo2.mean():8.5f}')
-print(f'std     full = {evo1.std():8.5f}, mono = {evo2.std():8.5f}')
-# value_series_T2 = [evo1.copy(), evo2.copy()]   # choose
-value_series_T3 = [evo1.copy(), evo2.copy()]   # choose
-
-
-labels = ['Full dimension', 'Reduced dimension', 'OT value', 'VMOT value (true)']
-OT_value = (np.e ** 0.5) * (np.e ** 2 - 1.) / 2   # analytical true value Ex. 4.2
-VMOT_value = 5.1124   # analytical true value Ex. 4.2
-ref_color='black'
-ref_label='reference'
-
-
-fig, ax = pl.subplots(1, 2, sharex=True, sharey=True, figsize=[9,4])
-
-# T = 2
-for v in value_series_T2:
-    ax[0].plot(range(81, len(v)+81), v[-20:])
-ax[0].set_xlim([100, 121])
-ax[0].axhline(OT_value, linestyle=':', color='black')
-ax[0].axhline(VMOT_value, linestyle=':', color='red')
-ax[0].legend(labels, loc='best', bbox_to_anchor=(1., 0.5, 0.0, 0.0))
-for v in value_series_T2:
-    ax[0].scatter(range(101, len(v)+101), v, s=5)
-ax[0].set_xlabel('Iteration')
-ax[0].set_title(title_T2)
-
-# T = 3
-for v in value_series_T3:
-    ax[1].plot(range(81, len(v)+81), v[-20:])
-ax[1].axhline(OT_value, linestyle=':', color='black')
-ax[1].legend(labels[:-1], loc='best', bbox_to_anchor=(1., 0.5, 0.0, 0.0))
-for v in value_series_T3:
-    ax[1].scatter(range(81, len(v)+81), v, s=5)
-ax[1].set_xlabel('Iteration')
-ax[1].set_title(title_T3)
-
-fig.show()
-
-
-
-
-
-
-# heatmap
 def plot_heatmap_T2(heat, x, y):
     s = 4
     c = 'black'
@@ -128,10 +55,154 @@ def plot_heatmap_T3(heat, x, y, z):
     fig.show()
 
 
-# margins based on beta_conjugate
+
+folder='gamma_1000/'
+existing_i = 150
+tail_cut = 100
+tail_size = existing_i - tail_cut
+opt_parameters = { 'gamma'           : 1000,    # penalization parameter
+                   'epochs'          : 1,       # iteration parameter
+                   'batch_size'      : 1000  }  # iteration parameter  
+OT_value = (np.e ** 0.5) * (np.e ** 2 - 1.) / 2   # analytical true value Ex. 4.2
+VMOT_value = 5.1124   # analytical true value Ex. 4.2
+d = 2
 n_points = 1000000
 
 
+# print statistics and load batch data for later plotting
+value_series = []
+density_set = []
+for T in [2, 3]:
+    for monotone in [False, True]:
+        
+        title = f'Numerical value (T = {T}, ' + ('reduced' if monotone else 'general') + ')'
+        print()
+        print(title)
+
+        # historical series
+        model, D_series, H_series, P_series = vmot.load_results(folder=folder, label=f'uniform_d{d}_T{T}_{existing_i}_{"mono" if monotone else "full"}_cpu')
+        evo = np.array(D_series)
+        print(f'full series   mean = {evo.mean():8.5f},   std = {evo.std():8.5f}')
+        print(f'tail series   mean = {evo[tail_cut:].mean():8.5f},   std = {evo[tail_cut:].std():8.5f}')
+        value_series.append(evo)
+        
+        if T == 2:
+            u, v, x, y = exT2.random_sample(n_points, monotone = monotone)
+            c = exT2.cost_f(x, y)
+            ws = vmot.generate_working_sample_T2(u, v, x, y, c)
+            
+            pi_hat, lmargin, umargin = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = monotone, opt_parameters = opt_parameters)
+            print('upper margin', umargin)
+            print('pi_hat total mass', pi_hat.sum())
+            
+            normalize = True
+            if normalize:
+                pi_hat /= pi_hat.sum()
+                
+            # T = 2
+            heatmap = pd.DataFrame({ 'x1'  : x[:,0],
+                                     'x2'  : x[:,1],
+                                     'y1'  : y[:,0],
+                                     'y2'  : y[:,1],
+                                     'p'   : pi_hat  })
+        
+        else:
+            u, v, w, x, y, z = exT3.random_sample(n_points, monotone = monotone)
+            c = exT3.cost_f(x, y, z)
+            ws = vmot.generate_working_sample_T3(u, v, w, x, y, z, c)
+                
+            pi_hat, lmargin, umargin = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = monotone, opt_parameters = opt_parameters)
+            print(pi_hat.sum())
+            
+        
+            # T = 3
+            heatmap = pd.DataFrame({ 'x1'  : x[:,0],
+                                     'x2'  : x[:,1],
+                                     'y1'  : y[:,0],
+                                     'y2'  : y[:,1],
+                                     'z1'  : z[:,0],
+                                     'z2'  : z[:,1],
+                                     'p'   : pi_hat  })
+            
+        pi_hat /= pi_hat.sum()
+        cut = np.quantile(pi_hat, 1 - (5000 / n_points))
+        # heat = heatmap.iloc[pi_hat > cut]
+        heat = heatmap.iloc[pi_hat * np.random.random(len(pi_hat)) > cut / 2]
+        density_set.append([x.copy(), y.copy(), pi_hat.copy(), umargin, cut])
+        
+        if T == 2:
+            plot_heatmap_T2(heat, x, y)
+            
+        if T == 3:
+            plot_heatmap_T3(heat, x, y, z)
+        
+
+# evolution of numeric values
+labels = ['Full dimension', 'Reduced dimension', 'OT value', 'VMOT value (true)']
+title_T2 = 'Numerical value (T = 2)'
+title_T3 = 'Numerical value (T = 3)'
+fig, ax = pl.subplots(1, 2, sharex=True, sharey=True, figsize=[9,4])
+size = len(value_series[0])
+
+_range = range(tail_cut + 1, size + 1)
+
+
+tolerance_values = [
+    (0.01, 0.05),  # First line
+    (0.02, 0.03),  # Second line
+    (0.015, 0.04),  # Third line
+    (0.025, 0.02)   # Fourth line
+]
+
+# T = 2
+# Plot first two series with tolerance bands
+line_handles = []
+for i in range(2):
+    values = value_series[i][tail_cut:]
+    upper_tol = values + tolerance_values[i][0]
+    lower_tol = values - tolerance_values[i][1]
+
+    line, = ax[0].plot(_range, values)  # Plot the main line
+    ax[0].fill_between(_range, lower_tol, upper_tol, color=line.get_color(), alpha=0.2)  # Tolerance band
+    line_handles.append(line)
+
+# ax[0].plot(_range, value_series[0][tail_cut:])
+# ax[0].plot(_range, value_series[1][tail_cut:])
+line_handles.append(ax[0].axhline(OT_value, linestyle='--', linewidth=2, color='black'))
+line_handles.append(ax[0].axhline(VMOT_value, linestyle='--', linewidth=2, color='red'))
+ax[0].legend(handles=line_handles, loc='center right', labels=labels)
+ax[0].scatter(_range, value_series[0][tail_cut:], s=5)
+ax[0].scatter(_range, value_series[1][tail_cut:], s=5)
+ax[0].set_xlabel('Iteration')
+ax[0].set_title(title_T2)
+
+# T = 3
+# Plot second two series with tolerance bands
+line_handles = []
+for i in range(2, 4):
+    values = value_series[i][tail_cut:]
+    upper_tol = values + tolerance_values[i][0]
+    lower_tol = values - tolerance_values[i][1]
+
+    line, = ax[1].plot(_range, values)  # Plot the main line
+    ax[1].fill_between(_range, lower_tol, upper_tol, color=line.get_color(), alpha=0.2)  # Tolerance band
+    line_handles.append(line)
+
+# ax[1].plot(_range, value_series[2][tail_cut:])
+# ax[1].plot(_range, value_series[3][tail_cut:])
+line_handles.append(ax[1].axhline(OT_value, linestyle='--', linewidth=2, color='black'))
+ax[1].legend(handles=line_handles, labels=labels[:-1], loc='best')
+ax[1].scatter(_range, value_series[2][tail_cut:], s=5)
+ax[1].scatter(_range, value_series[3][tail_cut:], s=5)
+ax[1].set_xlabel('Iteration')
+ax[1].set_title(title_T3)
+
+fig.show()
+
+
+
+
+# margins based on beta_conjugate
 
 # T = 2
 monotone = True   # choose
@@ -141,7 +212,7 @@ c = exT2.cost_f(x, y)
 ws = vmot.generate_working_sample_T2(u, v, x, y, c)
 
 # T = 3
-monotone = False   # choose
+monotone = True   # choose
 model = model2 if monotone else model1
 u, v, w, x, y, z = exT3.random_sample(n_points, monotone = monotone)
 c = exT3.cost_f(x, y, z)
@@ -159,10 +230,10 @@ normalize = True
 if normalize:
     pi_hat /= pi_hat.sum()
     
-# set_T2_mono = [x.copy(), y.copy(), pi_hat.copy()]  20
-# set_T2_full = [x.copy(), y.copy(), pi_hat.copy()]  17
-# set_T3_mono = [x.copy(), y.copy(), z.copy(), pi_hat.copy()]  18
-# set_T3_full = [x.copy(), y.copy(), z.copy(), pi_hat.copy()]  17
+# set_T2_full = [x.copy(), y.copy(), pi_hat.copy()]  1
+# set_T2_mono = [x.copy(), y.copy(), pi_hat.copy()]  1.7
+# set_T3_full = [x.copy(), y.copy(), z.copy(), pi_hat.copy()]  .75
+# set_T3_mono = [x.copy(), y.copy(), z.copy(), pi_hat.copy()]  .95
     
 # T = 2
 heatmap = pd.DataFrame({ 'x1'  : x[:,0],
@@ -171,7 +242,7 @@ heatmap = pd.DataFrame({ 'x1'  : x[:,0],
                          'y2'  : y[:,1],
                          'p'   : pi_hat  })
 
-scale = 17. * max(pi_hat)
+scale = 1.7 * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 plot_heatmap_T2(heat, x, y)
@@ -186,7 +257,7 @@ heatmap = pd.DataFrame({ 'x1'  : x[:,0],
                          'z2'  : z[:,1],
                          'p'   : pi_hat  })
 
-scale = 1. * max(pi_hat)
+scale = .95 * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 plot_heatmap_T3(heat, x, y, z)
@@ -197,15 +268,16 @@ plot_heatmap_T3(heat, x, y, z)
 
 
 # plot of four last-period maps
+
 s = 4
 c = 'black'
 a = .1
 fig, ax = pl.subplots(1, 4, sharex=True, sharey=True, figsize=[13.9,4.1])
 
 # T2, full
-x, y, pi_hat = set_T2_full
+x, y, pi_hat, umargin, cut = density_set[0]
 heatmap = pd.DataFrame({ 'x1': x[:,0], 'x2': x[:,1], 'y1': y[:,0], 'y2': y[:,1], 'p': pi_hat  })
-scale = 16.5 * max(pi_hat)
+scale = 1. * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 ax[0].set_xlim([0.4, 1.1])
@@ -214,9 +286,9 @@ ax[0].set_title('T = 2, General')
 ax[0].scatter(heat['y1'], heat['y2'], s=s, color=c, alpha=a)
 
 # T2, mono
-x, y, pi_hat = set_T2_mono
+x, y, pi_hat, umargin, cut = density_set[1]
 heatmap = pd.DataFrame({ 'x1': x[:,0], 'x2': x[:,1], 'y1': y[:,0], 'y2': y[:,1], 'p': pi_hat  })
-scale = 21. * max(pi_hat)
+scale = 1.7 * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 ax[1].set_xlim([0.4, 1.1])
@@ -225,9 +297,9 @@ ax[1].set_title('T = 2, Reduced')
 ax[1].scatter(heat['y1'], heat['y2'], s=s, color=c, alpha=a)
 
 # T3, full
-x, y, z, pi_hat = set_T3_full
+x, y, z, pi_hat, umargin, cut = density_set[2]
 heatmap = pd.DataFrame({ 'x1': x[:,0], 'x2': x[:,1], 'y1': y[:,0], 'y2': y[:,1], 'z1': z[:,0], 'z2': z[:,1], 'p': pi_hat  })
-scale = 17. * max(pi_hat)
+scale = .75 * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 ax[2].set_xlim([0.4, 1.1])
@@ -236,9 +308,9 @@ ax[2].set_title('T = 3, General')
 ax[2].scatter(heat['z1'], heat['z2'], s=s, color=c, alpha=a)
 
 # T3, mono
-x, y, z, pi_hat = set_T3_mono
+x, y, z, pi_hat, umargin, cut = density_set[3]
 heatmap = pd.DataFrame({ 'x1': x[:,0], 'x2': x[:,1], 'y1': y[:,0], 'y2': y[:,1], 'z1': z[:,0], 'z2': z[:,1], 'p': pi_hat  })
-scale = 19. * max(pi_hat)
+scale = .95 * max(pi_hat)
 heat = heatmap.iloc[pi_hat > scale * np.random.random(len(pi_hat))]
 print(len(heat))
 ax[3].set_xlim([0.4, 1.1])

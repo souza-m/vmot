@@ -73,7 +73,7 @@ def cost_f(x, y, z):
 
 
 # --- process batches and save models (takes long time) ---
-opt_parameters = { 'gamma'           : 100,     # penalization parameter
+opt_parameters = { 'gamma'           : 10,      # penalization parameter
                    'epochs'          : 1,       # iteration parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 

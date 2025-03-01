@@ -1,0 +1,53 @@
+T = 2
+statistics - full series
+mean    full =  5.41346, mono =  5.39587
+std     full =  0.86961, mono =  0.85926
+statistics - last piece
+mean    full =  5.08032, mono =  5.11876
+std     full =  0.00000, mono =  0.00000
+
+full upper margin 0.018131624221801756
+mono upper margin 0.01340014362335205
+T = 3
+
+statistics - full series
+mean    full =  5.37646, mono =  5.35193
+std     full =  0.82499, mono =  0.82982
+statistics - last piece
+mean    full =  5.05983, mono =  5.06675
+std     full =  0.00000, mono =  0.00000
+
+full upper margin 0.020093685150146486
+mono upper margin 0.022289180755615236
+
+
+
+Numerical value (T = 2, general)
+model loaded from ./model_dump/gamma_1000/results_uniform_d2_T2_120_full_cpu.pickle
+full series   mean =  5.41346,   std =  0.86961
+tail series   mean =  5.07699,   std =  0.00238
+upper margin 0.018131624221801756
+pi_hat total mass 0.9238394
+upper margin 0.018131624221801756
+
+Numerical value (T = 2, reduced)
+model loaded from ./model_dump/gamma_1000/results_uniform_d2_T2_120_mono_cpu.pickle
+full series   mean =  5.39587,   std =  0.85926
+tail series   mean =  5.11736,   std =  0.00199
+upper margin 0.01340014362335205
+pi_hat total mass 1.0335003
+upper margin 0.01340014362335205
+
+Numerical value (T = 3, general)
+model loaded from ./model_dump/gamma_1000/results_uniform_d2_T3_120_full_cpu.pickle
+full series   mean =  5.37646,   std =  0.82499
+tail series   mean =  5.05681,   std =  0.00256
+0.8730731
+upper margin 0.020093685150146486
+
+Numerical value (T = 3, reduced)
+model loaded from ./model_dump/gamma_1000/results_uniform_d2_T3_120_mono_cpu.pickle
+full series   mean =  5.35193,   std =  0.82982
+tail series   mean =  5.06182,   std =  0.00210
+0.99034506
+upper margin 0.022289180755615236

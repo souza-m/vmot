@@ -7,16 +7,12 @@ PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Tran
 
 import numpy as np
 import pandas as pd
-# from scipy.stats import norm
 import vmot_dual as vmot
 import matplotlib.pyplot as pl
-# import matplotlib.colors as mcolors
-# from cycler import cycler
 import datetime as dt, time
 
 
 # example with cross-product cost and uniform marginals, d = 2, T = 3
-
 # over all possible joint distributions of (X,Y)
 
 
@@ -63,7 +59,7 @@ def cost_f(x, y):
 
 
 # --- process batches and save models (takes long time) ---
-opt_parameters = { 'gamma'           : 100,     # penalization parameter
+opt_parameters = { 'gamma'           : 10,      # penalization parameter
                    'epochs'          : 1,       # iteration parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 
