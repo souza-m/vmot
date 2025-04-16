@@ -7,9 +7,9 @@ Robust finance is concerned with developing models and approaches that account f
 
 ## Features
 - **Dual Problem Computation**: Implements the dual formulation of the VMOT problem using the framework established by Eckstein and Kupper (2021).
-- **Dimensional Reduction**: Exploits dimensional reduction techniques enabled by monotonicity properties, as described in the research paper.
-- **Neural Network Optimization**: Leverages Python's PyTorch library for neural network implementation, utilizing the **Adam gradient descent optimizer** for efficient optimization.
-- **Numerical Experiments**: Provides ready-to-use scripts for reproducing results from the paper, including robust option pricing problems in two-period market models.
+- **Dimensional Reduction**: Exploits a dimensional reduction technique in some cases, enabled by a monotonicity property, as described in the research paper.
+- **Neural Network Optimization**: Uses **Adam gradient descent optimizer** through Python's PyTorch library  for neural network implementation.
+- **Numerical Experiments**: Provides scripts for reproducing results from the paper, including robust option pricing problems in two-period market models.
 
 ---
 
@@ -71,7 +71,7 @@ vmot/
 ## Citation
 If you use this code in your research, please cite:
 ```bibtex
-@article{hiew2023geometry,
+@article{hiewetal2023vmot,
   title={Geometry of vectorial martingale optimal transport and robust option pricing},
   author={Hiew, Author1 and Lim, Author2 and Pass, Author3 and Souza, Author4},
   journal={arXiv preprint arXiv:2309.04947},
@@ -82,4 +82,4 @@ If you use this code in your research, please cite:
 ---
 
 ## Contact
-For questions or issues, please email `[Your Contact Email]`.
+For questions or issues, please email `marcelo.souza@bcb,gov.br`.
