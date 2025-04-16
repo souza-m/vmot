@@ -73,9 +73,9 @@ If you use this code in your research, please cite:
 ```bibtex
 @article{hiewetal2023vmot,
   title={Geometry of vectorial martingale optimal transport and robust option pricing},
-  author={Hiew, Author1 and Lim, Author2 and Pass, Author3 and Souza, Author4},
+  author={Hiew, Joshua Zoen-Git and Lim, Tongseok and Pass, Brendan and de Souza, Marcelo Cruz},
   journal={arXiv preprint arXiv:2309.04947},
-  year={2023}
+  year={2025}
 }
 ```
 
