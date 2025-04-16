@@ -83,3 +83,10 @@ If you use this code in your research, please cite:
 
 ## Contact
 For questions or issues, please email `marcelo.souza@bcb,gov.br`.
+
+---
+
+## License
+This project is licensed under the [MIT License](./LICENSE). You are free to use, modify, and distribute this project, provided that proper attribution is given to the authors.
+
+For more details, see the [LICENSE](./LICENSE) file.
