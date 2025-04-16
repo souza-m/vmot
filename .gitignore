@@ -8,4 +8,5 @@
 *.lyx~
 *.db
 /_not_used
+/model_dump
 *.pickle
