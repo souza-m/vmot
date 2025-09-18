@@ -129,6 +129,8 @@ for monotone in [False]:
         # sequential storage of the variables' evolution
         D_series = D_series + _D_series
         H_series = H_series + _H_series
+        P_series = H_series + _P_series
+        vmot.dump_results([model, opt, D_series, H_series, P_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
 
     t1 = time.time() # timer
     timers.append(t1)
