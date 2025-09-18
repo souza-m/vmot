@@ -65,16 +65,17 @@ def cost_f(x, y):
 # --- process batches and save models (takes long time) ---
 
 # optimization parameters
-opt_parameters = { 'gamma'           : 100,    # penalization parameter
-                   'epochs'          : 1,       # iteration parameter
-                   'batch_size'      : 1000  }  # iteration parameter  
+opt_parameters = { 'gamma'           : 1000,    # penalization parameter
+                   'epochs'          : 1,      # iteration parameter
+                   'batch_size'      : 1000 }  # iteration parameter  
 
 # batch control
-I = 110              # total desired iterations
+I = 160              # total desired iterations
 n_points = 1000000   # sample points at each iteration
 timers = []
-for monotone in [True, False]:
-    existing_i = 100       # last iteration saved
+for monotone in [False]:
+    # existing_i = 0       # last iteration saved
+    existing_i = 120# 63 if mono else 0       # last iteration saved
     mono_label = 'mono' if monotone else 'full'
     print(mono_label)
     t0 = time.time() # timer
@@ -94,11 +95,12 @@ for monotone in [True, False]:
         print('model generated')
         
         # train
-        D_series, H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        # opt_parameters['gamma'] = existing_i + 1
+        D_series, H_series, P_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters,verbose = 1)
         
         # store models and evolution
         existing_i = 1
-        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        vmot.dump_results([model, opt, D_series, H_series, P_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
         
     # iterative parsing
     while existing_i < I:
@@ -114,21 +116,19 @@ for monotone in [True, False]:
         
         # load existing model
         print(f'\nloading model {existing_i}')
-        if existing_i == 100:
-            model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-            H_series = []
-        else:
-            model, opt, D_series, H_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        model, opt, D_series, H_series, P_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        # for g in opt.param_groups:
+        #     g['lr'] = 1e-9
         
         # train
-        _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        pi_weight = 0#min(40, existing_i) / 50
+        _D_series, _H_series, _P_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, pi_weight=pi_weight, verbose = 1)
         existing_i += 1
         print('models updated')
         
         # sequential storage of the variables' evolution
         D_series = D_series + _D_series
         H_series = H_series + _H_series
-        vmot.dump_results([model, opt, D_series, H_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
 
     t1 = time.time() # timer
     timers.append(t1)
@@ -136,7 +136,7 @@ for monotone in [True, False]:
     
 print('duration 1 = ' + str(dt.timedelta(seconds=round(timers[1] - timers[0]))))
 print('duration 2 = ' + str(dt.timedelta(seconds=round(timers[3] - timers[2]))))
-
+print(f'ratio {(timers[3] - timers[2]) / (timers[1] - timers[0]) : 8.5f}')
 
 
 # individual plot

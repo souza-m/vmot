@@ -4,57 +4,7 @@ Created on Jul 18 2025
 @author: souzam
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 Example with cross-product cost and normal marginals, d = 2, T = 2
-"""
-
-import numpy as np
-import pandas as pd
-from scipy.stats import norm
-import vmot_dual as vmot
-import matplotlib.pyplot as pl
-import datetime as dt, time
-
-# two marginals, two periods
-d = 2
-T = 2
-
-# Parameters for the normal distributions
-mean_X = [0, 0]
-std_X = [1, 2]
-mean_Y = [0, 0]
-std_Y = [1.5, 2.5]
-
-# inverse cumulative for normal marginals
-def F_inv_X1(u):
-    return norm.ppf(u) * std_X[0] + mean_X[0]
-
-def F_inv_X2(u):
-    return norm.ppf(u) * std_X[1] + mean_X[1]
-
-def F_inv_Y1(u):
-    return norm.ppf(u) * std_Y[0] + mean_Y[0]
-
-def F_inv_Y2(u):
-    return norm.ppf(u) * std_Y[1] + mean_Y[1]
-
-# generate synthetic sample
-def random_sample(n_points, monotone):
-    u = np.random.random((n_points, 1 if monotone else 2))
-    v = np.random.random((n_points, 2))
-    
-    if monotone:
-        x = np.array([F_inv_X1(u[:,0]), F_inv_X2(u[:,0])]).T
-    else:
-        x = np.array([F_inv_X1(u[:,0]), F_inv_X2(u[:,1])]).T
-    y = np.array([F_inv_Y1(v[:,0]), F_inv_Y2(v[:,1])]).T
-                  
-    return u, v, x, y
-
-# cost function
-def cost_f(x, y):
-    return np.exp(y[:,0] + y[:,1])
-
-opt_parameters = { 'gamma' : 10, 'epochs' : 1, 'batch_size' : 1000 }
-
+"""c vbnm
 if __name__ == "__main__":
     I = 100
     n_points = 1000000

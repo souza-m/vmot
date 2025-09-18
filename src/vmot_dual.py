@@ -91,7 +91,7 @@ class PotentialF(nn.Module):
 
 
 # main training function
-def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbose = 0):
+def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, pi_weight = 0, verbose = 0):
 
     beta            = beta_L2
     gamma           = opt_parameters['gamma']
@@ -106,6 +106,7 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
     # iterative calls to train_loop
     D_series = []
     H_series = []
+    P_series = []
     if verbose > 0:
         t0 = time.time() # timer
     for i in range(epochs):
@@ -114,9 +115,10 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
         verb = ((i+1)%verbose == 0 or (i+1 == epochs)) * 100
         if verb:
             print()
-        D, H, P, ds, hs = mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, verb)
+        D, H, P, ds, hs = mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, pi_weight = pi_weight, verbose = verb)
         D_series.append(D)
         H_series.append(H)
+        P_series.append(P)
         if verb:
             print('\nmeans')
             print(f'   D   = {D:12.4f}')
@@ -130,8 +132,13 @@ def mtg_train(working_sample, model, opt, d, T, monotone, opt_parameters, verbos
         print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
         print()
         
+<<<<<<< Updated upstream:src/vmot_dual.py
     return D_series, H_series
 
+=======
+    return D_series, H_series, P_series
+    
+>>>>>>> Stashed changes:vmot_dual.py
 # train loop
 def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, pi_weight = 0, verbose = 0):
     
@@ -157,6 +164,7 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, pi_w
         deviation = c - D - H
         penalty = beta(deviation, gamma)
         
+<<<<<<< Updated upstream:src/vmot_dual.py
         if pi_weight > 0:
             beta_prime = beta_L2_prime             # first derivative of L2 penalization function
             ratio = beta_prime(deviation, gamma)
@@ -169,6 +177,22 @@ def mtg_train_loop(working_loader, model, opt, d, T, monotone, beta, gamma, pi_w
         else:
             # loss
             loss = (D.sum() + H.sum() + penalty.sum()) / len(sample)
+=======
+        # weighted loss
+        if pi_weight > 0:
+            ratio = beta_L2_prime(deviation.detach(), gamma)
+            ratio_sum = sum(ratio)
+            if np.isclose(ratio_sum.cpu().numpy(), 0):
+                loss = sum(D + penalty)  / len(sample)
+            else:
+                pi_hat = pi_weight * ratio / ratio_sum + (1. - pi_weight) / len(sample)
+                assert np.isclose(sum(pi_hat).cpu().numpy(), 1, atol=1e-3), f'{sum(pi_hat):12.9f}'
+                loss = sum(pi_hat * (D + penalty))
+            
+        # loss
+        else:
+            loss = sum(D + penalty)  / len(sample)
+>>>>>>> Stashed changes:vmot_dual.py
                 
         # backpropagation
         if not opt is None:
@@ -296,7 +320,7 @@ def generate_model(d, T, monotone):
         phi_list = nn.ModuleList([PotentialF(1, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size).to(device) for i in range(d * T)])
         h_list   = nn.ModuleList([PotentialF(j * d, n_hidden_layers=n_hidden_layers, hidden_size=hidden_size).to(device) for j in range(1, T) for k in range(d)])
     model = nn.ModuleList([phi_list, h_list])
-    lr =1e-4
+    lr =1e-5
     opt = torch.optim.Adam(model.parameters(), lr=lr)
     return model, opt
 
@@ -356,7 +380,11 @@ def convergence_plot(value_series_list, labels, h_series_list=None,
     ref_label='reference'
     pl.figure(figsize = [7,7])   # plot in two iterations to have a clean legend
     for v in value_series_list:
+<<<<<<< Updated upstream:src/vmot_dual.py
         pl.plot(range(101, len(v)+101), v)
+=======
+        pl.plot(range(1, len(v)+1), v)
+>>>>>>> Stashed changes:vmot_dual.py
     if not ref_value is None:
         pl.axhline(ref_value, linestyle=':', color=ref_color)
     pl.legend(labels + [ref_label])

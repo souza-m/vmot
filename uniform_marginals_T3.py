@@ -5,6 +5,7 @@ Created on Mon May 24 17:35:25 2021
 PyTorch implementation of Eckstein and Kupper 2019 - Computation of Optimal Transport...
 """
 
+
 import numpy as np
 import pandas as pd
 # from scipy.stats import norm
@@ -63,9 +64,9 @@ def random_sample(n_points, monotone):
         x = np.array([F_inv_X1(u[:,0]), F_inv_X2(u[:,1])]).T
     y = np.array([F_inv_Y1(v[:,0]), F_inv_Y2(v[:,1])]).T
     z = np.array([F_inv_Z1(w[:,0]), F_inv_Z2(w[:,1])]).T
-                  
-    return u, v, w, x, y, z
     
+    return u, v, w, x, y, z
+
 
 # cost function
 def cost_f(x, y, z):
@@ -75,16 +76,16 @@ def cost_f(x, y, z):
 # --- process batches and save models (takes long time) ---
 
 # optimization parameters
-opt_parameters = { 'gamma'           : 1000,     # penalization parameter
+opt_parameters = { 'gamma'           : 1000,    # penalization parameter
                    'epochs'          : 1,       # iteration parameter
                    'batch_size'      : 1000  }  # iteration parameter  
 
 # batch control
-I = 110              # total desired iterations
+I = 150              # total desired iterations
 n_points = 1000000   # sample points at each iteration
 timers = []
 for monotone in [True, False]:
-    existing_i = 100       # last iteration saved
+    existing_i = 120     # last iteration saved
     mono_label = 'mono' if monotone else 'full'
     print(mono_label)
     t0 = time.time() # timer
@@ -104,12 +105,13 @@ for monotone in [True, False]:
         print('model generated')
         
         # train
-        D_series, H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        # opt_parameters['gamma'] = 1 * (existing_i + 1)
+        D_series, H_series, P_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
         
         # store models and evolution
         existing_i = 1
-        vmot.dump_results([model, opt, D_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-        
+        vmot.dump_results([model, opt, D_series, H_series, P_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+    
     # iterative parsing
     while existing_i < I:
         
@@ -124,22 +126,20 @@ for monotone in [True, False]:
         
         # load existing model
         print(f'\nloading model {existing_i}')
-        if existing_i == 100:
-            model, opt, D_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-            H_series = []
-        else:
-            model, opt, D_series, H_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+        model, opt, D_series, H_series, P_series = vmot.load_results(f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
         
         # train
-        _D_series, _H_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
+        # opt_parameters['gamma'] = 1 * (existing_i + 1)
+        _D_series, _H_series, _P_series = vmot.mtg_train(ws, model, opt, d, T, monotone = monotone, opt_parameters=opt_parameters, verbose = 1)
         existing_i += 1
         print('models updated')
         
         # sequential storage of the variables' evolution
         D_series = D_series + _D_series
         H_series = H_series + _H_series
-        vmot.dump_results([model, opt, D_series, H_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
-
+        P_series = H_series + _P_series
+        vmot.dump_results([model, opt, D_series, H_series, P_series], f'uniform_d{d}_T{T}_{existing_i}_' + mono_label)
+    
     t1 = time.time() # timer
     timers.append(t1)
     print('duration = ' + str(dt.timedelta(seconds=round(t1 - t0))))
@@ -148,19 +148,27 @@ print('duration 1 = ' + str(dt.timedelta(seconds=round(timers[1] - timers[0]))))
 print('duration 2 = ' + str(dt.timedelta(seconds=round(timers[3] - timers[2]))))
 print(f'ratio {(timers[3] - timers[2]) / (timers[1] - timers[0]) : 8.5f}')
 
+
+
 # plot the evolution of the dual value
 # reference value
 upper_bound = 5.1124   # true solution of the related T=2 problem, see Example 4.2 of reference paper
 lower_bound = 2 * (np.e - np.sqrt(np.e)) * (2/3) * (np.e ** 1.5 - 1)   # true value for the independent coupling
 
+evo1 = np.array(D_series) # random, monotoneandom, monotone
+evo2 = np.array(D_series) + np.array(H_series) # random, monotoneandom, monotone
+vmot.convergence_plot([evo1, evo2], ['D', 'D+H'], ref_value=upper_bound)
+vmot.convergence_plot([evo1[-20:], evo2[-20:]], ['D', 'D+H'], ref_value=upper_bound)
+
+
 # u, v, x, y = random_sample(n_points=10000000, monotone = True)
 # c = cost_f(x, y, w)
 # sample_mean = c.mean()
 
-_, __, D1_series, H1_series = vmot.load_results(f'uniform_d{d}_T{T}_110_full')
-_, __, D2_series, H2_series = vmot.load_results(f'uniform_d{d}_T{T}_110_mono')
-evo1 = np.array(D1_series)[100:] + np.array(H1_series) # random, independent
-evo2 = np.array(D2_series)[100:] + np.array(H2_series) # random, monotone
+_, __, D1_series, H1_series, P1_series = vmot.load_results(f'uniform_d{d}_T{T}_110_full')
+_, __, D2_series, H2_series, P2_series = vmot.load_results(f'uniform_d{d}_T{T}_110_mono')
+evo1 = np.array(D1_series)[100:] + np.array(H1_series)[100:] # random, independent
+evo2 = np.array(D2_series)[100:] + np.array(H2_series)[100:] # random, monotone
 vmot.convergence_plot([evo2, evo1], ['reduced', 'full'], ref_value=upper_bound)
 
 
@@ -217,7 +225,7 @@ c = cost_f(x, y)
 print(c.mean())
 ws = vmot.generate_working_sample_T2(u, v, x, y, c)
 D, H, c = vmot.mtg_dual_value(ws, model, d, T, monotone)
-pi_hat, lbound, ubound = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = False, opt_parameters = opt_parameters)
+pi_hat, lbound, ubound = vmot.mtg_numeric_pi_hat(ws, model, d, T, monotone = monotone, opt_parameters = opt_parameters)
 pi_hat.sum()
 heatmap = pd.DataFrame({ 'x1'  : x[:,0],
                           'x2'  : x[:,1],
